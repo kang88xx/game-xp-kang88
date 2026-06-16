@@ -34,6 +34,21 @@ const EXPLORER = EXPLORER_URL;
 // Meme-coin bet sizes (KDG trades for fractions of a cent).
 const QUICK_CHIPS = [100, 500, 1000, 5000];
 
+// LMS timer tiers — bet floor doubles & round timer halves every 10 bets
+// (mirrors KangLMS.betFloorForTier / durationForTier; row index === tier).
+const TIER_ROWS = [
+  { bets: "0–9", bet: "1,000", timer: "24h" },
+  { bets: "10–19", bet: "2,000", timer: "12h" },
+  { bets: "20–29", bet: "4,000", timer: "6h" },
+  { bets: "30–39", bet: "8,000", timer: "3h" },
+  { bets: "40–49", bet: "16,000", timer: "1.5h" },
+  { bets: "50–59", bet: "32,000", timer: "45m" },
+  { bets: "60–69", bet: "64,000", timer: "22.5m" },
+  { bets: "70–79", bet: "128,000", timer: "11.25m" },
+  { bets: "80–89", bet: "256,000", timer: "5.6m" },
+  { bets: "90+", bet: "512,000+", timer: "→30s" },
+];
+
 function mmss(ms: number): string {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(totalSec / 60);
@@ -691,7 +706,6 @@ function OnchainGame() {
   const queryClient = useQueryClient();
   const kang = useBalance("KDG");
 
-  const [amount, setAmount] = useState("100");
   const [nowMs, setNowMs] = useState(() => Date.now());
   // "bet" | "claim-all" | `claim:${roundId}` | null
   const [busy, setBusy] = useState<string | null>(null);
@@ -729,9 +743,16 @@ function OnchainGame() {
   const { data: minBetWei } = useReadContract({
     address: contract,
     abi: LMS_ABI,
-    functionName: "minBet",
+    functionName: "currentMinBet",
     chainId: CHAIN_ID,
-    query: { refetchInterval: 60_000 },
+    query: { refetchInterval: 30_000 },
+  });
+  const { data: tierRaw } = useReadContract({
+    address: contract,
+    abi: LMS_ABI,
+    functionName: "currentTier",
+    chainId: CHAIN_ID,
+    query: { refetchInterval: 30_000 },
   });
   const { data: isPaused } = useReadContract({
     address: contract,
@@ -762,7 +783,8 @@ function OnchainGame() {
 
   const prizePool = round ? Number(formatUnits(round.prizePoolWei, dec)) : 0;
   const burned = round ? Number(formatUnits(round.burnedWei, dec)) : 0;
-  const minBet = minBetWei != null ? Number(formatUnits(minBetWei, dec)) : 1;
+  const minBet = minBetWei != null ? Number(formatUnits(minBetWei, dec)) : 0;
+  const tier = tierRaw != null ? Number(tierRaw) : 0;
   const pending = pendingWei != null ? Number(formatUnits(pendingWei, dec)) : 0;
 
   // deadline == 0 → the round is waiting for its first bet (lazy start).
@@ -890,8 +912,8 @@ function OnchainGame() {
     return true;
   };
 
-  const parsedAmt = parseFloat(amount);
-  const betAmt = Number.isFinite(parsedAmt) ? parsedAmt : 0;
+  // Tier model: the bet is FIXED to the current on-chain minimum (no choice).
+  const betAmt = minBet;
   const overBalance = hydrated && connected && betAmt > kang;
   // An expired pot goes to its winner — a bet now opens a FRESH round.
   const previewPrize =
@@ -899,7 +921,7 @@ function OnchainGame() {
 
   const doBet = async () => {
     if (!requireWallet() || !round || !kangAddr) return;
-    const amountWei = parseUnits(String(betAmt), dec);
+    const amountWei = minBetWei ?? parseUnits(String(betAmt), dec);
     try {
       setBusy("bet");
       const allowance = await publicClient!.readContract({
@@ -987,7 +1009,6 @@ function OnchainGame() {
     }
   };
 
-  const maxBet = () => setAmount(kang > 0 ? String(Math.floor(kang)) : "0");
 
   // Betting on an expired round is fine — bet() settles it and opens the next.
   const canBet =
@@ -1185,7 +1206,7 @@ function OnchainGame() {
 
             <div className="rounded-2xl bg-[var(--surface)] p-4">
               <div className="flex items-center justify-between text-xs text-[var(--muted)]">
-                <label htmlFor="lms-bet-amount">Bet amount</label>
+                <span>Bet · Tier {tier}</span>
                 <span>
                   Balance:{" "}
                   <span
@@ -1197,39 +1218,18 @@ function OnchainGame() {
                   </span>
                 </span>
               </div>
-              <div className="mt-1 flex items-center">
-                <input
-                  id="lms-bet-amount"
-                  type="number"
-                  inputMode="decimal"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  min={minBet}
-                  placeholder="0"
-                  className="w-full bg-transparent text-2xl font-semibold outline-none placeholder:text-[var(--muted-2)]"
-                />
+              <div className="mt-1 flex items-baseline gap-2">
+                <span className="text-2xl font-semibold">
+                  {hydrated ? formatNumber(minBet, 0) : "—"}
+                </span>
                 <span className="text-sm font-semibold text-[var(--muted)]">
                   KDG
                 </span>
               </div>
-              <div className="mt-2 flex gap-2 flex-wrap">
-                {QUICK_CHIPS.map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setAmount(String(v))}
-                    className="rounded-lg bg-[var(--card)] px-2.5 py-1 text-xs font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
-                  >
-                    {v}
-                  </button>
-                ))}
-                <button
-                  disabled={!hydrated || !connected}
-                  onClick={maxBet}
-                  className="rounded-lg bg-[var(--card)] px-2.5 py-1 text-xs font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)] disabled:opacity-50"
-                >
-                  MAX
-                </button>
-              </div>
+              <p className="mt-1 text-xs text-[var(--muted-2)]">
+                Fixed to the active tier minimum — doubles every 10 bets while
+                the timer halves.
+              </p>
             </div>
 
             {/* Payout preview */}
@@ -1281,6 +1281,33 @@ function OnchainGame() {
               No randomness · last bettor wins the pool · prizes are claimed
               from the contract (pull-payment)
             </p>
+            <div className="mt-4 rounded-2xl border border-[var(--border)] p-3">
+              <div className="mb-2 text-xs font-semibold">
+                Timer Tiers
+                <span className="ml-1 font-normal text-[var(--muted-2)]">
+                  · every 10 bets: bet ×2, timer ÷2
+                </span>
+              </div>
+              <div className="flex justify-between text-[10px] uppercase tracking-wide text-[var(--muted-2)]">
+                <span className="w-1/3">Bets</span>
+                <span className="w-1/3 text-center">Min Bet</span>
+                <span className="w-1/3 text-right">Timer</span>
+              </div>
+              {TIER_ROWS.map((r, t) => (
+                <div
+                  key={r.bets}
+                  className={`flex justify-between text-[11px] ${
+                    t === tier
+                      ? "font-semibold text-[var(--accent)]"
+                      : "text-[var(--muted)]"
+                  }`}
+                >
+                  <span className="w-1/3">{r.bets}</span>
+                  <span className="w-1/3 text-center">{r.bet} KDG</span>
+                  <span className="w-1/3 text-right">{r.timer}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Fee distribution bar */}

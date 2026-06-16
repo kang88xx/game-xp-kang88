@@ -85,11 +85,57 @@ export const LMS_ABI = [
     outputs: [{ name: "", type: "uint256" }],
   },
   {
+    // Bet floor a new bet must meet right now (tier 0 if fresh/expired).
     type: "function",
-    name: "minBet",
+    name: "currentMinBet",
     stateMutability: "view",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    // Current tier of the live round (betCount / tierStep).
+    type: "function",
+    name: "currentTier",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint8" }],
+  },
+  {
+    type: "function",
+    name: "baseBet",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "baseDuration",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint64" }],
+  },
+  {
+    type: "function",
+    name: "tierStep",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint32" }],
+  },
+  {
+    // Bet floor for a given tier: baseBet << tier.
+    type: "function",
+    name: "betFloorForTier",
+    stateMutability: "view",
+    inputs: [{ name: "tier", type: "uint8" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    // Round timer (seconds) for a given tier: baseDuration >> tier, floored.
+    type: "function",
+    name: "durationForTier",
+    stateMutability: "view",
+    inputs: [{ name: "tier", type: "uint8" }],
+    outputs: [{ name: "", type: "uint64" }],
   },
   {
     type: "function",

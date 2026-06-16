@@ -18,13 +18,12 @@ pragma solidity ^0.8.20;
  *   • Lazy round start: a round's clock starts at its FIRST bet, not before.
  *   • Reentrancy-guarded, effects-before-interaction throughout.
  *
- * Simplifications vs the reference (deliberate, for this game's scale):
- * no price oracle / USD-anchored minBet, no bet tiers — flat owner-set
- * minBet and timer config instead.
+ * Tier model: every `tierStep` bets the bet floor doubles and the round
+ * timer halves. Tier t (= betCount / tierStep, capped at MAX_TIER) requires
+ * baseBet<<t and, on each bet, RESETS the clock to baseDuration>>t (floored
+ * at minDuration). No price oracle — owner-set baseBet/baseDuration instead.
  *
- * Timer model (mirrors the site's demo game): the first bet starts the clock
- * at `startDuration`; every later bet ADDS `betExtension`, capped so the
- * remaining time never exceeds `maxRemaining`.
+ * Defaults: 1,000 KANG / 24h at tier 0; ×2 bet and ÷2 timer every 10 bets.
  *
  * Self-contained (no imports) so it compiles in Remix or with plain solc.
  */
@@ -46,10 +45,13 @@ contract KangLMS {
 
     uint16 public burnBps = 500; // 5%
     uint16 public treasuryBps = 1500; // 15% — prize gets the remainder (80%)
-    uint256 public minBet = 1e18; // 1 KANG
-    uint64 public startDuration = 180; // first bet starts a 3m clock
-    uint64 public betExtension = 60; // each bet adds 60s…
-    uint64 public maxRemaining = 300; // …capped at 5m remaining
+    // Tier model: every `tierStep` bets, the bet floor doubles and the round
+    // timer halves. Tier t = betCount / tierStep (capped at MAX_TIER).
+    uint256 public baseBet = 1000e18; // tier-0 bet floor: 1,000 KANG
+    uint64 public baseDuration = 24 hours; // tier-0 round timer
+    uint64 public minDuration = 30; // timer floor (seconds)
+    uint32 public tierStep = 10; // bets per tier
+    uint8 public constant MAX_TIER = 32; // overflow guard on the 2^t shift
     bool public paused;
 
     // ---------- State ----------
@@ -166,15 +168,16 @@ contract KangLMS {
     /**
      * Place a bet in the current round. Caller must have approved this
      * contract for at least `amount`. The first bet of a round starts its
-     * clock; later bets extend it (capped at maxRemaining). If the previous
-     * round expired, it is settled HERE — this bet opens the next round.
+     * clock; each later bet RESETS it to the active tier's timer. If the
+     * previous round expired, it is settled HERE — this bet opens the next.
      */
     function bet(uint256 amount) external nonReentrant {
         require(!paused, "paused");
         _settleExpired();
         Round storage r = rounds[currentRoundId];
         require(!r.settled, "settled");
-        require(amount >= minBet, "below minBet");
+        uint8 tier = tierAt(r.betCount);
+        require(amount >= betFloorForTier(tier), "below tier min");
 
         require(
             token.transferFrom(msg.sender, address(this), amount),
@@ -196,13 +199,8 @@ contract KangLMS {
         r.lastBettor = msg.sender;
         r.betCount++;
 
-        if (r.deadline == 0) {
-            r.deadline = uint64(block.timestamp) + startDuration;
-        } else {
-            uint256 remaining = r.deadline - block.timestamp + betExtension;
-            if (remaining > maxRemaining) remaining = maxRemaining;
-            r.deadline = uint64(block.timestamp + remaining);
-        }
+        // Reset the clock to the active tier's timer (halves every tierStep).
+        r.deadline = uint64(block.timestamp) + durationForTier(tier);
 
         require(token.transfer(burnWallet, burnAmount), "burn failed");
         require(token.transfer(treasury, treasuryAmount), "treasury failed");
@@ -304,23 +302,55 @@ contract KangLMS {
         emit ConfigUpdated("feeSplit");
     }
 
-    function setMinBet(uint256 _minBet) external onlyOwner {
-        require(_minBet > 0, "minBet=0");
-        minBet = _minBet;
-        emit ConfigUpdated("minBet");
+    function setTierConfig(
+        uint256 _baseBet,
+        uint64 _baseDuration,
+        uint64 _minDuration,
+        uint32 _tierStep
+    ) external onlyOwner {
+        require(_baseBet > 0, "baseBet=0");
+        require(_baseDuration >= 60 && _baseDuration <= 7 days, "duration range");
+        require(_minDuration >= 10 && _minDuration <= _baseDuration, "minDur range");
+        require(_tierStep >= 1, "tierStep=0");
+        baseBet = _baseBet;
+        baseDuration = _baseDuration;
+        minDuration = _minDuration;
+        tierStep = _tierStep;
+        emit ConfigUpdated("tier");
     }
 
-    function setTimer(
-        uint64 _startDuration,
-        uint64 _betExtension,
-        uint64 _maxRemaining
-    ) external onlyOwner {
-        require(_startDuration >= 30 && _betExtension >= 5, "too short");
-        require(_maxRemaining >= _startDuration, "cap < start");
-        startDuration = _startDuration;
-        betExtension = _betExtension;
-        maxRemaining = _maxRemaining;
-        emit ConfigUpdated("timer");
+    // ---------- Tier math (bet floor & timer per tier) ----------
+
+    /// Tier for a given bet count (= betCount / tierStep), capped at MAX_TIER.
+    function tierAt(uint32 betCount) public view returns (uint8) {
+        uint256 t = betCount / tierStep;
+        return t >= MAX_TIER ? MAX_TIER : uint8(t);
+    }
+
+    /// Bet floor for a tier: baseBet doubled per tier (baseBet << tier).
+    function betFloorForTier(uint8 tier) public view returns (uint256) {
+        return baseBet << tier;
+    }
+
+    /// Round timer for a tier: baseDuration halved per tier, floored.
+    function durationForTier(uint8 tier) public view returns (uint64) {
+        uint64 d = baseDuration >> tier;
+        return d < minDuration ? minDuration : d;
+    }
+
+    /// Bet floor a NEW bet must meet right now (tier 0 if the round is fresh
+    /// or already expired). The page reads this to submit exactly the minimum.
+    function currentMinBet() external view returns (uint256) {
+        Round storage r = rounds[currentRoundId];
+        bool fresh = r.deadline == 0 || block.timestamp > r.deadline;
+        return betFloorForTier(tierAt(fresh ? 0 : r.betCount));
+    }
+
+    /// Current tier for the live round (0 if fresh/expired).
+    function currentTier() external view returns (uint8) {
+        Round storage r = rounds[currentRoundId];
+        bool fresh = r.deadline == 0 || block.timestamp > r.deadline;
+        return tierAt(fresh ? 0 : r.betCount);
     }
 
     function setPaused(bool _paused) external onlyOwner {
