@@ -57,10 +57,6 @@ function px(
   ctx.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
 }
 
-function shortAddr(a?: string | null): string {
-  return a ? `${a.slice(2, 6)}…${a.slice(-4)}`.toUpperCase() : "—";
-}
-
 export interface ArenaState {
   tier: number;
   betCount: number;
@@ -200,14 +196,6 @@ export function PixelArena({
         px(ctx, xx, yy, 1, 1, col);
       }
       ctx.globalAlpha = 1;
-
-      // Last-bettor label (bottom-left).
-      const fs = Math.max(7, Math.round(Math.min(W, H) * 0.07));
-      ctx.fillStyle = P.inkSoft;
-      ctx.font = `${fs}px ui-monospace, Menlo, Consolas, monospace`;
-      ctx.textBaseline = "bottom";
-      ctx.textAlign = "left";
-      ctx.fillText(`LAST ${shortAddr(s.lastBettor)}`, 3, H - 2);
 
       raf = requestAnimationFrame(draw);
     };
