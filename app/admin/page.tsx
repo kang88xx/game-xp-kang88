@@ -1132,7 +1132,7 @@ function CampaignForm() {
   const createCampaign = useDexStore((s) => s.createCampaign);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [tokenSymbol, setTokenSymbol] = useState("IOI");
+  const [tokenSymbol, setTokenSymbol] = useState("XP");
   const [amountPerClaim, setAmountPerClaim] = useState("100");
   const [totalAllocation, setTotalAllocation] = useState("100000");
   const [eligibility, setEligibility] = useState<Eligibility>("public");
@@ -1212,16 +1212,23 @@ function CampaignForm() {
 
         <Field label="Reward token">
           <div className="grid grid-cols-2 gap-2">
-            {["KANG", "XP", "USDT", "IOI"].map((sym) => (
+            {[
+              { sym: "XP", disabled: false },
+              { sym: "KDG", disabled: false },
+              { sym: "USDX", disabled: false },
+              { sym: "IOI", disabled: true },
+            ].map(({ sym, disabled }) => (
               <button
                 key={sym}
                 type="button"
+                disabled={disabled}
                 onClick={() => setTokenSymbol(sym)}
+                title={disabled ? "토큰 컨트랙트 미배포 — 선택 불가" : undefined}
                 className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-sm font-medium transition-colors ${
                   tokenSymbol === sym
                     ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
                     : "border-[var(--border)] text-[var(--muted)]"
-                }`}
+                } ${disabled ? "cursor-not-allowed opacity-40" : ""}`}
               >
                 <TokenLogo symbol={sym} size={18} />
                 {sym}
