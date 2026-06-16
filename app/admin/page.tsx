@@ -67,7 +67,7 @@ const esc = (s: string) =>
 
 /**
  * Opens a standalone HTML window listing a campaign's claim recipients —
- * wallet, allocated amount (받을 수량), received amount (받은 수량) — with a
+ * wallet, allocated amount (allocated), received amount (received) — with a
  * client-side address search box. Whitelist campaigns expose per-wallet data;
  * others only track an aggregate count.
  */
@@ -95,16 +95,16 @@ function openClaimDetail(
   const claimedCount = rows.filter((r) => r.claimed).length;
   const sym = esc(c.tokenSymbol);
   const note = isWl
-    ? `받은 인원 ${claimedCount}/${rows.length}명 · 받을 수량 합계 ${totalAlloc.toLocaleString()} ${sym} · 받은 수량 합계 ${totalRecv.toLocaleString()} ${sym}`
-    : `이 캠페인은 개별 지갑 클레임 내역을 추적하지 않습니다 (화이트리스트 캠페인만 지원) · 총 ${c.claimedCount}건 클레임`;
+    ? `${claimedCount}/${rows.length} claimed · Allocated total ${totalAlloc.toLocaleString()} ${sym} · Received total ${totalRecv.toLocaleString()} ${sym}`
+    : `This campaign does not track per-wallet claim history (whitelist campaigns only) · ${c.claimedCount} total claims`;
 
   const html = `<!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex" />
-<title>${esc(c.name)} · 클레임 내역</title>
+<title>${esc(c.name)} · Claim History</title>
 <style>
   :root { color-scheme: light dark; }
   * { box-sizing: border-box; }
@@ -132,15 +132,15 @@ function openClaimDetail(
 </style>
 </head>
 <body>
-  <h1>${esc(c.name)} · 클레임 내역</h1>
+  <h1>${esc(c.name)} · Claim History</h1>
   <p class="sub">${note}</p>
-  <input id="q" class="search" type="search" placeholder="지갑주소 검색…" autocomplete="off" />
+  <input id="q" class="search" type="search" placeholder="Search wallet address…" autocomplete="off" />
   <table>
     <thead><tr>
-      <th>지갑주소</th>
-      <th class="num">받을 수량</th>
-      <th class="num">받은 수량</th>
-      <th>상태</th>
+      <th>Wallet Address</th>
+      <th class="num">Allocated</th>
+      <th class="num">Received</th>
+      <th>Status</th>
     </tr></thead>
     <tbody id="rows"></tbody>
   </table>
@@ -154,15 +154,15 @@ function openClaimDetail(
     var body = document.getElementById("rows");
     if (!list.length) {
       body.innerHTML = '<tr><td class="empty" colspan="4">' +
-        (ROWS.length ? "검색 결과가 없습니다." : "내역이 없습니다.") + "</td></tr>";
+        (ROWS.length ? "No results found." : "No records.") + "</td></tr>";
       return;
     }
     body.innerHTML = list.map(function (r) {
       var pill = r.full
-        ? '<span class="pill y">받음</span>'
+        ? '<span class="pill y">Received</span>'
         : r.claimed
-          ? '<span class="pill p">부분</span>'
-          : '<span class="pill n">대기</span>';
+          ? '<span class="pill p">Partial</span>'
+          : '<span class="pill n">Pending</span>';
       return "<tr><td class='addr'>" + r.address +
         "</td><td class='num'>" + fmt(r.allocated) + " " + SYM +
         "</td><td class='num'>" + fmt(r.received) + " " + SYM +
@@ -410,7 +410,7 @@ function AdminDashboard() {
                     Ended campaigns ({ended.length})
                   </span>
                   <span className="text-xs">
-                    {showEnded ? "접기 ▲" : "펼치기 ▼"}
+                    {showEnded ? "Collapse ▲" : "Expand ▼"}
                   </span>
                 </button>
                 {showEnded && (
@@ -460,13 +460,13 @@ function LegacySweepTool() {
 
   const sweep = async () => {
     if (!/^0x[0-9a-fA-F]{40}$/.test(contractAddr))
-      return toast.error("컨트랙트 주소가 올바르지 않습니다");
+      return toast.error("Invalid contract address");
     const id = parseInt(campaignId, 10);
     if (!Number.isFinite(id) || id <= 0)
-      return toast.error("캠페인 ID(숫자)를 입력하세요");
-    if (!wallet || !publicClient) return toast.error("지갑을 연결하세요");
+      return toast.error("Enter a numeric campaign ID");
+    if (!wallet || !publicClient) return toast.error("Connect your wallet");
     if (chainId !== CHAIN_ID)
-      return toast.error("지갑 네트워크를 BSC로 전환하세요");
+      return toast.error("Switch your wallet network to Xphere");
     try {
       setBusy(true);
       const target = contractAddr as `0x${string}`;
@@ -477,9 +477,9 @@ function LegacySweepTool() {
       })) as string;
       if (owner.toLowerCase() !== wallet.toLowerCase())
         return toast.error(
-          `해당 컨트랙트의 소유자 지갑이 아닙니다 — ${shortAddress(owner)}로 연결하세요 (현재 ${shortAddress(wallet)})`,
+          `Not the owner of this contract — connect with ${shortAddress(owner)} (current: ${shortAddress(wallet)})`,
         );
-      toast.info("종료·회수 트랜잭션 전송 중… 지갑에서 확인하세요");
+      toast.info("Submitting end & sweep transaction… confirm in your wallet");
       const hash = await writeContractAsync({
         address: target,
         abi: AIRDROP_ABI,
@@ -488,13 +488,13 @@ function LegacySweepTool() {
         chainId: CHAIN_ID,
       });
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      if (receipt.status !== "success") return toast.error("트랜잭션 실패");
+      if (receipt.status !== "success") return toast.error("Transaction failed");
       toast.success(
-        `캠페인 #${id} 회수 완료 — 미클레임 물량이 지갑으로 돌아왔습니다`,
+        `Campaign #${id} swept — unclaimed tokens returned to your wallet`,
       );
       setCampaignId("");
     } catch {
-      toast.error("회수 실패 — 주소 / 캠페인 ID / 잔여 물량을 확인하세요");
+      toast.error("Sweep failed — check address / campaign ID / remaining balance");
     } finally {
       setBusy(false);
     }
@@ -507,28 +507,28 @@ function LegacySweepTool() {
         aria-expanded={open}
         className="flex w-full items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm font-medium text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
       >
-        <span>이전 컨트랙트 회수 도구</span>
-        <span className="text-xs">{open ? "접기 ▲" : "펼치기 ▼"}</span>
+        <span>Legacy Contract Sweep Tool</span>
+        <span className="text-xs">{open ? "Collapse ▲" : "Expand ▼"}</span>
       </button>
       {open && (
         <div className="mt-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
           <p className="text-xs leading-relaxed text-[var(--muted)]">
-            컨트랙트 교체 이전 버전에 남은 캠페인의 미클레임 물량을 회수합니다.
-            해당 컨트랙트의 소유자 지갑으로 연결한 뒤 캠페인 ID를 입력하세요 —
-            즉시 종료되고 잔여 물량이 지갑으로 전송됩니다.
+            Sweeps unclaimed tokens from campaigns on a replaced contract version.
+            Connect with the owner wallet of that contract and enter the campaign ID —
+            it will be ended immediately and remaining tokens sent to your wallet.
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <input
               value={contractAddr}
               onChange={(e) => setContractAddr(e.target.value.trim())}
-              placeholder="0x… 컨트랙트 주소"
+              placeholder="0x… contract address"
               spellCheck={false}
               className={`${INPUT} font-mono text-xs sm:flex-1`}
             />
             <input
               value={campaignId}
               onChange={(e) => setCampaignId(e.target.value)}
-              placeholder="캠페인 ID"
+              placeholder="Campaign ID"
               inputMode="numeric"
               className={`${INPUT} sm:w-28`}
             />
@@ -538,7 +538,7 @@ function LegacySweepTool() {
               className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--down)] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {busy ? "회수 중…" : "종료 + 회수"}
+              {busy ? "Sweeping…" : "End + Sweep"}
             </button>
           </div>
         </div>
@@ -674,7 +674,7 @@ function PoolsManager() {
                     {p.token0} / {p.token1}
                     {!visible && (
                       <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] font-medium text-[var(--muted)]">
-                        숨김
+                        Hidden
                       </span>
                     )}
                   </div>
@@ -694,11 +694,11 @@ function PoolsManager() {
                     setPoolVisible(p.id, !visible);
                     toast.info(
                       visible
-                        ? `${p.token0}/${p.token1} 풀 숨김 — 기존 LP는 출금 가능`
-                        : `${p.token0}/${p.token1} 풀 표시됨`,
+                        ? `${p.token0}/${p.token1} pool hidden — existing LPs can still withdraw`
+                        : `${p.token0}/${p.token1} pool is now visible`,
                     );
                   }}
-                  title={visible ? "프론트에서 숨기기" : "프론트에 표시"}
+                  title={visible ? "Hide from frontend" : "Show on frontend"}
                   className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[var(--surface)] ${
                     visible ? "text-[var(--up)]" : "text-[var(--muted-2)]"
                   }`}
@@ -721,7 +721,7 @@ function PoolsManager() {
 
       <DeleteConfirmModal
         open={deleteTarget !== null}
-        title={`${deleteTarget?.token0 ?? ""}/${deleteTarget?.token1 ?? ""} 풀 삭제`}
+        title={`${deleteTarget?.token0 ?? ""}/${deleteTarget?.token1 ?? ""} Delete Pool`}
         description={
           // Deleting only drops the site listing — the on-chain pair and
           // users' LP tokens are untouched, but holders lose this site's
@@ -729,9 +729,9 @@ function PoolsManager() {
           (deleteTarget &&
           stats[deleteTarget.id]?.available &&
           stats[deleteTarget.id].tvlUsd > 0
-            ? `⚠️ 이 풀에 온체인 유동성(${formatUsd(stats[deleteTarget.id].tvlUsd, { compact: true })})이 있습니다. 삭제해도 온체인 자금은 그대로지만, LP 보유자가 이 사이트에서 출금할 수 없게 됩니다 — 숨김(전원 버튼)을 권장합니다.\n\n`
+            ? `⚠️ This pool has on-chain liquidity (${formatUsd(stats[deleteTarget.id].tvlUsd, { compact: true })}). Deleting it keeps on-chain funds intact but LP holders will lose the withdraw UI on this site — consider hiding it (power button) instead.\n\n`
             : "") +
-          "사이트 목록에서 이 풀을 제거합니다. 온체인 페어와 LP 토큰에는 영향이 없습니다."
+          "Removes this pool from the site listing. The on-chain pair and LP tokens are unaffected."
         }
         onConfirm={() => {
           if (!deleteTarget) return;
@@ -871,15 +871,15 @@ function SwapTokensManager() {
             <p className="-mt-1 text-xs">
               {infoLoading ? (
                 <span className="text-[var(--muted)]">
-                  토큰 정보 읽는 중…
+                  Loading token info…
                 </span>
               ) : detectFailed ? (
                 <span className="text-[var(--down)]">
-                  온체인 정보를 못 읽었습니다 — 아래를 직접 입력하세요.
+                  Could not read on-chain data — enter details manually below.
                 </span>
               ) : (
                 <span className="text-[var(--up)]">
-                  ✓ 온체인에서 자동 입력됨 (수정 가능)
+                  ✓ Auto-filled from on-chain (editable)
                 </span>
               )}
             </p>
@@ -964,7 +964,7 @@ function SwapTokensManager() {
                   {t.symbol !== "XP" && (
                     <button
                       onClick={() => setDeleteTarget({ symbol: t.symbol, custom })}
-                      title={custom ? "Remove custom token" : "취급 중단 (목록에서 제거)"}
+                      title={custom ? "Remove custom token" : "Delist (remove from list)"}
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--down)] transition-colors hover:bg-[var(--down-soft)]"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -980,7 +980,7 @@ function SwapTokensManager() {
         {(removedTokens ?? []).length > 0 && (
           <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-strong)] px-4 py-3">
             <p className="text-xs font-medium text-[var(--muted)]">
-              취급 중단된 토큰
+              Delisted tokens
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               {removedTokens.map((sym) => (
@@ -988,9 +988,9 @@ function SwapTokensManager() {
                   key={sym}
                   onClick={() => {
                     restoreToken(sym);
-                    toast.success(`${sym} 복원됨`);
+                    toast.success(`${sym} restored`);
                   }}
-                  title="복원"
+                  title="Restore"
                   className="inline-flex items-center gap-1 rounded-full border border-[var(--border-strong)] px-3 py-1 text-xs font-medium text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
                 >
                   <Plus className="h-3 w-3" />
@@ -1004,13 +1004,13 @@ function SwapTokensManager() {
 
       <DeleteConfirmModal
         open={deleteTarget !== null}
-        title={`${deleteTarget?.symbol ?? ""} ${deleteTarget?.custom ? "삭제" : "취급 중단"}`}
+        title={`${deleteTarget?.symbol ?? ""} ${deleteTarget?.custom ? "Delete" : "Delist"}`}
         description={
           deleteTarget?.custom
-            ? `커스텀 토큰 ${deleteTarget.symbol}을(를) 완전히 삭제합니다. 다시 쓰려면 컨트랙트 주소로 재등록해야 합니다.`
-            : `${deleteTarget?.symbol} 토큰을 취급 중단합니다 — 스왑 목록과 홈 시세에서 사라집니다. '취급 중단된 토큰'에서 복원할 수 있습니다.`
+            ? `Permanently delete custom token ${deleteTarget.symbol}. You will need to re-register it by contract address to use it again.`
+            : `${deleteTarget?.symbol} will be delisted — it will disappear from the swap list and home price ticker. You can restore it under 'Delisted tokens'.`
         }
-        confirmLabel={deleteTarget?.custom ? "삭제" : "취급 중단"}
+        confirmLabel={deleteTarget?.custom ? "Delete" : "Delist"}
         onConfirm={() => {
           if (!deleteTarget) return;
           if (deleteTarget.custom) removeAdminToken(deleteTarget.symbol);
@@ -1018,7 +1018,7 @@ function SwapTokensManager() {
           toast.info(
             deleteTarget.custom
               ? `Removed ${deleteTarget.symbol}`
-              : `${deleteTarget.symbol} 취급 중단됨 — 아래에서 복원 가능`,
+              : `${deleteTarget.symbol} delisted — restorable below`,
           );
           setDeleteTarget(null);
         }}
@@ -1062,24 +1062,24 @@ function AnalyticsPanel() {
 
   const cards = [
     {
-      label: "방문자 (오늘)",
+      label: "Visitors (today)",
       value: num(data?.visitors),
       sub:
         data === undefined
           ? undefined
-          : `총 누적 ${data.visitorsTotal.toLocaleString()}명`,
+          : `${data.visitorsTotal.toLocaleString()} total cumulative`,
       icon: <Users className="h-4 w-4" />,
       action: detailBtn("/api/analytics/visitors"),
     },
     {
-      label: "지갑 연결 (총 누적)",
+      label: "Wallet Connections (total)",
       value: num(data?.connections),
       sub: undefined as string | undefined,
       icon: <Wallet className="h-4 w-4" />,
       action: detailBtn("/api/analytics/connections"),
     },
     {
-      label: "거래량 (금일)",
+      label: "Volume (today)",
       value:
         data === undefined
           ? "—"
@@ -1094,7 +1094,7 @@ function AnalyticsPanel() {
     <div className="mt-8">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">
-          방문자·거래량은 오늘(KST) · 지갑 연결은 총 누적
+          Visitors & volume are today (KST) · wallet connections are total cumulative
         </h2>
         {data && (
           <span className="font-mono text-xs text-[var(--muted-2)]">
@@ -1225,7 +1225,7 @@ function CampaignForm() {
                 type="button"
                 disabled={disabled}
                 onClick={() => setTokenSymbol(sym)}
-                title={disabled ? "토큰 컨트랙트 미배포 — 선택 불가" : undefined}
+                title={disabled ? "Token contract not deployed — unavailable" : undefined}
                 className={`flex items-center justify-center gap-1.5 rounded-xl border py-2 text-sm font-medium transition-colors ${
                   tokenSymbol === sym
                     ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
@@ -1348,11 +1348,11 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
 
   const requireWallet = (): boolean => {
     if (!wallet || !publicClient) {
-      toast.error("지갑을 연결하세요");
+      toast.error("Connect your wallet");
       return false;
     }
     if (chainId !== CHAIN_ID) {
-      toast.error("지갑 네트워크를 BSC로 전환하세요");
+      toast.error("Switch your wallet network to Xphere");
       return false;
     }
     return true;
@@ -1362,7 +1362,7 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
     if (!launched) return updateCampaign(c.id, { active: !c.active });
     if (missingOnchain)
       return toast.error(
-        "이전 컨트랙트에서 발행된 캠페인입니다 — 현재 컨트랙트에서는 제어할 수 없습니다",
+        "This campaign was launched on a previous contract — it cannot be controlled from the current contract",
       );
     if (!requireWallet()) return;
     if (!(await ensureContractOwner(publicClient!, wallet!))) return;
@@ -1371,8 +1371,8 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
       setTxBusy(true);
       toast.info(
         next
-          ? "온체인 캠페인 재개 중… 지갑에서 확인하세요"
-          : "온체인 캠페인 일시정지 중… 지갑에서 확인하세요",
+          ? "Resuming on-chain campaign… confirm in your wallet"
+          : "Pausing on-chain campaign… confirm in your wallet",
       );
       const hash = await writeContractAsync({
         address: AIRDROP_CONTRACT as `0x${string}`,
@@ -1383,13 +1383,13 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
       });
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success")
-        return toast.error("온체인 트랜잭션 실패");
+        return toast.error("On-chain transaction failed");
       updateCampaign(c.id, { active: next });
-      toast.success(next ? "캠페인 재개됨 (온체인)" : "캠페인 일시정지됨 (온체인)");
+      toast.success(next ? "Campaign resumed (on-chain)" : "Campaign paused (on-chain)");
     } catch {
       // The tx may still have landed (receipt wait can time out on testnet
       // RPC) — the on-chain read below self-corrects the badge either way.
-      toast.error("상태 확인 실패 — 잠시 후 배지가 체인 상태로 갱신됩니다");
+      toast.error("Status check failed — badge will sync to chain state shortly");
     } finally {
       // Whatever happened, resync the badge with the chain.
       void refetchOnchain();
@@ -1404,7 +1404,7 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
       deleteCampaign(c.id);
       toast.info(
         `Deleted "${c.name}"` +
-          (missingOnchain ? " — 이전 컨트랙트 발행분, 로컬 기록만 삭제됨" : ""),
+          (missingOnchain ? " — launched on previous contract, only local record deleted" : ""),
       );
       return;
     }
@@ -1412,7 +1412,7 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
     if (!(await ensureContractOwner(publicClient!, wallet!))) return;
     try {
       setTxBusy(true);
-      toast.info("종료·회수 트랜잭션 전송 중… 지갑에서 확인하세요");
+      toast.info("Submitting end & sweep transaction… confirm in your wallet");
       const hash = await writeContractAsync({
         address: AIRDROP_CONTRACT as `0x${string}`,
         abi: AIRDROP_ABI,
@@ -1422,11 +1422,11 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
       });
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success")
-        return toast.error("온체인 트랜잭션 실패");
+        return toast.error("On-chain transaction failed");
       updateCampaign(c.id, { active: false, endsAt: Date.now() });
-      toast.success("캠페인 종료 — 미클레임 물량이 지갑으로 회수되었습니다");
+      toast.success("Campaign ended — unclaimed tokens swept to your wallet");
     } catch {
-      toast.error("종료·회수 실패 — 컨트랙트 소유자 지갑인지 확인하세요");
+      toast.error("End & sweep failed — verify you are connected as the contract owner");
     } finally {
       setTxBusy(false);
     }
@@ -1500,7 +1500,7 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
         <div className="flex items-center gap-1">
           <button
             onClick={() => openClaimDetail(c, isWl ? receivedRows : undefined)}
-            title="클레임 내역 보기"
+            title="View claim history"
             className="inline-flex items-center gap-1 rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-[11px] font-medium text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
           >
             <ListFilter className="h-3 w-3" />
@@ -1512,8 +1512,8 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
             title={
               launched
                 ? isActive
-                  ? "온체인 일시정지"
-                  : "온체인 재개"
+                  ? "Pause on-chain"
+                  : "Resume on-chain"
                 : isActive
                   ? "Pause"
                   : "Activate"
@@ -1529,7 +1529,7 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
           <button
             onClick={() => setConfirmDelete(true)}
             disabled={txBusy}
-            title={launched ? "즉시 종료 + 미클레임 회수" : "Delete"}
+            title={launched ? "End immediately + sweep unclaimed" : "Delete"}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--down)] transition-colors hover:bg-[var(--down-soft)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Trash2 className="h-4 w-4" />
@@ -1565,17 +1565,17 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
         open={confirmDelete}
         title={
           launched && !missingOnchain
-            ? `캠페인 #${c.onchainId} 즉시 종료`
-            : `"${c.name}" 삭제`
+            ? `End Campaign #${c.onchainId} Now`
+            : `Delete "${c.name}"`
         }
         description={
           launched && !missingOnchain
-            ? `온체인 캠페인 #${c.onchainId}을(를) 즉시 종료합니다. 클레임이 바로 중단되고, 미클레임 물량 전부가 연결된 오너 지갑으로 회수됩니다. 되돌릴 수 없습니다.`
+            ? `Immediately ends on-chain campaign #${c.onchainId}. Claims stop at once and all unclaimed tokens are swept to the connected owner wallet. This cannot be undone.`
             : missingOnchain
-              ? `"${c.name}"은(는) 이전 컨트랙트에서 발행된 캠페인입니다 — 현재 컨트랙트에는 존재하지 않아 로컬 기록만 삭제합니다. 이전 컨트랙트에 남은 미클레임 물량은 별도로 회수해야 합니다.`
-              : `"${c.name}" 캠페인 드래프트를 삭제합니다 (화이트리스트 명단 포함).`
+              ? `"${c.name}" was launched on a previous contract — it does not exist on the current contract, so only the local record will be deleted. Unclaimed tokens on the old contract must be swept separately.`
+              : `Delete the draft for campaign "${c.name}" (including its whitelist).`
         }
-        confirmLabel={launched && !missingOnchain ? "종료 + 회수" : "삭제"}
+        confirmLabel={launched && !missingOnchain ? "End + Sweep" : "Delete"}
         onConfirm={() => {
           setConfirmDelete(false);
           void removeCampaign();
@@ -1609,7 +1609,7 @@ async function ensureContractOwner(
     } as never)) as string;
     if (owner.toLowerCase() !== wallet.toLowerCase()) {
       toast.error(
-        `컨트랙트 소유자 지갑이 아닙니다 — ${shortAddress(owner)} 지갑으로 연결하세요 (현재 ${shortAddress(wallet)})`,
+        `Not the contract owner — connect with wallet ${shortAddress(owner)} (current: ${shortAddress(wallet)})`,
       );
       return false;
     }
@@ -1627,7 +1627,7 @@ function DeleteConfirmModal({
   open,
   title,
   description,
-  confirmLabel = "삭제",
+  confirmLabel = "Delete",
   onConfirm,
   onClose,
 }: {
@@ -1649,7 +1649,7 @@ function DeleteConfirmModal({
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password) return toast.error("어드민 비밀번호를 입력하세요");
+    if (!password) return toast.error("Enter the admin password");
     try {
       setVerifying(true);
       const res = await fetch("/api/admin/verify", {
@@ -1658,13 +1658,13 @@ function DeleteConfirmModal({
         body: JSON.stringify({ password }),
       });
       if (res.status === 429)
-        return toast.error("시도 횟수 초과 — 10분 후 다시 시도하세요");
-      if (!res.ok) return toast.error("비밀번호가 올바르지 않습니다");
+        return toast.error("Too many attempts — try again in 10 minutes");
+      if (!res.ok) return toast.error("Incorrect password");
       setPassword("");
       onClose();
       onConfirm();
     } catch {
-      toast.error("확인 요청 실패 — 네트워크를 확인하세요");
+      toast.error("Verification request failed — check your network");
     } finally {
       setVerifying(false);
     }
@@ -1700,7 +1700,7 @@ function DeleteConfirmModal({
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="어드민 비밀번호"
+          placeholder="Admin password"
           autoFocus
           autoComplete="current-password"
           className={`${INPUT} mt-4`}
@@ -1711,7 +1711,7 @@ function DeleteConfirmModal({
             onClick={cancel}
             className="flex-1 rounded-2xl border border-[var(--border-strong)] py-2.5 text-sm font-medium text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
           >
-            취소
+            Cancel
           </button>
           <button
             type="submit"
@@ -1719,7 +1719,7 @@ function DeleteConfirmModal({
             className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[var(--down)] py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {verifying && <Loader2 className="h-4 w-4 animate-spin" />}
-            {verifying ? "확인 중…" : confirmLabel}
+            {verifying ? "Verifying…" : confirmLabel}
           </button>
         </div>
       </form>
@@ -1767,17 +1767,17 @@ function PublicLaunchPanel({ campaign: c }: { campaign: AirdropCampaign }) {
 
   const launchPublic = async () => {
     if (!airdropLive)
-      return toast.error("에어드랍 컨트랙트가 아직 배포/설정되지 않았습니다");
-    if (!wallet || !publicClient) return toast.error("지갑을 연결하세요");
+      return toast.error("Airdrop contract is not yet deployed/configured");
+    if (!wallet || !publicClient) return toast.error("Connect your wallet");
     if (chainId !== CHAIN_ID)
-      return toast.error("지갑 네트워크를 BSC로 전환하세요");
+      return toast.error("Switch your wallet network to Xphere");
     const reward = resolveOnchainReward(c.tokenSymbol);
     if (!reward)
-      return toast.error(`${c.tokenSymbol}는 온체인 발행에 쓸 토큰 컨트랙트가 없습니다`);
+      return toast.error(`No token contract configured for ${c.tokenSymbol} on-chain launch`);
     if (!(c.amountPerClaim > 0))
-      return toast.error("지갑당 수량(amountPerClaim)이 0보다 커야 합니다");
+      return toast.error("Amount per claim (amountPerClaim) must be greater than 0");
     if (c.amountPerClaim > c.totalAllocation)
-      return toast.error("지갑당 수량이 총 할당보다 클 수 없습니다");
+      return toast.error("Amount per claim cannot exceed total allocation");
     if (!(await ensureContractOwner(publicClient, wallet))) return;
 
     try {
@@ -1793,7 +1793,7 @@ function PublicLaunchPanel({ campaign: c }: { campaign: AirdropCampaign }) {
       // ERC-20 campaigns approve the contract first; native XP is funded
       // directly via msg.value on createCampaign (claimers get native XP).
       if (!native) {
-        toast.info(`${++step}/${steps} 토큰 사용 승인 중… 지갑에서 확인하세요`);
+        toast.info(`${++step}/${steps} Approving token spend… confirm in your wallet`);
         const approveHash = await writeContractAsync({
           address: tokenAddr,
           abi: erc20Abi,
@@ -1804,7 +1804,7 @@ function PublicLaunchPanel({ campaign: c }: { campaign: AirdropCampaign }) {
         await publicClient.waitForTransactionReceipt({ hash: approveHash });
       }
 
-      toast.info(`${++step}/${steps} 캠페인 생성·충전 중… 지갑에서 확인하세요`);
+      toast.info(`${++step}/${steps} Creating & funding campaign… confirm in your wallet`);
       const createHash = await writeContractAsync({
         address: contract,
         abi: AIRDROP_ABI,
@@ -1818,7 +1818,7 @@ function PublicLaunchPanel({ campaign: c }: { campaign: AirdropCampaign }) {
         hash: createHash,
       });
       if (receipt.status !== "success")
-        return toast.error("온체인 생성 트랜잭션 실패");
+        return toast.error("On-chain create transaction failed");
 
       const logs = parseEventLogs({
         abi: AIRDROP_ABI,
@@ -1827,13 +1827,13 @@ function PublicLaunchPanel({ campaign: c }: { campaign: AirdropCampaign }) {
       });
       const id = logs.length ? Number(logs[0].args.id) : undefined;
       if (id === undefined)
-        return toast.error("캠페인 ID를 읽지 못했습니다 (수동 확인 필요)");
+        return toast.error("Could not read campaign ID (manual verification required)");
 
       updateCampaign(c.id, { onchainId: id });
-      toast.success(`온체인 퍼블릭 캠페인 #${id} 발행·충전 완료 — 이제 클레임 가능`);
+      toast.success(`On-chain public campaign #${id} launched & funded — claims are now open`);
     } catch {
       toast.error(
-        "온체인 발행 실패 — 지갑 거부 / 잔액 부족 / 소유자 아님 등을 확인하세요",
+        "Launch failed — check wallet rejection / insufficient balance / not owner",
       );
     } finally {
       setLaunching(false);
@@ -1845,15 +1845,15 @@ function PublicLaunchPanel({ campaign: c }: { campaign: AirdropCampaign }) {
       {locked ? (
         <div className="flex items-center gap-2 rounded-xl border border-[var(--up)]/30 bg-[var(--up-soft)] px-3 py-2 text-xs font-medium text-[var(--up)]">
           <Check className="h-4 w-4" />
-          온체인 발행됨 · 캠페인 #{c.onchainId} — 누구나 {c.amountPerClaim.toLocaleString()}{" "}
-          {c.tokenSymbol} 클레임 가능
+          On-chain launched · Campaign #{c.onchainId} — anyone can claim {c.amountPerClaim.toLocaleString()}{" "}
+          {c.tokenSymbol}
         </div>
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2">
           <span className="text-xs text-[var(--muted)]">
             {airdropLive
-              ? `준비되면 온체인 발행 — 지갑당 ${c.amountPerClaim.toLocaleString()} ${c.tokenSymbol} × (총 ${c.totalAllocation.toLocaleString()})를 컨트랙트에 충전하고 누구나 클레임할 수 있게 엽니다.`
-              : "온체인 발행하려면 먼저 에어드랍 컨트랙트를 배포하세요 (npm run deploy:airdrop)."}
+              ? `Ready to launch on-chain — funds ${c.amountPerClaim.toLocaleString()} ${c.tokenSymbol} × (total ${c.totalAllocation.toLocaleString()}) into the contract and opens claims to everyone.`
+              : "Deploy the airdrop contract first before launching on-chain (npm run deploy:airdrop)."}
           </span>
           <button
             onClick={launchPublic}
@@ -1865,7 +1865,7 @@ function PublicLaunchPanel({ campaign: c }: { campaign: AirdropCampaign }) {
             ) : (
               <Rocket className="h-3.5 w-3.5" />
             )}
-            {launching ? "발행 중…" : "온체인 발행"}
+            {launching ? "Launching…" : "Launch On-chain"}
           </button>
         </div>
       )}
@@ -1928,7 +1928,7 @@ function WhitelistManager({
   );
 
   // Launched on-chain. The root is replaceable via updateRoot, so the
-  // whitelist keeps growing — local additions go live with "온체인 갱신".
+  // whitelist keeps growing — local additions go live with "On-chain Sync".
   const launched = c.onchainId != null;
 
   const parsed = parseBulk(bulk, parseFloat(defaultAmount));
@@ -1946,7 +1946,7 @@ function WhitelistManager({
       );
       if (dup.length > 0)
         toast.error(
-          `이미 수령한 지갑 ${dup.length}개 포함 — 현재 컨트랙트(v4)에서는 증액분 재클레임이 불가합니다`,
+          `${dup.length} wallet(s) already claimed — top-ups cannot be re-claimed on the current contract (v4)`,
         );
     }
     addManyToWhitelist(
@@ -1956,7 +1956,7 @@ function WhitelistManager({
     toast.success(
       `Applied ${valid.length} allocation${valid.length !== 1 ? "s" : ""}` +
         (invalid.length ? ` · skipped ${invalid.length} invalid` : "") +
-        (launched ? ' — "온체인 갱신"을 눌러야 클레임 가능해집니다' : ""),
+        (launched ? ' — press "On-chain Sync" to make claims available' : ""),
     );
     setBulk("");
   };
@@ -1968,18 +1968,18 @@ function WhitelistManager({
    * visitor can rebuild their proof (the latest publish wins on read).
    */
   const syncOnChain = async () => {
-    if (!wallet || !publicClient) return toast.error("지갑을 연결하세요");
+    if (!wallet || !publicClient) return toast.error("Connect your wallet");
     if (chainId !== CHAIN_ID)
-      return toast.error("지갑 네트워크를 BSC로 전환하세요");
+      return toast.error("Switch your wallet network to Xphere");
     const reward = resolveOnchainReward(c.tokenSymbol);
     if (!reward)
-      return toast.error(`${c.tokenSymbol}는 온체인 발행에 쓸 토큰 컨트랙트가 없습니다`);
+      return toast.error(`No token contract configured for ${c.tokenSymbol} on-chain launch`);
     if (missingOnchain)
       return toast.error(
-        "이전 컨트랙트에서 발행된 캠페인입니다 — 삭제 후 새 캠페인으로 발행하세요",
+        "This campaign was launched on a previous contract — delete it and launch a new campaign",
       );
     if (c.whitelist.length === 0)
-      return toast.error("화이트리스트가 비어 있습니다");
+      return toast.error("Whitelist is empty");
     if (!(await ensureContractOwner(publicClient, wallet))) return;
     // Block funding top-ups that v4 can never pay out: a claimed wallet's
     // grown allocation is unreachable behind the permanent hasClaimed flag,
@@ -1991,7 +1991,7 @@ function WhitelistManager({
       });
       if (stranded.length > 0)
         return toast.error(
-          `이미 수령한 지갑 ${stranded.length}개에 증액분이 있습니다 — v4 컨트랙트는 재클레임 불가, v5 재배포 후 갱신하세요`,
+          `${stranded.length} wallet(s) already claimed have increased allocations — v4 contract cannot re-claim, redeploy v5 then sync`,
         );
     }
     try {
@@ -2004,7 +2004,7 @@ function WhitelistManager({
       const root = merkleRoot(allocs);
       // Keep funding topped up to the full allocation budget (not just the
       // whitelist sum) — lets an admin raise an under-funded campaign (e.g.
-      // one launched before this change) to its allocation via "온체인 갱신".
+      // one launched before this change) to its allocation via "On-chain Sync".
       const wlSumWei = allocs.reduce((s, a) => s + BigInt(a.amountWei), 0n);
       const allocWei = parseUnits(String(c.totalAllocation), decimals);
       const totalWei = allocWei > wlSumWei ? allocWei : wlSumWei;
@@ -2033,12 +2033,12 @@ function WhitelistManager({
       // claim() will always reject — block and route the admin instead.
       if (!isActive) {
         return toast.error(
-          "일시정지된 캠페인입니다 — 재개(Power) 후 갱신하세요",
+          "Campaign is paused — resume it (Power) before syncing",
         );
       }
       if (isPastMs(endsAtSec * 1000)) {
         return toast.error(
-          "종료된 캠페인입니다 — 미클레임 회수 후 새 캠페인으로 발행하세요",
+          "Campaign has ended — sweep unclaimed tokens then launch a new campaign",
         );
       }
       const delta = totalWei > fundedWei ? totalWei - fundedWei : 0n;
@@ -2048,7 +2048,7 @@ function WhitelistManager({
       // ERC-20 top-ups approve the delta first; native XP top-ups fund the
       // delta directly via msg.value on updateRoot (no approve, no wrapping).
       if (delta > 0n && !native) {
-        toast.info(`${++step}/${steps} 추가 충전 승인 중… 지갑에서 확인하세요`);
+        toast.info(`${++step}/${steps} Approving top-up… confirm in your wallet`);
         const approveHash = await writeContractAsync({
           address: rewardAddr,
           abi: erc20Abi,
@@ -2060,7 +2060,7 @@ function WhitelistManager({
       }
 
       toast.info(
-        `${++step}/${steps} 머클 루트 갱신${delta > 0n ? "·충전" : ""} 중… 지갑에서 확인하세요`,
+        `${++step}/${steps} Updating${delta > 0n ? " & funding" : ""} Merkle root… confirm in your wallet`,
       );
       const updateHash = await writeContractAsync({
         address: contract,
@@ -2074,9 +2074,9 @@ function WhitelistManager({
         hash: updateHash,
       });
       if (updReceipt.status !== "success")
-        return toast.error("루트 갱신 트랜잭션 실패");
+        return toast.error("Root update transaction failed");
 
-      toast.info(`${++step}/${steps} 화이트리스트 재공개 중… 지갑에서 확인하세요`);
+      toast.info(`${++step}/${steps} Re-publishing whitelist… confirm in your wallet`);
       const publishHash = await writeContractAsync({
         address: contract,
         abi: AIRDROP_ABI,
@@ -2093,14 +2093,14 @@ function WhitelistManager({
       });
       if (pubReceipt.status !== "success")
         return toast.error(
-          "화이트리스트 재공개 실패 — '온체인 갱신'을 다시 눌러 재시도하세요",
+          "Whitelist re-publish failed — press 'On-chain Sync' again to retry",
         );
 
       toast.success(
-        `캠페인 #${c.onchainId} 화이트리스트 갱신 완료 — 추가 인원 클레임 가능`,
+        `Campaign #${c.onchainId} whitelist synced — new wallets can now claim`,
       );
     } catch {
-      toast.error("온체인 갱신 실패 — 소유자 지갑 / 토큰 잔액을 확인하세요");
+      toast.error("On-chain sync failed — check owner wallet / token balance");
     } finally {
       setSyncing(false);
     }
@@ -2120,15 +2120,15 @@ function WhitelistManager({
    */
   const launchOnChain = async () => {
     if (!airdropLive)
-      return toast.error("에어드랍 컨트랙트가 아직 배포/설정되지 않았습니다");
-    if (!wallet || !publicClient) return toast.error("지갑을 연결하세요");
+      return toast.error("Airdrop contract is not yet deployed/configured");
+    if (!wallet || !publicClient) return toast.error("Connect your wallet");
     if (chainId !== CHAIN_ID)
-      return toast.error("지갑 네트워크를 BSC로 전환하세요");
+      return toast.error("Switch your wallet network to Xphere");
     const reward = resolveOnchainReward(c.tokenSymbol);
     if (!reward)
-      return toast.error(`${c.tokenSymbol}는 온체인 발행에 쓸 토큰 컨트랙트가 없습니다`);
+      return toast.error(`No token contract configured for ${c.tokenSymbol} on-chain launch`);
     if (c.whitelist.length === 0)
-      return toast.error("화이트리스트가 비어 있습니다");
+      return toast.error("Whitelist is empty");
     if (!(await ensureContractOwner(publicClient, wallet))) return;
 
     try {
@@ -2158,7 +2158,7 @@ function WhitelistManager({
       // ERC-20 campaigns approve the contract first; native XP is funded
       // directly via msg.value on createCampaign (claimers get native XP).
       if (!native) {
-        toast.info(`${++step}/${steps} 토큰 사용 승인 중… 지갑에서 확인하세요`);
+        toast.info(`${++step}/${steps} Approving token spend… confirm in your wallet`);
         const approveHash = await writeContractAsync({
           address: tokenAddr,
           abi: erc20Abi,
@@ -2169,7 +2169,7 @@ function WhitelistManager({
         await publicClient.waitForTransactionReceipt({ hash: approveHash });
       }
 
-      toast.info(`${++step}/${steps} 캠페인 생성·충전 중… 지갑에서 확인하세요`);
+      toast.info(`${++step}/${steps} Creating & funding campaign… confirm in your wallet`);
       const createHash = await writeContractAsync({
         address: contract,
         abi: AIRDROP_ABI,
@@ -2184,7 +2184,7 @@ function WhitelistManager({
         hash: createHash,
       });
       if (receipt.status !== "success")
-        return toast.error("온체인 생성 트랜잭션 실패");
+        return toast.error("On-chain create transaction failed");
 
       const logs = parseEventLogs({
         abi: AIRDROP_ABI,
@@ -2193,11 +2193,11 @@ function WhitelistManager({
       });
       const id = logs.length ? Number(logs[0].args.id) : undefined;
       if (id === undefined)
-        return toast.error("캠페인 ID를 읽지 못했습니다 (수동 확인 필요)");
+        return toast.error("Could not read campaign ID (manual verification required)");
 
       // Publish the allocation list on-chain (event-only) so any visitor can
       // rebuild their proof and claim — solves the whitelist data-sharing gap.
-      toast.info(`${++step}/${steps} 화이트리스트 공개 중… 지갑에서 확인하세요`);
+      toast.info(`${++step}/${steps} Publishing whitelist… confirm in your wallet`);
       const publishHash = await writeContractAsync({
         address: contract,
         abi: AIRDROP_ABI,
@@ -2215,19 +2215,19 @@ function WhitelistManager({
 
       // The campaign IS launched+funded at this point regardless of the
       // publish outcome — record it, and if the publish reverted point the
-      // admin at 온체인 갱신, which republishes the full list (the retry path).
+      // admin at On-chain Sync, which republishes the full list (the retry path).
       updateCampaign(c.id, { onchainId: id });
       if (pubReceipt.status !== "success") {
         return toast.error(
-          `캠페인 #${id} 발행·충전은 완료됐지만 화이트리스트 공개가 실패했습니다 — '온체인 갱신'으로 재공개하세요`,
+          `Campaign #${id} launched & funded but whitelist publish failed — use 'On-chain Sync' to republish`,
         );
       }
       toast.success(
-        `온체인 캠페인 #${id} 발행·충전·공개 완료 — 누구나 클레임 가능`,
+        `On-chain campaign #${id} launched, funded & published — claims are now open`,
       );
     } catch {
       toast.error(
-        "온체인 발행 실패 — 지갑 거부 / 잔액 부족 / 소유자 아님 등을 확인하세요",
+        "Launch failed — check wallet rejection / insufficient balance / not owner",
       );
     } finally {
       setLaunching(false);
@@ -2248,14 +2248,14 @@ function WhitelistManager({
       {/* On-chain launch / status */}
       {launched && missingOnchain ? (
         <div className="mt-2 rounded-xl border border-[var(--down)]/30 bg-[var(--down-soft)] px-3 py-2 text-xs font-medium text-[var(--down)]">
-          이전 컨트랙트에서 발행된 캠페인 (#{c.onchainId}) — 현재 컨트랙트에 없어
-          제어할 수 없습니다. 삭제(로컬 기록 제거) 후 새 캠페인으로 발행하세요.
+          Campaign launched on previous contract (#{c.onchainId}) — not present on the current contract,
+          cannot be controlled. Delete (removes local record) then launch a new campaign.
         </div>
       ) : launched ? (
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--up)]/30 bg-[var(--up-soft)] px-3 py-2">
           <span className="flex items-center gap-2 text-xs font-medium text-[var(--up)]">
             <Check className="h-4 w-4" />
-            온체인 발행됨 · 캠페인 #{c.onchainId} — 인원 추가 후 갱신하면 바로 클레임 가능
+            On-chain launched · Campaign #{c.onchainId} — add wallets and sync to open claims immediately
           </span>
           <button
             onClick={syncOnChain}
@@ -2267,15 +2267,15 @@ function WhitelistManager({
             ) : (
               <Rocket className="h-3.5 w-3.5" />
             )}
-            {syncing ? "갱신 중…" : "온체인 갱신"}
+            {syncing ? "Syncing…" : "On-chain Sync"}
           </button>
         </div>
       ) : (
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2">
           <span className="text-xs text-[var(--muted)]">
             {airdropLive
-              ? `준비되면 온체인에 발행 — 총 할당량 ${c.totalAllocation.toLocaleString()} ${c.tokenSymbol} 전액을 컨트랙트에 충전하고 클레임을 엽니다 (미클레임분은 종료 시 회수).`
-              : "온체인 발행하려면 먼저 에어드랍 컨트랙트를 배포하세요 (npm run deploy:airdrop)."}
+              ? `Ready to launch on-chain — deposits the full allocation of ${c.totalAllocation.toLocaleString()} ${c.tokenSymbol} into the contract and opens claims (unclaimed amount is swept on close).`
+              : "Deploy the airdrop contract first before launching on-chain (npm run deploy:airdrop)."}
           </span>
           <button
             onClick={launchOnChain}
@@ -2287,16 +2287,16 @@ function WhitelistManager({
             ) : (
               <Rocket className="h-3.5 w-3.5" />
             )}
-            {launching ? "발행 중…" : "온체인 발행"}
+            {launching ? "Launching…" : "Launch On-chain"}
           </button>
         </div>
       )}
 
       {/* Bulk entry: paste many, apply at once. Duplicates accumulate.
-          Stays open after launch — additions go live via "온체인 갱신". */}
+          Stays open after launch — additions go live via "On-chain Sync". */}
       <div className="mt-2">
         <div className="mb-2 flex items-center gap-2">
-          <span className="text-xs text-[var(--muted)]">기본 금액</span>
+          <span className="text-xs text-[var(--muted)]">Default amount</span>
           <input
             type="text"
             inputMode="decimal"
@@ -2306,7 +2306,7 @@ function WhitelistManager({
             title={`Default amount when a line omits one (${c.tokenSymbol})`}
             className="w-28 rounded-xl border border-[var(--border-strong)] bg-[var(--card)] px-3 py-2 text-xs outline-none focus:border-[var(--accent)]"
           />
-          <span className="text-xs text-[var(--muted-2)]">{c.tokenSymbol} / 미기재 시 적용</span>
+          <span className="text-xs text-[var(--muted-2)]">{c.tokenSymbol} / applied when omitted</span>
         </div>
         <textarea
           value={bulk}
@@ -2314,13 +2314,13 @@ function WhitelistManager({
           rows={5}
           spellCheck={false}
           placeholder={
-            "한 줄에 하나씩:\n0xabc…, 100\n0xdef…, 250\n0x123…       ← 금액 생략 시 기본 금액"
+            "One per line:\n0xabc…, 100\n0xdef…, 250\n0x123…       ← amount omitted: default used"
           }
           className="w-full resize-y rounded-xl border border-[var(--border-strong)] bg-[var(--card)] px-3 py-2 font-mono text-xs outline-none focus:border-[var(--accent)]"
         />
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-[var(--up)]">유효 {valid.length}</span>
+            <span className="text-[var(--up)]">Valid {valid.length}</span>
             {invalid.length > 0 && (
               <span
                 className="text-[var(--down)]"
@@ -2328,7 +2328,7 @@ function WhitelistManager({
                   .map((r) => `line ${r.line}: ${r.error}`)
                   .join("\n")}
               >
-                오류 {invalid.length}
+                Errors {invalid.length}
               </span>
             )}
             {address && (
@@ -2336,7 +2336,7 @@ function WhitelistManager({
                 onClick={addMyWallet}
                 className="inline-flex items-center gap-1 font-medium text-[var(--accent)]"
               >
-                <UserPlus className="h-3.5 w-3.5" />내 지갑 추가
+                <UserPlus className="h-3.5 w-3.5" />Add my wallet
               </button>
             )}
           </div>
@@ -2346,7 +2346,7 @@ function WhitelistManager({
             className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
-            할당 반영 ({valid.length})
+            Apply ({valid.length})
           </button>
         </div>
       </div>
@@ -2376,7 +2376,7 @@ function WhitelistManager({
                   </span>
                   {launched ? (
                     <span
-                      title="온체인 클레임 상태 (자동 동기화)"
+                      title="On-chain claim status (auto-synced)"
                       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                         full
                           ? "bg-[var(--up-soft)] text-[var(--up)]"
@@ -2389,7 +2389,7 @@ function WhitelistManager({
                       {full
                         ? "Received"
                         : partial
-                          ? `부분 ${received.toLocaleString()}`
+                          ? `Partial ${received.toLocaleString()}`
                           : "Pending"}
                     </span>
                   ) : (

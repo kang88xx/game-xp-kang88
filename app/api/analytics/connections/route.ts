@@ -23,7 +23,7 @@ export async function GET() {
   const log = await connectionLog();
   const rows =
     log.length === 0
-      ? `<tr><td colspan="4" class="empty">아직 연결된 지갑이 없습니다.</td></tr>`
+      ? `<tr><td colspan="4" class="empty">No wallets connected yet.</td></tr>`
       : log
           .map((c, i) => {
             const { date, time } = kstParts(c.ts);
@@ -37,12 +37,12 @@ export async function GET() {
           .join("");
 
   const html = `<!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex" />
-<title>지갑 연결 내역 (${log.length})</title>
+<title>Wallet Connections (${log.length})</title>
 <style>
   :root { color-scheme: light dark; }
   * { box-sizing: border-box; }
@@ -66,11 +66,11 @@ export async function GET() {
 </style>
 </head>
 <body>
-  <h1>지갑 연결 내역</h1>
-  <p class="sub">총 ${log.length}개 · 신규 지갑 기준 · 시간은 한국시간(KST)</p>
+  <h1>Wallet Connections</h1>
+  <p class="sub">Total ${log.length} · New wallets only · Time in KST</p>
   <table>
     <thead>
-      <tr><th>#</th><th>날짜</th><th>시간</th><th>지갑주소</th></tr>
+      <tr><th>#</th><th>Date</th><th>Time</th><th>Wallet Address</th></tr>
     </thead>
     <tbody>${rows}</tbody>
   </table>

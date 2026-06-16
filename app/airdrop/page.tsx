@@ -216,10 +216,10 @@ function OnchainCampaignCard({
   const doClaim = async () => {
     if (!wallet || !publicClient) return;
     if (chainId !== CHAIN_ID)
-      return toast.error("지갑 네트워크를 BSC로 전환하세요");
+      return toast.error("Switch your wallet network to Xphere");
     try {
       setClaiming(true);
-      toast.info("클레임 트랜잭션을 지갑에서 승인하세요");
+      toast.info("Please approve the claim transaction in your wallet");
       let hash: `0x${string}`;
       if (c.isPublic) {
         hash = await writeContractAsync({
@@ -231,9 +231,9 @@ function OnchainCampaignCard({
         });
       } else {
         if (wlAllocs.length === 0)
-          return toast.error("화이트리스트 데이터를 불러올 수 없습니다");
+          return toast.error("Failed to load whitelist data");
         const pf = merkleProof(wlAllocs, wallet);
-        if (!pf) return toast.error("이 지갑은 화이트리스트에 없습니다");
+        if (!pf) return toast.error("This wallet is not on the whitelist");
         hash = await writeContractAsync({
           address: AIRDROP_CONTRACT as `0x${string}`,
           abi: AIRDROP_ABI,
@@ -243,15 +243,15 @@ function OnchainCampaignCard({
         });
       }
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      if (receipt.status !== "success") return toast.error("클레임 실패");
+      if (receipt.status !== "success") return toast.error("Claim failed");
       recordClaim(c.onchainId.toString());
       toast.success(
-        `${claimableNow.toLocaleString()} ${c.tokenSymbol} 클레임 완료!`,
+        `Claimed ${claimableNow.toLocaleString()} ${c.tokenSymbol}!`,
       );
       // Refresh hasClaimed + on-chain campaign state.
       queryClient.invalidateQueries();
     } catch {
-      toast.error("클레임 실패 — 이미 수령했거나 지갑에서 거부됨");
+      toast.error("Claim failed — already claimed or rejected in wallet");
     } finally {
       setClaiming(false);
     }
@@ -332,9 +332,9 @@ function OnchainCampaignCard({
       {!c.isPublic && walletClaimedWei > 0n && remainingAllocWei > 0n && (
         <div className="mt-4 flex items-center gap-2 rounded-xl bg-[var(--up-soft)] px-3 py-2 text-xs text-[var(--up)]">
           <Check className="h-3.5 w-3.5" />
-          이미 {Number(formatUnits(walletClaimedWei, dec)).toLocaleString()}{" "}
-          {c.tokenSymbol} 수령 — 추가 {claimableNow.toLocaleString()}{" "}
-          {c.tokenSymbol} 클레임 가능
+          Already claimed {Number(formatUnits(walletClaimedWei, dec)).toLocaleString()}{" "}
+          {c.tokenSymbol} — {claimableNow.toLocaleString()}{" "}
+          {c.tokenSymbol} additional claimable
         </div>
       )}
 
@@ -446,7 +446,7 @@ function DraftCampaignCard({ campaign: c }: { campaign: AirdropCampaign }) {
           className="h-12 w-full rounded-2xl bg-[var(--surface-2)] font-semibold text-[var(--muted-2)]"
         >
           {airdropLive
-            ? "온체인 발행 대기 중 (Admin)"
+            ? "Waiting for on-chain launch (Admin)"
             : "On-chain claims coming soon"}
         </button>
       </div>

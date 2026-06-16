@@ -102,13 +102,13 @@ export function BridgePanel() {
   // Plain computed value — the React Compiler handles memoization; a manual
   // useMemo here trips react-hooks/preserve-manual-memoization.
   const error: string | null = (() => {
-    if (!token || !srcTok) return "지원되는 브리지 토큰이 없습니다";
+    if (!token || !srcTok) return "No supported bridge tokens available";
     if (amountNum <= 0) return null;
-    if (info && !info.supported) return "이 토큰은 브리지에서 지원되지 않습니다";
-    if (minN && amountNum < minN) return `최소 ${formatNumber(minN)} ${srcTok.symbol}`;
-    if (maxN && amountNum > maxN) return `최대 ${formatNumber(maxN)} ${srcTok.symbol}`;
-    if (amountNum > remainingN) return `일일 한도 초과 (잔여 ${formatNumber(remainingN)})`;
-    if (amountNum > balanceN) return "잔액 부족";
+    if (info && !info.supported) return "This token is not supported by the bridge";
+    if (minN && amountNum < minN) return `Min ${formatNumber(minN)} ${srcTok.symbol}`;
+    if (maxN && amountNum > maxN) return `Max ${formatNumber(maxN)} ${srcTok.symbol}`;
+    if (amountNum > remainingN) return `Daily limit exceeded (remaining ${formatNumber(remainingN)})`;
+    if (amountNum > balanceN) return "Insufficient balance";
     return null;
   })();
 
@@ -127,22 +127,22 @@ export function BridgePanel() {
       open();
       return;
     }
-    if (!token || !tokenAddr || !srcTok) return toast.error("토큰을 선택하세요");
+    if (!token || !tokenAddr || !srcTok) return toast.error("Select a token");
     const to = (recipient.trim() || address) as `0x${string}`;
-    if (!isAddress(to)) return toast.error("받는 주소가 올바르지 않습니다");
-    if (amountNum <= 0) return toast.error("수량을 입력하세요");
+    if (!isAddress(to)) return toast.error("Invalid recipient address");
+    if (amountNum <= 0) return toast.error("Enter an amount");
     if (error) return toast.error(error);
 
     try {
       setBusy(true);
       if (chainId !== sourceId) {
-        toast.info(`지갑을 ${src.label}로 전환하세요`);
+        toast.info(`Switch your wallet to ${src.label}`);
         await switchChainAsync({ chainId: sourceId });
       }
       const amtWei = parseUnits(amount, decimals);
 
       if (allowanceRaw < amtWei) {
-        toast.info(`${srcTok.symbol} 사용 승인 중… 지갑에서 확인하세요`);
+        toast.info(`Approving ${srcTok.symbol}… confirm in your wallet`);
         const ah = await writeContractAsync({
           address: tokenAddr,
           abi: erc20Abi,
@@ -153,7 +153,7 @@ export function BridgePanel() {
         await publicClient?.waitForTransactionReceipt({ hash: ah });
       }
 
-      toast.info("브리지 트랜잭션 전송 중… 지갑에서 확인하세요");
+      toast.info("Sending bridge transaction… confirm in your wallet");
       const hash = await writeContractAsync({
         address: bridgeAddr,
         abi: BRIDGE_ABI,
@@ -163,14 +163,14 @@ export function BridgePanel() {
       });
       const receipt = await publicClient?.waitForTransactionReceipt({ hash });
       if (receipt && receipt.status !== "success")
-        return toast.error("브리지 트랜잭션 실패");
+        return toast.error("Bridge transaction failed");
 
       toast.success(
-        `브리지 요청 완료 — 잠시 후 ${dst.short}에서 ${dstTok?.symbol}를 받게 됩니다`,
+        `Bridge request submitted — you will receive ${dstTok?.symbol} on ${dst.short} shortly`,
       );
       setAmount("");
     } catch {
-      toast.error("브리지 실패 — 지갑 거부 / 잔액 부족 / 한도 초과 등을 확인하세요");
+      toast.error("Bridge failed — check for wallet rejection / insufficient balance / limit exceeded");
     } finally {
       setBusy(false);
     }
@@ -190,9 +190,9 @@ export function BridgePanel() {
   const cta = !isConnected
     ? "Connect Wallet"
     : busy
-      ? "처리 중…"
+      ? "Processing…"
       : needsApprove
-        ? `${srcTok?.symbol} 승인 후 브리지`
+        ? `Approve ${srcTok?.symbol} & Bridge`
         : "Bridge";
 
   return (

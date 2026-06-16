@@ -65,15 +65,15 @@ export function RemoveLiquidityModal({
     nB * (market[pool.token1]?.priceUsd ?? 0);
 
   const remove = async () => {
-    if (!wallet || !publicClient) return toast.error("지갑을 연결하세요");
+    if (!wallet || !publicClient) return toast.error("Connect your wallet");
     if (chainId !== CHAIN_ID)
-      return toast.error("지갑 네트워크를 Xphere로 전환하세요");
+      return toast.error("Switch your wallet network to Xphere");
     if (!pairAddress || lpToBurn <= 0n)
-      return toast.error("출금할 유동성이 없습니다");
+      return toast.error("No liquidity to remove");
 
     const addrA = liquidityTokenAddress(pool.token0, tokenMap);
     const addrB = liquidityTokenAddress(pool.token1, tokenMap);
-    if (!addrA || !addrB) return toast.error("토큰 주소를 찾을 수 없습니다");
+    if (!addrA || !addrB) return toast.error("Token address not found");
 
     try {
       setRemoving(true);
@@ -85,7 +85,7 @@ export function RemoveLiquidityModal({
         args: [wallet, PANCAKE_ROUTER],
       });
       if (allowance < lpToBurn) {
-        toast.info("LP 토큰 사용 승인 중… 지갑에서 확인하세요");
+        toast.info("Approving LP token… confirm in your wallet");
         const approveHash = await writeContractAsync({
           address: pairAddress,
           abi: erc20Abi,
@@ -107,7 +107,7 @@ export function RemoveLiquidityModal({
       const aIsBnb = pool.token0 === NATIVE_SYMBOL;
       const bIsBnb = pool.token1 === NATIVE_SYMBOL;
 
-      toast.info("유동성 출금 트랜잭션 전송 중… 지갑에서 확인하세요");
+      toast.info("Sending remove liquidity transaction… confirm in your wallet");
       let hash: `0x${string}`;
       if (aIsBnb || bIsBnb) {
         const tokenAddr = aIsBnb ? addrB : addrA;
@@ -131,16 +131,16 @@ export function RemoveLiquidityModal({
       }
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success")
-        return toast.error("유동성 출금 트랜잭션 실패");
+        return toast.error("Remove liquidity transaction failed");
 
       recordTransaction(
         "remove-liquidity",
         `Removed ${pct}% of ${pool.token0}/${pool.token1} liquidity (~${formatNumber(nA, 4)} ${pool.token0} + ${formatNumber(nB, 4)} ${pool.token1})`,
       );
-      toast.success("유동성 출금 완료 — 토큰이 지갑으로 들어왔습니다");
+      toast.success("Liquidity removed — tokens have been sent to your wallet");
       onClose();
     } catch {
-      toast.error("유동성 출금 실패 — 지갑 거부 여부를 확인하세요");
+      toast.error("Remove liquidity failed — check for wallet rejection");
     } finally {
       setRemoving(false);
     }
@@ -160,7 +160,7 @@ export function RemoveLiquidityModal({
             <TokenLogo symbol={pool.token0} size={28} />
             <TokenLogo symbol={pool.token1} size={28} />
             <h3 className="ml-1 text-base font-semibold">
-              {pool.token0} / {pool.token1} 출금
+              {pool.token0} / {pool.token1} Withdraw
             </h3>
           </div>
           <button
@@ -173,7 +173,7 @@ export function RemoveLiquidityModal({
 
         <div className="px-5 pb-5">
           <div className="rounded-2xl bg-[var(--surface)] p-4">
-            <div className="text-xs text-[var(--muted)]">출금 비율</div>
+            <div className="text-xs text-[var(--muted)]">Withdraw Amount</div>
             <div className="mt-1 text-3xl font-semibold">{pct}%</div>
             <div className="mt-3 flex gap-2">
               {PCTS.map((v) => (
@@ -210,7 +210,7 @@ export function RemoveLiquidityModal({
               </span>
             </div>
             <div className="flex items-center justify-between border-t border-[var(--border)] pt-2 text-xs text-[var(--muted)]">
-              <span>예상 수령액</span>
+              <span>Estimated received</span>
               <span>{formatUsd(usdTotal)}</span>
             </div>
           </div>
@@ -225,7 +225,7 @@ export function RemoveLiquidityModal({
             ) : (
               <Minus className="h-4 w-4" />
             )}
-            {removing ? "출금 중…" : "Remove Liquidity"}
+            {removing ? "Withdrawing…" : "Remove Liquidity"}
           </button>
         </div>
       </div>

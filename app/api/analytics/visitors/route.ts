@@ -19,12 +19,12 @@ export async function GET() {
   const data = JSON.stringify(days);
 
   const html = `<!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex" />
-<title>방문자 내역 (${total})</title>
+<title>Visitor Records (${total})</title>
 <style>
   :root { color-scheme: light dark; }
   * { box-sizing: border-box; }
@@ -56,15 +56,15 @@ export async function GET() {
 </style>
 </head>
 <body>
-  <h1>방문자 내역</h1>
-  <p class="sub">총 누적 ${total.toLocaleString()}명 · 날짜는 한국시간(KST)</p>
+  <h1>Visitor Records</h1>
+  <p class="sub">Total ${total.toLocaleString()} cumulative visitors · Dates in KST</p>
   <div class="tabs">
-    <button data-mode="day" class="active">일간</button>
-    <button data-mode="week">주간</button>
-    <button data-mode="month">월간</button>
+    <button data-mode="day" class="active">Daily</button>
+    <button data-mode="week">Weekly</button>
+    <button data-mode="month">Monthly</button>
   </div>
   <table>
-    <thead><tr><th id="th-label">날짜</th><th class="num">방문자수</th></tr></thead>
+    <thead><tr><th id="th-label">Date</th><th class="num">Visitors</th></tr></thead>
     <tbody id="rows"></tbody>
   </table>
 <script>
@@ -91,17 +91,17 @@ export async function GET() {
     return Object.keys(map)
       .sort(function (a, b) { return b.localeCompare(a); })
       .map(function (k) {
-        return { label: mode === "week" ? k + " 주" : k, count: map[k] };
+        return { label: mode === "week" ? k + " week" : k, count: map[k] };
       });
   }
 
   function render(mode) {
     document.getElementById("th-label").textContent =
-      mode === "week" ? "주 시작일" : mode === "month" ? "월" : "날짜";
+      mode === "week" ? "Week Start" : mode === "month" ? "Month" : "Date";
     var rows = group(mode);
     var body = document.getElementById("rows");
     if (!rows.length) {
-      body.innerHTML = '<tr><td class="empty" colspan="2">방문 기록이 없습니다.</td></tr>';
+      body.innerHTML = '<tr><td class="empty" colspan="2">No visitor records yet.</td></tr>';
       return;
     }
     body.innerHTML = rows

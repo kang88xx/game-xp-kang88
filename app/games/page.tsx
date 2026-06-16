@@ -752,11 +752,11 @@ function OnchainGame() {
 
   const requireWallet = (): boolean => {
     if (!wallet || !publicClient) {
-      toast.error("지갑을 연결하세요");
+      toast.error("Connect your wallet");
       return false;
     }
     if (chainId !== CHAIN_ID) {
-      toast.error("지갑 네트워크를 BSC로 전환하세요");
+      toast.error("Switch your wallet network to Xphere");
       return false;
     }
     return true;
@@ -781,7 +781,7 @@ function OnchainGame() {
         args: [wallet!, contract],
       });
       if (allowance < amountWei) {
-        toast.info("1/2 KDG 사용 승인 중… 지갑에서 확인하세요");
+        toast.info("1/2 Approving KDG spend… confirm in your wallet");
         const approveHash = await writeContractAsync({
           address: kangAddr,
           abi: erc20Abi,
@@ -791,7 +791,7 @@ function OnchainGame() {
         });
         await publicClient!.waitForTransactionReceipt({ hash: approveHash });
       }
-      toast.info("베팅 트랜잭션을 지갑에서 승인하세요");
+      toast.info("Please approve the bet transaction in your wallet");
       const hash = await writeContractAsync({
         address: contract,
         abi: LMS_ABI,
@@ -800,13 +800,13 @@ function OnchainGame() {
         chainId: CHAIN_ID,
       });
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
-      if (receipt.status !== "success") return toast.error("베팅 실패");
+      if (receipt.status !== "success") return toast.error("Bet failed");
       toast.success(
-        `${betAmt.toLocaleString()} KDG 베팅 완료 — 타이머가 연장되었습니다`,
+        `Bet ${betAmt.toLocaleString()} KDG placed — timer extended`,
       );
       refreshAll();
     } catch {
-      toast.error("베팅 실패 — 라운드 만료 / 잔액 / 지갑 거부를 확인하세요");
+      toast.error("Bet failed — round expired, insufficient balance, or rejected in wallet");
     } finally {
       setBusy(null);
     }
@@ -817,7 +817,7 @@ function OnchainGame() {
     if (!requireWallet()) return;
     try {
       setBusy(`claim:${roundId}`);
-      toast.info(`라운드 #${roundId} 상금 수령을 지갑에서 승인하세요`);
+      toast.info(`Approve claim for round #${roundId} prize in your wallet`);
       const hash = await writeContractAsync({
         address: contract,
         abi: LMS_ABI,
@@ -826,11 +826,11 @@ function OnchainGame() {
         chainId: CHAIN_ID,
       });
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
-      if (receipt.status !== "success") return toast.error("수령 실패");
-      toast.success(`라운드 #${roundId} · ${amount.toLocaleString()} KDG 수령 완료!`);
+      if (receipt.status !== "success") return toast.error("Claim failed");
+      toast.success(`Round #${roundId} · Claimed ${amount.toLocaleString()} KDG!`);
       refreshAll();
     } catch {
-      toast.error("수령 실패 — 지갑에서 거부되었거나 수령할 금액이 없습니다");
+      toast.error("Claim failed — rejected in wallet or nothing to claim");
     } finally {
       setBusy(null);
     }
@@ -841,7 +841,7 @@ function OnchainGame() {
     if (!requireWallet()) return;
     try {
       setBusy("claim-all");
-      toast.info("전체 상금 수령 트랜잭션을 지갑에서 승인하세요");
+      toast.info("Approve claim-all transaction in your wallet");
       const hash = await writeContractAsync({
         address: contract,
         abi: LMS_ABI,
@@ -849,11 +849,11 @@ function OnchainGame() {
         chainId: CHAIN_ID,
       });
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
-      if (receipt.status !== "success") return toast.error("수령 실패");
-      toast.success(`${claimable.toLocaleString()} KDG 전체 수령 완료!`);
+      if (receipt.status !== "success") return toast.error("Claim failed");
+      toast.success(`Claimed all ${claimable.toLocaleString()} KDG!`);
       refreshAll();
     } catch {
-      toast.error("수령 실패 — 지갑에서 거부되었거나 수령할 금액이 없습니다");
+      toast.error("Claim failed — rejected in wallet or nothing to claim");
     } finally {
       setBusy(null);
     }
@@ -925,7 +925,7 @@ function OnchainGame() {
         {/* Genuine new round (no first bet yet). */}
         {waiting && (
           <p className="mb-3 text-xs text-[var(--muted)]">
-            첫 베팅이 들어오면 타이머가 시작됩니다
+            The timer starts when the first bet is placed
           </p>
         )}
 
@@ -934,8 +934,8 @@ function OnchainGame() {
             round on-chain automatically. */}
         {expired && (
           <p className="mb-3 text-xs text-[var(--muted)]">
-            이전 라운드 종료 · 첫 베팅이 새 라운드를 시작합니다
-            {unsettledWin > 0 && " — 당신의 상금은 아래에서 클레임하세요"}
+            Previous round ended · First bet starts a new round
+            {unsettledWin > 0 && " — Your prize is ready to claim below"}
           </p>
         )}
 
@@ -1016,7 +1016,7 @@ function OnchainGame() {
                     {busy === "claim-all" && (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     )}
-                    {busy === "claim-all" ? "수령 중…" : "Claim all"}
+                    {busy === "claim-all" ? "Claiming…" : "Claim all"}
                   </button>
                 )}
               </div>
@@ -1032,7 +1032,7 @@ function OnchainGame() {
                       </span>
                       <span className="ml-2 text-xs text-[var(--muted)]">
                         Round #{row.roundId}
-                        {row.isRefund ? " · 환불" : ""}
+                        {row.isRefund ? " · Refund" : ""}
                       </span>
                     </div>
                     <button
@@ -1043,7 +1043,7 @@ function OnchainGame() {
                       {busy === `claim:${row.roundId}` && (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       )}
-                      {busy === `claim:${row.roundId}` ? "수령 중…" : "Claim"}
+                      {busy === `claim:${row.roundId}` ? "Claiming…" : "Claim"}
                     </button>
                   </div>
                 ))}
@@ -1133,17 +1133,17 @@ function OnchainGame() {
                 >
                   {busy === "bet" && <Loader2 className="h-5 w-5 animate-spin" />}
                   {busy === "bet"
-                    ? "베팅 중…"
+                    ? "Betting…"
                     : !round
-                      ? "라운드 불러오는 중…"
+                      ? "Loading round…"
                       : isPaused
-                        ? "게임 일시정지됨"
+                        ? "Game paused"
                         : overBalance
                           ? "Insufficient KDG"
                           : betAmt < minBet
                             ? `Minimum ${minBet.toLocaleString()} KDG`
                             : expired
-                              ? `Bet ${betAmt.toLocaleString()} KDG — 새 라운드 시작`
+                              ? `Bet ${betAmt.toLocaleString()} KDG — starts new round`
                               : `Bet ${betAmt.toLocaleString()} KDG`}
                 </button>
               )}
@@ -1263,7 +1263,7 @@ function OnchainGame() {
                       #{h.roundId + 1}
                     </span>
                     <span className="font-mono truncate">
-                      {h.winner !== ZERO_ADDR ? shortAddress(h.winner) : "환불"}
+                      {h.winner !== ZERO_ADDR ? shortAddress(h.winner) : "Refund"}
                     </span>
                     <span className="font-semibold text-right">
                       {formatNumber(h.prize, 2)}

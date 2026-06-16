@@ -175,7 +175,7 @@ export function AddLiquidityModal({
       args: [wallet!, PANCAKE_ROUTER],
     });
     if (allowance >= amount) return;
-    toast.info(`${label} 사용 승인 중… 지갑에서 확인하세요`);
+    toast.info(`Approving ${label}… confirm in your wallet`);
     const hash = await writeContractAsync({
       address: token,
       abi: erc20Abi,
@@ -189,16 +189,16 @@ export function AddLiquidityModal({
   };
 
   const supply = async () => {
-    if (!wallet || !publicClient) return toast.error("지갑을 연결하세요");
+    if (!wallet || !publicClient) return toast.error("Connect your wallet");
     if (chainId !== CHAIN_ID)
-      return toast.error("지갑 네트워크를 Xphere로 전환하세요");
-    if (n0 <= 0 || n1 <= 0) return toast.error("두 토큰 수량을 입력하세요");
-    if (!enough) return toast.error("잔액이 부족합니다");
+      return toast.error("Switch your wallet network to Xphere");
+    if (n0 <= 0 || n1 <= 0) return toast.error("Enter amounts for both tokens");
+    if (!enough) return toast.error("Insufficient balance");
 
     const addrA = liquidityTokenAddress(pool.token0, tokenMap);
     const addrB = liquidityTokenAddress(pool.token1, tokenMap);
     if (!addrA || !addrB)
-      return toast.error("이 풀의 토큰에 컨트랙트 주소가 없습니다");
+      return toast.error("No contract address found for pool tokens");
 
     try {
       setSupplying(true);
@@ -219,7 +219,7 @@ export function AddLiquidityModal({
       if (!aIsBnb) await ensureAllowance(addrA, amtA, pool.token0);
       if (!bIsBnb) await ensureAllowance(addrB, amtB, pool.token1);
 
-      toast.info("유동성 공급 트랜잭션 전송 중… 지갑에서 확인하세요");
+      toast.info("Sending add liquidity transaction… confirm in your wallet");
       let hash: `0x${string}`;
       if (aIsBnb || bIsBnb) {
         const tokenAddr = aIsBnb ? addrB : addrA;
@@ -246,18 +246,18 @@ export function AddLiquidityModal({
       }
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success")
-        return toast.error("유동성 공급 트랜잭션 실패");
+        return toast.error("Add liquidity transaction failed");
 
       const summary = `Added ${formatNumber(n0, 4)} ${pool.token0} + ${formatNumber(n1, 4)} ${pool.token1} liquidity`;
       recordTransaction("add-liquidity", summary);
       toast.success(
-        `유동성 공급 완료 — ${pool.token0}/${pool.token1} LP 토큰을 받았습니다`,
+        `Liquidity added — you received ${pool.token0}/${pool.token1} LP tokens`,
       );
       setAmount0("");
       setAmount1("");
       onClose();
     } catch {
-      toast.error("유동성 공급 실패 — 지갑 거부 / 잔액 부족 등을 확인하세요");
+      toast.error("Add liquidity failed — check for wallet rejection / insufficient balance");
     } finally {
       setSupplying(false);
     }
@@ -340,13 +340,11 @@ export function AddLiquidityModal({
 
           {hasReserves ? (
             <p className="mt-3 text-center text-xs text-[var(--muted-2)]">
-              1 {pool.token0} = {formatNumber(ratio01, 6)} {pool.token1} (온체인
-              비율)
+              1 {pool.token0} = {formatNumber(ratio01, 6)} {pool.token1} (on-chain rate)
             </p>
           ) : (
             <p className="mt-3 text-center text-xs text-[var(--accent)]">
-              첫 유동성 공급 — 입력한 두 수량의 비율이 이 풀의 초기 가격이
-              됩니다
+              First liquidity — the ratio of the two amounts you enter will be the initial price of this pool
             </p>
           )}
 
@@ -368,7 +366,7 @@ export function AddLiquidityModal({
               >
                 {supplying && <Loader2 className="h-4 w-4 animate-spin" />}
                 {supplying
-                  ? "공급 중…"
+                  ? "Supplying…"
                   : n0 <= 0 || n1 <= 0
                     ? "Enter an amount"
                     : !enough

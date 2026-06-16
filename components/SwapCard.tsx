@@ -174,14 +174,14 @@ export function SwapCard({
   // the swap in the same flow — no second click. Every early exit surfaces a
   // toast so a click never silently does nothing.
   const handleSwap = async () => {
-    if (!address) return toast.error("지갑을 연결하세요");
-    if (!publicClient) return toast.error("네트워크 연결을 확인하세요");
+    if (!address) return toast.error("Connect your wallet");
+    if (!publicClient) return toast.error("Check your network connection");
     if (quote.noRoute || quote.path.length === 0)
-      return toast.error("이 토큰 쌍의 유동성 경로가 없습니다");
+      return toast.error("No liquidity route for this token pair");
     // W1: never submit a swap whose slippage-adjusted minimum rounds to 0,
     // which would leave the trade with no on-chain output protection.
     if (quote.amountOutWei <= 0n || minOutWei <= 0n)
-      return toast.error("견적을 받는 중입니다 — 잠시 후 다시 시도하세요");
+      return toast.error("Fetching quote — please try again shortly");
 
     const deadline = swapDeadline();
     const summary = `Swapped ${formatNumber(amountNum, 4)} ${from} → ${formatNumber(amountOut, 4)} ${to}`;
@@ -193,7 +193,7 @@ export function SwapCard({
       if (needsApproval && fromToken?.address) {
         stage = "approve";
         setPendingAction("approve");
-        toast.info(`${from} 사용 승인 중… 지갑에서 확인하세요`);
+        toast.info(`Approving ${from}… confirm in your wallet`);
         const approveHash = await writeContractAsync({
           address: fromToken.address as `0x${string}`,
           abi: erc20Abi,
@@ -205,13 +205,13 @@ export function SwapCard({
           hash: approveHash,
         });
         if (aReceipt.status !== "success")
-          return toast.error(`${from} 승인 트랜잭션 실패`);
+          return toast.error(`${from} approval transaction failed`);
       }
 
       // Step 2 — the swap itself.
       stage = "swap";
       setPendingAction("swap");
-      toast.info("스왑 트랜잭션 전송 중… 지갑에서 확인하세요");
+      toast.info("Sending swap transaction… confirm in your wallet");
       let hash: `0x${string}`;
       if (isFromNative) {
         hash = await writeContractAsync({
@@ -258,8 +258,8 @@ export function SwapCard({
     } catch {
       toast.error(
         stage === "approve"
-          ? "승인이 거부되었거나 실패했습니다"
-          : "스왑이 거부되었거나 실패했습니다",
+          ? "Approval rejected or failed"
+          : "Swap rejected or failed",
       );
     } finally {
       setPendingAction(null);
@@ -354,7 +354,7 @@ export function SwapCard({
                 )}
                 {slippage > 5 && (
                   <p className="mt-2 text-xs text-[var(--down)]">
-                    높은 슬리피지 — 불리한 가격/MEV에 노출될 수 있어요
+                    High slippage — you may get an unfavorable price or be exposed to MEV
                   </p>
                 )}
               </div>
