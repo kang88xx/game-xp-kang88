@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Coins, Trophy, Clock, Flame, Users, TrendingUp, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Coins, Trophy, Clock, Flame, Users, TrendingUp, Loader2, Dices } from "lucide-react";
 import { useAppKit } from "@reown/appkit/react";
 import { erc20Abi, formatUnits, parseUnits } from "viem";
 import {
@@ -41,9 +41,137 @@ function mmss(ms: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+const LMS_INTRO_KEY = "lms-intro-dismissed";
+
 export default function GamesPage() {
   // lmsLive is a build-time env constant — same on server and client.
-  return lmsLive ? <OnchainGame /> : <DemoGame />;
+  const hydrated = useHydrated();
+  const [dismissed, setDismissed] = useState(false);
+  // Read the persisted "do not show again" flag once, SSR-safe.
+  const [persisted] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem(LMS_INTRO_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  // Gate on `hydrated` so the modal only appears after hydration (no SSR
+  // mismatch) and we never call setState inside an effect.
+  const showIntro = hydrated && !persisted && !dismissed;
+  return (
+    <>
+      {showIntro && <LmsIntroModal onClose={() => setDismissed(true)} />}
+      {lmsLive ? <OnchainGame /> : <DemoGame />}
+    </>
+  );
+}
+
+// ─── Intro modal — "Last Man Standing" rules, shown on entering /games ───────
+function LmsIntroModal({ onClose }: { onClose: () => void }) {
+  const [dontShow, setDontShow] = useState(false);
+  const close = () => {
+    if (dontShow) {
+      try {
+        localStorage.setItem(LMS_INTRO_KEY, "1");
+      } catch {
+        /* ignore */
+      }
+    }
+    onClose();
+  };
+  return (
+    <div className="fixed inset-0 z-[90] flex items-start justify-center bg-black/50 p-4 pt-16 sm:pt-24">
+      <div className="absolute inset-0" onClick={close} aria-hidden />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Last Man Standing"
+        className="animate-fade-in relative w-full max-w-md overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-2xl"
+      >
+        <div className="px-6 pt-6 pb-5 text-center">
+          <div className="text-xs font-semibold tracking-[0.3em] text-[var(--muted-2)]">
+            LMS
+          </div>
+          <h2 className="mt-2 text-2xl font-bold tracking-tight">
+            Last Man Standing
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+            A KDG betting round where the final eligible bettor before expiry
+            receives the credited prize.
+          </p>
+        </div>
+
+        <div className="border-t border-[var(--border)]">
+          <LmsStep
+            n="01"
+            icon={<Dices className="h-5 w-5" />}
+            title="Enter with the current minimum"
+            body="The page submits only the active on-chain minimum bet."
+          />
+          <LmsStep
+            n="02"
+            icon={<Clock className="h-5 w-5" />}
+            title="Take the lead"
+            body="Your bet resets the timer and makes your wallet the current last bettor."
+          />
+          <LmsStep
+            n="03"
+            icon={<Trophy className="h-5 w-5" />}
+            title="Claim after settlement"
+            body="Winnings and refunds are credited first, then withdrawn with claim."
+          />
+        </div>
+
+        <div className="border-t border-[var(--border)] bg-[var(--surface)] px-6 py-3 text-center font-mono text-xs text-[var(--muted)]">
+          80% prize / 15% treasury / 5% burn
+        </div>
+
+        <div className="px-6 pb-6 pt-4">
+          <button
+            onClick={close}
+            className="w-full rounded-2xl bg-[var(--accent)] py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+          >
+            Enter Game
+          </button>
+          <label className="mt-3 flex cursor-pointer select-none items-center justify-center gap-2 text-xs text-[var(--muted)]">
+            <input
+              type="checkbox"
+              checked={dontShow}
+              onChange={(e) => setDontShow(e.target.checked)}
+              className="h-4 w-4 rounded border-[var(--border-strong)] accent-[var(--accent)]"
+            />
+            Do not show again
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LmsStep({
+  n,
+  icon,
+  title,
+  body,
+}: {
+  n: string;
+  icon: ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="flex items-start gap-4 border-b border-[var(--border)] px-6 py-4 last:border-b-0">
+      <span className="mt-0.5 font-mono text-sm text-[var(--muted-2)]">{n}</span>
+      <span className="mt-0.5 shrink-0 text-[var(--accent)]">{icon}</span>
+      <div>
+        <div className="text-sm font-semibold">{title}</div>
+        <div className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
+          {body}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /** The local demo (phantom bots, store rounds) — shown until KangLMS is deployed. */
