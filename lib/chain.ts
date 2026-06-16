@@ -17,7 +17,7 @@ export const CHAIN_LABEL = "Xphere Mainnet";
 export const NATIVE_SYMBOL = "XP";
 
 export const RPC_URL =
-  process.env.NEXT_PUBLIC_XPHERE_RPC ?? "https://xp-mainnet.rpc.xplorium.xyz";
+  process.env.NEXT_PUBLIC_XPHERE_RPC ?? "https://en-bkk.x-phere.com";
 export const EXPLORER_URL =
   process.env.NEXT_PUBLIC_XPHERE_EXPLORER ?? "https://xp.tamsa.io";
 

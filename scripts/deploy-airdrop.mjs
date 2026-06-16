@@ -13,7 +13,7 @@
 // right after deploy (via transferOwnership).
 //
 // Optional env in .env.deploy:
-//   XPHERE_RPC     — RPC override (default: xp-mainnet.rpc.xplorium.xyz)
+//   XPHERE_RPC     — RPC override (default: en-bkk.x-phere.com)
 //   AIRDROP_OWNER  — final owner address; ownership is transferred here if set
 //                    and different from the deployer.
 import { readFileSync } from "node:fs";
@@ -45,7 +45,7 @@ function loadEnv() {
 loadEnv();
 
 const PK = process.env.DEPLOYER_PRIVATE_KEY;
-const RPC = process.env.XPHERE_RPC ?? "https://xp-mainnet.rpc.xplorium.xyz";
+const RPC = process.env.XPHERE_RPC ?? "https://en-bkk.x-phere.com";
 const FINAL_OWNER = process.env.AIRDROP_OWNER;
 
 const xphere = defineChain({

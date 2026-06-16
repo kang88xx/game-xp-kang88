@@ -40,7 +40,7 @@ function loadEnv() {
 loadEnv();
 
 const PK = process.env.DEPLOYER_PRIVATE_KEY;
-const RPC = process.env.XPHERE_RPC ?? "https://xp-mainnet.rpc.xplorium.xyz";
+const RPC = process.env.XPHERE_RPC ?? "https://en-bkk.x-phere.com";
 
 const xphere = defineChain({
   id: 20250217,
