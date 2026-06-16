@@ -7,12 +7,20 @@ export { AIRDROP_CONTRACT, CHAIN_ID };
 /** True once a MerkleAirdrop contract address is configured for this network. */
 export const airdropLive = AIRDROP_CONTRACT !== "";
 
+/**
+ * Sentinel `token` value the contract treats as the native coin (XP): the
+ * campaign is funded with msg.value and pays out via call, no ERC-20 involved.
+ * MUST match `MerkleAirdrop.NATIVE`.
+ */
+export const NATIVE_TOKEN =
+  "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" as const;
+
 // Minimal ABI — only what the app calls/reads.
 export const AIRDROP_ABI = [
   {
     type: "function",
     name: "createCampaign",
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     inputs: [
       { name: "token", type: "address" },
       { name: "merkleRoot", type: "bytes32" },
@@ -60,7 +68,7 @@ export const AIRDROP_ABI = [
     // list) and tops up funding for the added allocations in the same tx.
     type: "function",
     name: "updateRoot",
-    stateMutability: "nonpayable",
+    stateMutability: "payable",
     inputs: [
       { name: "id", type: "uint256" },
       { name: "newRoot", type: "bytes32" },

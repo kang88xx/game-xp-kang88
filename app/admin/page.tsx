@@ -32,10 +32,10 @@ import {
 import { useDexStore, useHydrated } from "@/lib/store";
 import { useTokenRegistry, tokenTradable } from "@/lib/token-registry";
 import { usePoolStats } from "@/lib/pool-stats";
-import { CHAIN_ID } from "@/lib/chain";
+import { CHAIN_ID, NATIVE_SYMBOL } from "@/lib/chain";
 import { TOKEN_MAP } from "@/lib/tokens";
 import { merkleRoot } from "@/lib/merkle";
-import { AIRDROP_ABI, AIRDROP_CONTRACT, airdropLive } from "@/lib/airdrop";
+import { AIRDROP_ABI, AIRDROP_CONTRACT, NATIVE_TOKEN, airdropLive } from "@/lib/airdrop";
 import {
   daysUntil,
   formatUsd,
@@ -1727,6 +1727,25 @@ const ZERO_ROOT =
   "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
 
 /**
+ * Resolve the on-chain token a campaign funds/pays out with. ERC-20 tokens
+ * (KDG, USDX) use their contract; native XP (no contract) uses the NATIVE
+ * sentinel — the contract funds it via msg.value and pays claimers native XP
+ * directly (no wrapping). `native` drives the funding path. Returns null when
+ * no usable on-chain token exists.
+ */
+function resolveOnchainReward(
+  symbol: string,
+): { token: `0x${string}`; decimals: number; native: boolean } | null {
+  const t = TOKEN_MAP[symbol];
+  if (!t) return null;
+  if (t.address)
+    return { token: t.address as `0x${string}`, decimals: t.decimals, native: false };
+  if (t.symbol === NATIVE_SYMBOL)
+    return { token: NATIVE_TOKEN, decimals: t.decimals, native: true };
+  return null;
+}
+
+/**
  * On-chain launch for a PUBLIC campaign: approve the airdrop contract for the
  * total allocation, then createCampaign with no Merkle root and a fixed
  * amountPerClaim. Once launched, any wallet can claim from the /airdrop page
@@ -1741,7 +1760,6 @@ function PublicLaunchPanel({ campaign: c }: { campaign: AirdropCampaign }) {
   const [launching, setLaunching] = useState(false);
 
   const locked = c.onchainId != null;
-  const rewardToken = TOKEN_MAP[c.tokenSymbol];
 
   const launchPublic = async () => {
     if (!airdropLive)
@@ -1749,10 +1767,9 @@ function PublicLaunchPanel({ campaign: c }: { campaign: AirdropCampaign }) {
     if (!wallet || !publicClient) return toast.error("지갑을 연결하세요");
     if (chainId !== CHAIN_ID)
       return toast.error("지갑 네트워크를 BSC로 전환하세요");
-    if (!rewardToken?.address)
-      return toast.error(
-        `${c.tokenSymbol}는 컨트랙트가 없어 온체인 발행 불가 (네이티브 토큰)`,
-      );
+    const reward = resolveOnchainReward(c.tokenSymbol);
+    if (!reward)
+      return toast.error(`${c.tokenSymbol}는 온체인 발행에 쓸 토큰 컨트랙트가 없습니다`);
     if (!(c.amountPerClaim > 0))
       return toast.error("지갑당 수량(amountPerClaim)이 0보다 커야 합니다");
     if (c.amountPerClaim > c.totalAllocation)
@@ -1761,30 +1778,36 @@ function PublicLaunchPanel({ campaign: c }: { campaign: AirdropCampaign }) {
 
     try {
       setLaunching(true);
-      const decimals = rewardToken.decimals;
+      const { token: tokenAddr, decimals, native } = reward;
       const totalWei = parseUnits(String(c.totalAllocation), decimals);
       const perClaimWei = parseUnits(String(c.amountPerClaim), decimals);
       const endsAtSec = BigInt(Math.floor(c.endsAt / 1000));
-      const tokenAddr = rewardToken.address as `0x${string}`;
       const contract = AIRDROP_CONTRACT as `0x${string}`;
+      const steps = native ? 1 : 2;
+      let step = 0;
 
-      toast.info("1/2 토큰 사용 승인 중… 지갑에서 확인하세요");
-      const approveHash = await writeContractAsync({
-        address: tokenAddr,
-        abi: erc20Abi,
-        functionName: "approve",
-        args: [contract, totalWei],
-        chainId: CHAIN_ID,
-      });
-      await publicClient.waitForTransactionReceipt({ hash: approveHash });
+      // ERC-20 campaigns approve the contract first; native XP is funded
+      // directly via msg.value on createCampaign (claimers get native XP).
+      if (!native) {
+        toast.info(`${++step}/${steps} 토큰 사용 승인 중… 지갑에서 확인하세요`);
+        const approveHash = await writeContractAsync({
+          address: tokenAddr,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [contract, totalWei],
+          chainId: CHAIN_ID,
+        });
+        await publicClient.waitForTransactionReceipt({ hash: approveHash });
+      }
 
-      toast.info("2/2 캠페인 생성·충전 중… 지갑에서 확인하세요");
+      toast.info(`${++step}/${steps} 캠페인 생성·충전 중… 지갑에서 확인하세요`);
       const createHash = await writeContractAsync({
         address: contract,
         abi: AIRDROP_ABI,
         functionName: "createCampaign",
         // Public campaign: zero root + fixed amountPerClaim. Anyone claims once.
         args: [tokenAddr, ZERO_ROOT, totalWei, endsAtSec, perClaimWei, c.name],
+        value: native ? totalWei : 0n,
         chainId: CHAIN_ID,
       });
       const receipt = await publicClient.waitForTransactionReceipt({
@@ -1944,8 +1967,9 @@ function WhitelistManager({
     if (!wallet || !publicClient) return toast.error("지갑을 연결하세요");
     if (chainId !== CHAIN_ID)
       return toast.error("지갑 네트워크를 BSC로 전환하세요");
-    if (!rewardToken?.address)
-      return toast.error(`${c.tokenSymbol}는 토큰 컨트랙트가 없습니다`);
+    const reward = resolveOnchainReward(c.tokenSymbol);
+    if (!reward)
+      return toast.error(`${c.tokenSymbol}는 온체인 발행에 쓸 토큰 컨트랙트가 없습니다`);
     if (missingOnchain)
       return toast.error(
         "이전 컨트랙트에서 발행된 캠페인입니다 — 삭제 후 새 캠페인으로 발행하세요",
@@ -1968,7 +1992,7 @@ function WhitelistManager({
     }
     try {
       setSyncing(true);
-      const decimals = rewardToken.decimals;
+      const { token: rewardAddr, decimals, native } = reward;
       const allocs = c.whitelist.map((w) => ({
         address: w.address,
         amountWei: parseUnits(String(w.amount), decimals).toString(),
@@ -2014,13 +2038,15 @@ function WhitelistManager({
         );
       }
       const delta = totalWei > fundedWei ? totalWei - fundedWei : 0n;
-      const steps = delta > 0n ? 3 : 2;
+      const steps = !native && delta > 0n ? 3 : 2;
       let step = 0;
 
-      if (delta > 0n) {
+      // ERC-20 top-ups approve the delta first; native XP top-ups fund the
+      // delta directly via msg.value on updateRoot (no approve, no wrapping).
+      if (delta > 0n && !native) {
         toast.info(`${++step}/${steps} 추가 충전 승인 중… 지갑에서 확인하세요`);
         const approveHash = await writeContractAsync({
-          address: rewardToken.address as `0x${string}`,
+          address: rewardAddr,
           abi: erc20Abi,
           functionName: "approve",
           args: [contract, delta],
@@ -2037,6 +2063,7 @@ function WhitelistManager({
         abi: AIRDROP_ABI,
         functionName: "updateRoot",
         args: [id, root, delta],
+        value: native ? delta : 0n,
         chainId: CHAIN_ID,
       });
       const updReceipt = await publicClient.waitForTransactionReceipt({
@@ -2081,7 +2108,6 @@ function WhitelistManager({
   };
 
   const totalAllocated = c.whitelist.reduce((sum, w) => sum + w.amount, 0);
-  const rewardToken = TOKEN_MAP[c.tokenSymbol];
 
   /**
    * Build the Merkle root from the whitelist, approve the airdrop contract for
@@ -2094,17 +2120,16 @@ function WhitelistManager({
     if (!wallet || !publicClient) return toast.error("지갑을 연결하세요");
     if (chainId !== CHAIN_ID)
       return toast.error("지갑 네트워크를 BSC로 전환하세요");
-    if (!rewardToken?.address)
-      return toast.error(
-        `${c.tokenSymbol}는 컨트랙트가 없어 온체인 발행 불가 (네이티브 토큰)`,
-      );
+    const reward = resolveOnchainReward(c.tokenSymbol);
+    if (!reward)
+      return toast.error(`${c.tokenSymbol}는 온체인 발행에 쓸 토큰 컨트랙트가 없습니다`);
     if (c.whitelist.length === 0)
       return toast.error("화이트리스트가 비어 있습니다");
     if (!(await ensureContractOwner(publicClient, wallet))) return;
 
     try {
       setLaunching(true);
-      const decimals = rewardToken.decimals;
+      const { token: tokenAddr, decimals, native } = reward;
       const allocs = c.whitelist.map((w) => ({
         address: w.address,
         amountWei: parseUnits(String(w.amount), decimals).toString(),
@@ -2121,20 +2146,26 @@ function WhitelistManager({
       const allocWei = parseUnits(String(c.totalAllocation), decimals);
       const totalWei = allocWei > wlSumWei ? allocWei : wlSumWei;
       const endsAtSec = BigInt(Math.floor(c.endsAt / 1000));
-      const tokenAddr = rewardToken.address as `0x${string}`;
       const contract = AIRDROP_CONTRACT as `0x${string}`;
 
-      toast.info("1/3 토큰 사용 승인 중… 지갑에서 확인하세요");
-      const approveHash = await writeContractAsync({
-        address: tokenAddr,
-        abi: erc20Abi,
-        functionName: "approve",
-        args: [contract, totalWei],
-        chainId: CHAIN_ID,
-      });
-      await publicClient.waitForTransactionReceipt({ hash: approveHash });
+      const steps = native ? 2 : 3;
+      let step = 0;
 
-      toast.info("2/3 캠페인 생성·충전 중… 지갑에서 확인하세요");
+      // ERC-20 campaigns approve the contract first; native XP is funded
+      // directly via msg.value on createCampaign (claimers get native XP).
+      if (!native) {
+        toast.info(`${++step}/${steps} 토큰 사용 승인 중… 지갑에서 확인하세요`);
+        const approveHash = await writeContractAsync({
+          address: tokenAddr,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [contract, totalWei],
+          chainId: CHAIN_ID,
+        });
+        await publicClient.waitForTransactionReceipt({ hash: approveHash });
+      }
+
+      toast.info(`${++step}/${steps} 캠페인 생성·충전 중… 지갑에서 확인하세요`);
       const createHash = await writeContractAsync({
         address: contract,
         abi: AIRDROP_ABI,
@@ -2142,6 +2173,7 @@ function WhitelistManager({
         // Whitelist campaign: amountPerClaim is unused on-chain (0); each wallet's
         // amount lives in the Merkle proof. Name is emitted for the claim page.
         args: [tokenAddr, root, totalWei, endsAtSec, 0n, c.name],
+        value: native ? totalWei : 0n,
         chainId: CHAIN_ID,
       });
       const receipt = await publicClient.waitForTransactionReceipt({
@@ -2161,7 +2193,7 @@ function WhitelistManager({
 
       // Publish the allocation list on-chain (event-only) so any visitor can
       // rebuild their proof and claim — solves the whitelist data-sharing gap.
-      toast.info("3/3 화이트리스트 공개 중… 지갑에서 확인하세요");
+      toast.info(`${++step}/${steps} 화이트리스트 공개 중… 지갑에서 확인하세요`);
       const publishHash = await writeContractAsync({
         address: contract,
         abi: AIRDROP_ABI,

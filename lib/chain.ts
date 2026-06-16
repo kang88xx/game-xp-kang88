@@ -45,9 +45,9 @@ export const PANCAKE_FACTORY = (process.env.NEXT_PUBLIC_DEX_FACTORY ??
 export const WNATIVE = (process.env.NEXT_PUBLIC_WXP ??
   "0x0000000000000000000000000000000000000000") as `0x${string}`;
 
-// MerkleAirdrop contract on Xphere — redeploy with `npm run deploy:airdrop`
-// (needs an Xphere variant), then set the address. Empty = on-chain claims
-// disabled (admin shows "deploy first").
+// MerkleAirdrop contract on Xphere — deploy with `npm run deploy:airdrop`,
+// then set the address here. Empty = on-chain claims disabled (admin shows
+// "deploy first").
 export const AIRDROP_CONTRACT = (process.env.NEXT_PUBLIC_AIRDROP_CONTRACT ??
   "") as `0x${string}` | "";
 

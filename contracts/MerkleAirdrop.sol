@@ -44,6 +44,10 @@ interface IERC20 {
 contract MerkleAirdrop {
     address public owner;
 
+    /// Sentinel `token` value meaning the campaign funds and pays out the
+    /// native coin (XP) instead of an ERC-20. EIP-7528-style placeholder.
+    address public constant NATIVE = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
+
     struct Campaign {
         address token;          // reward ERC-20
         bytes32 merkleRoot;     // root over (account, amount) leaves; 0 = public/open claim
@@ -103,7 +107,7 @@ contract MerkleAirdrop {
         uint64 endsAt,
         uint256 amountPerClaim,
         string calldata name
-    ) external onlyOwner returns (uint256 id) {
+    ) external payable onlyOwner returns (uint256 id) {
         require(token != address(0), "token=0");
         require(amount > 0, "amount=0");
         // Public campaigns (no root) must define a positive per-wallet reward.
@@ -123,10 +127,7 @@ contract MerkleAirdrop {
             active: true
         });
 
-        require(
-            IERC20(token).transferFrom(msg.sender, address(this), amount),
-            "fund failed"
-        );
+        _pullFunds(token, amount);
         emit CampaignCreated(id, token, merkleRoot, amount, endsAt, amountPerClaim, name);
     }
 
@@ -162,7 +163,7 @@ contract MerkleAirdrop {
         c.claimed += payout;
         require(c.claimed <= c.funded, "exhausted");
 
-        require(IERC20(c.token).transfer(msg.sender, payout), "transfer failed");
+        _send(c.token, msg.sender, payout);
         emit Claimed(id, msg.sender, payout);
     }
 
@@ -185,7 +186,7 @@ contract MerkleAirdrop {
         claimedAmount[id][msg.sender] = amount;
         c.claimed += amount;
 
-        require(IERC20(c.token).transfer(msg.sender, amount), "transfer failed");
+        _send(c.token, msg.sender, amount);
         emit Claimed(id, msg.sender, amount);
     }
 
@@ -207,7 +208,7 @@ contract MerkleAirdrop {
 
         c.active = false;
         c.funded = c.claimed; // prevent re-sweep
-        require(IERC20(c.token).transfer(to, left), "transfer failed");
+        _send(c.token, to, left);
         emit Swept(id, to, left);
     }
 
@@ -225,7 +226,7 @@ contract MerkleAirdrop {
         uint256 id,
         bytes32 newRoot,
         uint256 addAmount
-    ) external onlyOwner {
+    ) external payable onlyOwner {
         Campaign storage c = campaigns[id];
         require(c.token != address(0), "no campaign");
         require(c.merkleRoot != bytes32(0), "public campaign");
@@ -234,10 +235,9 @@ contract MerkleAirdrop {
         c.merkleRoot = newRoot;
         if (addAmount > 0) {
             c.funded += addAmount;
-            require(
-                IERC20(c.token).transferFrom(msg.sender, address(this), addAmount),
-                "fund failed"
-            );
+            _pullFunds(c.token, addAmount);
+        } else {
+            require(msg.value == 0, "no native");
         }
         emit RootUpdated(id, newRoot, addAmount);
     }
@@ -282,7 +282,7 @@ contract MerkleAirdrop {
         uint256 left = c.funded - c.claimed;
         if (left > 0) {
             c.funded = c.claimed; // prevent re-sweep
-            require(IERC20(c.token).transfer(to, left), "transfer failed");
+            _send(c.token, to, left);
             emit Swept(id, to, left);
         }
     }
@@ -303,6 +303,37 @@ contract MerkleAirdrop {
     function remaining(uint256 id) external view returns (uint256) {
         Campaign storage c = campaigns[id];
         return c.funded - c.claimed;
+    }
+
+    /**
+     * Pull `amount` of `token` in to fund a campaign: the native coin via
+     * msg.value (must match exactly), or an ERC-20 transferFrom (needs a prior
+     * approve, and rejects stray native).
+     */
+    function _pullFunds(address token, uint256 amount) internal {
+        if (token == NATIVE) {
+            require(msg.value == amount, "bad msg.value");
+        } else {
+            require(msg.value == 0, "no native");
+            require(
+                IERC20(token).transferFrom(msg.sender, address(this), amount),
+                "fund failed"
+            );
+        }
+    }
+
+    /**
+     * Pay `amount` of `token` out to `to`: the native coin via call, or an
+     * ERC-20 transfer. Reverts on failure (checks-effects-interactions in
+     * callers keeps this reentrancy-safe).
+     */
+    function _send(address token, address to, uint256 amount) internal {
+        if (token == NATIVE) {
+            (bool ok, ) = payable(to).call{value: amount}("");
+            require(ok, "native xfer failed");
+        } else {
+            require(IERC20(token).transfer(to, amount), "transfer failed");
+        }
     }
 
     function _verify(
