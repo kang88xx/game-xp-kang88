@@ -16,6 +16,7 @@ import { useBalance } from "@/lib/balances";
 import { formatNumber, shortAddress, timeAgoPure } from "@/lib/format";
 import { Eyebrow } from "@/components/ui";
 import { TokenLogo } from "@/components/TokenLogo";
+import { PixelArena } from "@/components/PixelArena";
 import { toast } from "@/components/toast";
 import { TOKEN_MAP } from "@/lib/tokens";
 import { CHAIN_ID, CHAIN_LABEL, EXPLORER_URL } from "@/lib/chain";
@@ -1053,13 +1054,13 @@ function OnchainGame() {
       </div>
 
       {/* Hero countdown card */}
-      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 sm:p-10 shadow-2xl mb-5 flex flex-col items-center text-center">
+      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5 shadow-2xl mb-5 flex flex-col items-center text-center">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted)] mb-3">
           {heroWaiting ? "Waiting for first bet" : "Time Remaining"}
         </span>
 
         <div
-          className="font-mono text-7xl sm:text-8xl font-bold tabular-nums leading-none mb-4"
+          className="font-mono text-4xl sm:text-5xl font-bold tabular-nums leading-none mb-3"
           style={{
             color: heroWaiting
               ? "var(--muted-2)"
@@ -1069,6 +1070,17 @@ function OnchainGame() {
           }}
         >
           {heroWaiting ? "--:--" : mmss(remainingMs)}
+        </div>
+        <div
+          className="mb-3 w-full overflow-hidden rounded-2xl border border-[var(--border)]"
+          style={{ aspectRatio: "8 / 5" }}
+        >
+          <PixelArena
+            tier={tier}
+            betCount={displayBetCount ?? 0}
+            lastBettor={displayLastBettor}
+            active={!heroWaiting}
+          />
         </div>
 
         {/* Genuine new round (no first bet yet). */}
