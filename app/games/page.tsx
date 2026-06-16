@@ -57,6 +57,14 @@ function mmss(ms: number): string {
   return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+function hhmmss(ms: number): string {
+  const totalSec = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
 const LMS_INTRO_KEY = "lms-intro-dismissed";
 
 export default function GamesPage() {
@@ -1054,70 +1062,67 @@ function OnchainGame() {
       </div>
 
       {/* Hero countdown card */}
-      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5 shadow-2xl mb-5 flex flex-col items-center text-center">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted)] mb-3">
-          {heroWaiting ? "Waiting for first bet" : "Time Remaining"}
-        </span>
+      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5 shadow-2xl mb-5">
+        <div className="flex h-44 items-stretch gap-4 sm:h-52">
+          {/* Left 70% — countdown */}
+          <div className="flex w-[70%] flex-col items-center justify-center text-center">
+            <span className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--muted)]">
+              {heroWaiting ? "Round timer" : "Time Remaining"}
+            </span>
+            <div
+              className="font-mono text-3xl font-bold tabular-nums leading-none sm:text-5xl"
+              style={{
+                color:
+                  !heroWaiting && remainingMs < 10_000
+                    ? "var(--down)"
+                    : "var(--foreground)",
+              }}
+            >
+              {heroWaiting
+                ? hhmmss(Math.max(30_000, Math.floor(86_400_000 / 2 ** tier)))
+                : hhmmss(remainingMs)}
+            </div>
+            {waiting && (
+              <p className="mt-3 text-xs text-[var(--muted)]">
+                The timer starts when the first bet is placed
+              </p>
+            )}
+            {expired && (
+              <p className="mt-3 text-xs text-[var(--muted)]">
+                Previous round ended · First bet starts a new round
+                {unsettledWin > 0 && " — Your prize is ready to claim below"}
+              </p>
+            )}
+            <div className="mt-3 text-sm text-[var(--muted)]">
+              {displayLastBettor ? (
+                <>
+                  Last bettor:{" "}
+                  <span className="font-mono font-semibold text-[var(--foreground)]">
+                    {shortAddress(displayLastBettor)}
+                    {wallet &&
+                      displayLastBettor.toLowerCase() ===
+                        wallet.toLowerCase() && (
+                        <span className="ml-1.5 inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
+                          YOU
+                        </span>
+                      )}
+                  </span>
+                </>
+              ) : (
+                <span>No bets yet</span>
+              )}
+            </div>
+          </div>
 
-        <div
-          className="font-mono text-4xl sm:text-5xl font-bold tabular-nums leading-none mb-3"
-          style={{
-            color: heroWaiting
-              ? "var(--muted-2)"
-              : remainingMs < 10_000
-                ? "var(--down)"
-                : "var(--foreground)",
-          }}
-        >
-          {heroWaiting ? "--:--" : mmss(remainingMs)}
-        </div>
-        <div
-          className="mb-3 w-full overflow-hidden rounded-2xl border border-[var(--border)]"
-          style={{ aspectRatio: "8 / 5" }}
-        >
-          <PixelArena
-            tier={tier}
-            betCount={displayBetCount ?? 0}
-            lastBettor={displayLastBettor}
-            active={!heroWaiting}
-          />
-        </div>
-
-        {/* Genuine new round (no first bet yet). */}
-        {waiting && (
-          <p className="mb-3 text-xs text-[var(--muted)]">
-            The timer starts when the first bet is placed
-          </p>
-        )}
-
-        {/* Previous round just ended → a fresh round is already open; the
-            winner's pot waits in the claim card. bet()/claim() settle the old
-            round on-chain automatically. */}
-        {expired && (
-          <p className="mb-3 text-xs text-[var(--muted)]">
-            Previous round ended · First bet starts a new round
-            {unsettledWin > 0 && " — Your prize is ready to claim below"}
-          </p>
-        )}
-
-        {/* Last bettor (hidden once the round ends — the new round has none). */}
-        <div className="text-sm text-[var(--muted)]">
-          {displayLastBettor ? (
-            <>
-              Last bettor:{" "}
-              <span className="font-mono font-semibold text-[var(--foreground)]">
-                {shortAddress(displayLastBettor)}
-                {wallet &&
-                  displayLastBettor.toLowerCase() === wallet.toLowerCase() && (
-                    <span className="ml-1.5 inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
-                      YOU
-                    </span>
-                  )}
-              </span>
-            </>
-          ) : (
-            <span>No bets yet</span>
-          )}
+          {/* Right 30% — Gold Babel pixel arena */}
+          <div className="w-[30%] overflow-hidden rounded-2xl border border-[var(--border)]">
+            <PixelArena
+              tier={tier}
+              betCount={displayBetCount ?? 0}
+              lastBettor={displayLastBettor}
+              active={!heroWaiting}
+            />
+          </div>
         </div>
       </div>
 
