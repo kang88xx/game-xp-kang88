@@ -83,21 +83,6 @@ export const BRIDGE_TOKENS: BridgeToken[] = [
       },
     },
   },
-  {
-    key: "nova",
-    chains: {
-      [XPHERE_CHAIN_ID]: {
-        address: "0x0DFfFad57Bc67701244B1bdA37E830eeadb0d69F",
-        decimals: 18,
-        symbol: "NOVA",
-      },
-      [BSC_CHAIN_ID]: {
-        address: "0x49A756e34A5A0a7FDBFCce73d10228ee2C85CA8b",
-        decimals: 18,
-        symbol: "NOVA",
-      },
-    },
-  },
 ];
 
 /** Tokens bridgeable FROM a given source chain (must exist on both sides). */
