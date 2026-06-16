@@ -26,7 +26,7 @@ import {
   TEST_BRIDGE_ABI,
   otherSide,
 } from "@/lib/bridge";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, formatAmountInput, parseAmountInput } from "@/lib/format";
 import { toast } from "@/components/toast";
 import { TokenLogo } from "./TokenLogo";
 
@@ -220,10 +220,10 @@ export function BridgePanel() {
           onMax={setMax}
         >
           <input
-            type="number"
+            type="text"
             inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            value={formatAmountInput(amount)}
+            onChange={(e) => setAmount(parseAmountInput(e.target.value))}
             placeholder="0"
             className="w-full bg-transparent text-3xl font-semibold outline-none placeholder:text-[var(--muted-2)]"
           />

@@ -12,7 +12,7 @@ import { useAppKit } from "@reown/appkit/react";
 import { useDexStore, useHydrated } from "@/lib/store";
 import { useBalances } from "@/lib/balances";
 import { useMarket } from "@/lib/market";
-import { formatNumber, formatUsd } from "@/lib/format";
+import { formatNumber, formatUsd, formatAmountInput, parseAmountInput } from "@/lib/format";
 import { PANCAKE_ROUTER, CHAIN_ID, NATIVE_SYMBOL } from "@/lib/chain";
 import { applySlippage } from "@/lib/pancake";
 import {
@@ -407,10 +407,10 @@ function AmountRow({
           <div className="text-sm font-semibold">{symbol}</div>
         </div>
         <input
-          type="number"
+          type="text"
           inputMode="decimal"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          value={formatAmountInput(value)}
+          onChange={(e) => onChange(parseAmountInput(e.target.value))}
           placeholder="0"
           aria-label={`${symbol} amount`}
           className="w-1/2 bg-transparent text-right text-lg font-semibold outline-none placeholder:text-[var(--muted-2)]"

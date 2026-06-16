@@ -40,6 +40,8 @@ import {
   daysUntil,
   formatUsd,
   shortAddress,
+  formatAmountInput,
+  parseAmountInput,
 } from "@/lib/format";
 import { TokenLogo, TokenPair } from "@/components/TokenLogo";
 import { toast } from "@/components/toast";
@@ -1243,18 +1245,20 @@ function CampaignForm() {
           {eligibility !== "whitelist" && (
             <Field label="Reward / wallet">
               <input
-                type="number"
-                value={amountPerClaim}
-                onChange={(e) => setAmountPerClaim(e.target.value)}
+                type="text"
+                inputMode="decimal"
+                value={formatAmountInput(amountPerClaim)}
+                onChange={(e) => setAmountPerClaim(parseAmountInput(e.target.value))}
                 className={INPUT}
               />
             </Field>
           )}
           <Field label="Total allocation">
             <input
-              type="number"
-              value={totalAllocation}
-              onChange={(e) => setTotalAllocation(e.target.value)}
+              type="text"
+              inputMode="decimal"
+              value={formatAmountInput(totalAllocation)}
+              onChange={(e) => setTotalAllocation(parseAmountInput(e.target.value))}
               className={INPUT}
             />
           </Field>
@@ -2294,9 +2298,10 @@ function WhitelistManager({
         <div className="mb-2 flex items-center gap-2">
           <span className="text-xs text-[var(--muted)]">기본 금액</span>
           <input
-            type="number"
-            value={defaultAmount}
-            onChange={(e) => setDefaultAmount(e.target.value)}
+            type="text"
+            inputMode="decimal"
+            value={formatAmountInput(defaultAmount)}
+            onChange={(e) => setDefaultAmount(parseAmountInput(e.target.value))}
             placeholder="100"
             title={`Default amount when a line omits one (${c.tokenSymbol})`}
             className="w-28 rounded-xl border border-[var(--border-strong)] bg-[var(--card)] px-3 py-2 text-xs outline-none focus:border-[var(--accent)]"

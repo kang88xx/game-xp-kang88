@@ -35,6 +35,40 @@ export function formatCompact(value: number): string {
   }).format(value);
 }
 
+/**
+ * Format a numeric INPUT string with thousand separators on the integer part,
+ * while preserving the decimal portion and in-progress typing (e.g. a trailing
+ * dot). Non-numeric characters are stripped. Pair with `parseAmountInput` to
+ * recover the raw value for calculations.
+ *
+ *   "10000000"   -> "10,000,000"
+ *   "1234.5"     -> "1,234.5"
+ *   "1000."      -> "1,000."      (mid-typing)
+ *   ""           -> ""
+ */
+export function formatAmountInput(raw: string): string {
+  const s = String(raw ?? "").replace(/[^\d.]/g, "");
+  const dot = s.indexOf(".");
+  let intPart: string;
+  let decPart: string | null;
+  if (dot === -1) {
+    intPart = s;
+    decPart = null;
+  } else {
+    intPart = s.slice(0, dot);
+    decPart = s.slice(dot + 1).replace(/\./g, ""); // drop any extra dots
+  }
+  intPart = intPart.replace(/^0+(?=\d)/, ""); // trim leading zeros (keep a lone 0)
+  const intFmt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  if (decPart === null) return intFmt;
+  return (intFmt || "0") + "." + decPart;
+}
+
+/** Strip thousand separators from a formatted input back to a raw numeric string. */
+export function parseAmountInput(formatted: string): string {
+  return String(formatted ?? "").replace(/,/g, "");
+}
+
 export function formatPercent(value: number, withSign = true): string {
   const sign = withSign && value > 0 ? "+" : "";
   return `${sign}${value.toFixed(2)}%`;

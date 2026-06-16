@@ -26,7 +26,7 @@ import {
   useSwapQuote,
 } from "@/lib/pancake";
 import { CHAIN_ID, CHAIN_LABEL, NATIVE_SYMBOL } from "@/lib/chain";
-import { formatNumber, formatUsd } from "@/lib/format";
+import { formatNumber, formatUsd, formatAmountInput, parseAmountInput } from "@/lib/format";
 import { TokenLogo } from "./TokenLogo";
 import { TokenSelectModal } from "./TokenSelectModal";
 import { toast } from "./toast";
@@ -379,10 +379,10 @@ export function SwapCard({
         </div>
         <div className="mt-2 flex items-center justify-between gap-3">
           <input
-            type="number"
+            type="text"
             inputMode="decimal"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            value={formatAmountInput(amount)}
+            onChange={(e) => setAmount(parseAmountInput(e.target.value))}
             placeholder="0"
             className="w-full bg-transparent text-3xl font-semibold outline-none placeholder:text-[var(--muted-2)]"
           />
