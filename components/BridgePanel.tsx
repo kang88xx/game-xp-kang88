@@ -1,401 +1,362 @@
 "use client";
 
-// Working testnet bridge UI: lock USDT on the source chain, then hand the
-// tx hash to /api/bridge whose relayer releases on the destination chain.
-// One click drives the whole flow (switch network → approve → lock → relay),
-// mirroring the one-click swap UX.
+// Functional Xphere <-> BSC bridge over the public XPBridge zk-bridge.
+// approve -> initiateBridge(token, amount, destChainId, recipient); the
+// XPBridge relayer releases the paired token on the destination chain.
 import { useState } from "react";
-import { ArrowDownUp, Check, ExternalLink, Loader2 } from "lucide-react";
-import { erc20Abi, formatUnits, maxUint256, parseUnits } from "viem";
+import { ArrowDownUp, Loader2, ExternalLink } from "lucide-react";
+import { erc20Abi, formatUnits, parseUnits, isAddress } from "viem";
 import {
   useAccount,
-  usePublicClient,
-  useReadContract,
+  useReadContracts,
   useSwitchChain,
   useWriteContract,
+  usePublicClient,
 } from "wagmi";
 import { useAppKit } from "@reown/appkit/react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useDexStore, useHydrated } from "@/lib/store";
 import {
-  BRIDGE_SIDES,
-  BRIDGE_TOKEN_DECIMALS,
-  BRIDGE_TOKEN_SYMBOL,
-  BSC_TESTNET_ID,
-  OPBNB_TESTNET_ID,
-  TEST_BRIDGE_ABI,
-  otherSide,
+  BRIDGE_ABI,
+  BRIDGE_CHAINS,
+  BRIDGE_ENABLED,
+  XPHERE_CHAIN_ID,
+  bridgeTokensForChain,
+  otherChainId,
+  bridgeFeePercent,
 } from "@/lib/bridge";
-import { formatNumber, formatAmountInput, parseAmountInput } from "@/lib/format";
-import { toast } from "@/components/toast";
+import { formatAmountInput, parseAmountInput, formatNumber } from "@/lib/format";
 import { TokenLogo } from "./TokenLogo";
+import { toast } from "./toast";
 
-type Step = "approve" | "lock" | "relay";
-type Phase = { step: Step; status: "active" | "done" } | null;
+const ZERO = "0x0000000000000000000000000000000000000000" as const;
 
-const STEP_LABEL: Record<Step, string> = {
-  approve: "USDT 승인",
-  lock: "소스 체인에 잠금",
-  relay: "목적지 체인에서 지급",
-};
+interface TokenInfo {
+  supported: boolean;
+  decimals: number;
+  minAmount: bigint;
+  maxAmount: bigint;
+  dailyLimit: bigint;
+  dailyUsage: bigint;
+  lastResetDay: bigint;
+}
 
 export function BridgePanel() {
-  const hydrated = useHydrated();
-  const connected = useDexStore((s) => s.connected);
-  const recordTransaction = useDexStore((s) => s.recordTransaction);
-  const { open: openWalletModal } = useAppKit();
-  const { address, chainId: walletChainId } = useAccount();
+  const { address, chainId, isConnected } = useAccount();
+  const { open } = useAppKit();
   const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync } = useWriteContract();
-  const queryClient = useQueryClient();
 
-  const [srcChainId, setSrcChainId] = useState<number>(BSC_TESTNET_ID);
+  const [sourceId, setSourceId] = useState<number>(XPHERE_CHAIN_ID);
+  const destId = otherChainId(sourceId);
+  const tokens = bridgeTokensForChain(sourceId);
+  const [tokenKey, setTokenKey] = useState(tokens[0]?.key ?? "");
+  const token = tokens.find((t) => t.key === tokenKey) ?? tokens[0];
+
   const [amount, setAmount] = useState("");
-  const [phase, setPhase] = useState<Phase>(null);
-  const [doneTx, setDoneTx] = useState<{ chainId: number; hash: string } | null>(
-    null,
-  );
+  const [recipient, setRecipient] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const src = BRIDGE_SIDES[srcChainId];
-  const dst = otherSide(srcChainId);
-  const srcPublic = usePublicClient({ chainId: src.chainId });
+  const src = BRIDGE_CHAINS[sourceId];
+  const dst = BRIDGE_CHAINS[destId];
+  const srcTok = token?.chains[sourceId];
+  const dstTok = token?.chains[destId];
+  const decimals = srcTok?.decimals ?? 18;
+  const bridgeAddr = src.bridge;
+  const tokenAddr = srcTok?.address;
+  const publicClient = usePublicClient({ chainId: sourceId });
 
-  // Balances on both sides + what the destination can actually pay out.
-  const { data: srcBal } = useReadContract({
-    address: src.usdt as `0x${string}`,
-    abi: erc20Abi,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    chainId: src.chainId,
-    query: { enabled: !!address, refetchInterval: 15_000 },
-  });
-  const { data: dstBal } = useReadContract({
-    address: dst.usdt as `0x${string}`,
-    abi: erc20Abi,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    chainId: dst.chainId,
-    query: { enabled: !!address, refetchInterval: 15_000 },
-  });
-  const { data: dstReserve } = useReadContract({
-    address: dst.bridge as `0x${string}`,
-    abi: TEST_BRIDGE_ABI,
-    functionName: "reserve",
-    chainId: dst.chainId,
-    query: { refetchInterval: 30_000 },
-  });
-  const { data: allowance } = useReadContract({
-    address: src.usdt as `0x${string}`,
-    abi: erc20Abi,
-    functionName: "allowance",
-    args: address ? [address, src.bridge as `0x${string}`] : undefined,
-    chainId: src.chainId,
-    query: { enabled: !!address },
+  const { data: reads } = useReadContracts({
+    allowFailure: true,
+    contracts: tokenAddr
+      ? [
+          { address: bridgeAddr, abi: BRIDGE_ABI, functionName: "bridgeFee", chainId: sourceId },
+          { address: bridgeAddr, abi: BRIDGE_ABI, functionName: "getTokenInfo", args: [tokenAddr], chainId: sourceId },
+          { address: bridgeAddr, abi: BRIDGE_ABI, functionName: "getRemainingDailyLimit", args: [tokenAddr], chainId: sourceId },
+          { address: tokenAddr, abi: erc20Abi, functionName: "balanceOf", args: [address ?? ZERO], chainId: sourceId },
+          { address: tokenAddr, abi: erc20Abi, functionName: "allowance", args: [address ?? ZERO, bridgeAddr], chainId: sourceId },
+        ]
+      : [],
+    query: { enabled: !!tokenAddr, refetchInterval: 20_000 },
   });
 
-  const fmt = (v: bigint | undefined) =>
-    v === undefined ? "—" : formatNumber(Number(formatUnits(v, BRIDGE_TOKEN_DECIMALS)), 4);
+  const feeRaw = reads?.[0]?.result as bigint | undefined;
+  const info = reads?.[1]?.result as TokenInfo | undefined;
+  const remainingRaw = reads?.[2]?.result as bigint | undefined;
+  const balanceRaw = (reads?.[3]?.result as bigint | undefined) ?? 0n;
+  const allowanceRaw = (reads?.[4]?.result as bigint | undefined) ?? 0n;
 
+  const feePercent = bridgeFeePercent(feeRaw);
   const amountNum = parseFloat(amount) || 0;
-  let amountWei = 0n;
-  try {
-    if (amountNum > 0) amountWei = parseUnits(amount, BRIDGE_TOKEN_DECIMALS);
-  } catch {
-    amountWei = 0n;
-  }
+  const feeAmount = amountNum * (feePercent / 100);
+  const receiveAmount = Math.max(0, amountNum - feeAmount);
 
-  const insufficient =
-    srcBal !== undefined && amountWei > 0n && amountWei > srcBal;
-  const overReserve =
-    dstReserve !== undefined && amountWei > 0n && amountWei > dstReserve;
-  const busy = phase !== null;
-  const disabled =
-    busy || amountWei <= 0n || insufficient || overReserve || !hydrated;
+  const minN = info ? Number(formatUnits(info.minAmount, decimals)) : 0;
+  const maxN = info ? Number(formatUnits(info.maxAmount, decimals)) : 0;
+  const dailyLimitN = info ? Number(formatUnits(info.dailyLimit, decimals)) : 0;
+  const dailyUsedN = info ? Number(formatUnits(info.dailyUsage, decimals)) : 0;
+  const remainingN =
+    remainingRaw !== undefined
+      ? Number(formatUnits(remainingRaw, decimals))
+      : Math.max(0, dailyLimitN - dailyUsedN);
+  const balanceN = Number(formatUnits(balanceRaw, decimals));
 
-  const flip = () => {
-    setSrcChainId(dst.chainId);
-    setDoneTx(null);
+  // Plain computed value — the React Compiler handles memoization; a manual
+  // useMemo here trips react-hooks/preserve-manual-memoization.
+  const error: string | null = (() => {
+    if (!token || !srcTok) return "지원되는 브리지 토큰이 없습니다";
+    if (amountNum <= 0) return null;
+    if (info && !info.supported) return "이 토큰은 브리지에서 지원되지 않습니다";
+    if (minN && amountNum < minN) return `최소 ${formatNumber(minN)} ${srcTok.symbol}`;
+    if (maxN && amountNum > maxN) return `최대 ${formatNumber(maxN)} ${srcTok.symbol}`;
+    if (amountNum > remainingN) return `일일 한도 초과 (잔여 ${formatNumber(remainingN)})`;
+    if (amountNum > balanceN) return "잔액 부족";
+    return null;
+  })();
+
+  const swapChains = () => {
+    setSourceId(destId);
+    setAmount("");
   };
-  const setMax = () =>
-    srcBal !== undefined &&
-    setAmount(formatUnits(srcBal, BRIDGE_TOKEN_DECIMALS));
+
+  const setMax = () => {
+    const cap = Math.min(balanceN, maxN || balanceN, remainingN || balanceN);
+    setAmount(cap > 0 ? String(cap) : "");
+  };
 
   const bridge = async () => {
-    if (!address) return toast.error("지갑을 연결하세요");
-    if (!srcPublic) return toast.error("네트워크 연결을 확인하세요");
-    setDoneTx(null);
-    try {
-      // 0) Wallet must be on the source chain.
-      if (walletChainId !== src.chainId) {
-        toast.info(`${src.short}로 네트워크 전환 중…`);
-        await switchChainAsync({ chainId: src.chainId });
-      }
+    if (!isConnected || !address) {
+      open();
+      return;
+    }
+    if (!token || !tokenAddr || !srcTok) return toast.error("토큰을 선택하세요");
+    const to = (recipient.trim() || address) as `0x${string}`;
+    if (!isAddress(to)) return toast.error("받는 주소가 올바르지 않습니다");
+    if (amountNum <= 0) return toast.error("수량을 입력하세요");
+    if (error) return toast.error(error);
 
-      // 1) Approve the bridge for USDT if allowance is short.
-      if (allowance === undefined || allowance < amountWei) {
-        setPhase({ step: "approve", status: "active" });
-        toast.info("USDT 사용 승인 중… 지갑에서 확인하세요");
-        const approveHash = await writeContractAsync({
-          address: src.usdt as `0x${string}`,
+    try {
+      setBusy(true);
+      if (chainId !== sourceId) {
+        toast.info(`지갑을 ${src.label}로 전환하세요`);
+        await switchChainAsync({ chainId: sourceId });
+      }
+      const amtWei = parseUnits(amount, decimals);
+
+      if (allowanceRaw < amtWei) {
+        toast.info(`${srcTok.symbol} 사용 승인 중… 지갑에서 확인하세요`);
+        const ah = await writeContractAsync({
+          address: tokenAddr,
           abi: erc20Abi,
           functionName: "approve",
-          args: [src.bridge as `0x${string}`, maxUint256],
-          chainId: src.chainId,
+          args: [bridgeAddr, amtWei],
+          chainId: sourceId,
         });
-        const r = await srcPublic.waitForTransactionReceipt({
-          hash: approveHash,
-        });
-        if (r.status !== "success") throw new Error("approve reverted");
+        await publicClient?.waitForTransactionReceipt({ hash: ah });
       }
 
-      // 2) Lock on the source chain.
-      setPhase({ step: "lock", status: "active" });
-      toast.info("브릿지 트랜잭션 전송 중… 지갑에서 확인하세요");
-      const lockHash = await writeContractAsync({
-        address: src.bridge as `0x${string}`,
-        abi: TEST_BRIDGE_ABI,
-        functionName: "bridgeOut",
-        args: [amountWei, BigInt(dst.chainId)],
-        chainId: src.chainId,
+      toast.info("브리지 트랜잭션 전송 중… 지갑에서 확인하세요");
+      const hash = await writeContractAsync({
+        address: bridgeAddr,
+        abi: BRIDGE_ABI,
+        functionName: "initiateBridge",
+        args: [tokenAddr, amtWei, BigInt(destId), to],
+        chainId: sourceId,
       });
-      const lockReceipt = await srcPublic.waitForTransactionReceipt({
-        hash: lockHash,
-      });
-      if (lockReceipt.status !== "success")
-        throw new Error("bridge tx reverted");
+      const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+      if (receipt && receipt.status !== "success")
+        return toast.error("브리지 트랜잭션 실패");
 
-      // 3) Ask the relayer to release on the destination chain.
-      setPhase({ step: "relay", status: "active" });
-      const res = await fetch("/api/bridge", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ srcChainId: src.chainId, txHash: lockHash }),
-      });
-      const data = (await res.json()) as {
-        ok: boolean;
-        error?: string;
-        dstTxHash?: string;
-        alreadyProcessed?: boolean;
-      };
-      if (!data.ok)
-        throw new Error(data.error ?? "릴레이어 처리에 실패했습니다");
-
-      setPhase({ step: "relay", status: "done" });
-      if (data.dstTxHash)
-        setDoneTx({ chainId: dst.chainId, hash: data.dstTxHash });
-      const summary = `Bridged ${formatNumber(amountNum, 4)} USDT ${src.short} → ${dst.short}`;
-      recordTransaction("bridge", summary);
-      toast.success(summary);
-      setAmount("");
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "";
-      toast.error(
-        msg.includes("User rejected") || msg.includes("rejected")
-          ? "지갑에서 거부되었습니다"
-          : `브릿지 실패 — ${msg.slice(0, 120) || "다시 시도하세요"}`,
+      toast.success(
+        `브리지 요청 완료 — 잠시 후 ${dst.short}에서 ${dstTok?.symbol}를 받게 됩니다`,
       );
+      setAmount("");
+    } catch {
+      toast.error("브리지 실패 — 지갑 거부 / 잔액 부족 / 한도 초과 등을 확인하세요");
     } finally {
-      setPhase((p) => (p?.status === "done" ? p : null));
-      queryClient.invalidateQueries();
+      setBusy(false);
     }
   };
 
-  const activeStep = phase?.status === "active" ? phase.step : null;
+  const needsApprove =
+    amountNum > 0 && !error && tokenAddr
+      ? allowanceRaw < (() => {
+          try {
+            return parseUnits(amount, decimals);
+          } catch {
+            return 0n;
+          }
+        })()
+      : false;
+
+  const cta = !isConnected
+    ? "Connect Wallet"
+    : busy
+      ? "처리 중…"
+      : needsApprove
+        ? `${srcTok?.symbol} 승인 후 브리지`
+        : "Bridge";
 
   return (
-    <div className="mx-auto w-full max-w-md">
-      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-2 shadow-xl shadow-black/[0.03]">
-        <div className="px-3 py-2">
-          <h2 className="text-base font-semibold">Bridge USDT</h2>
-          <p className="text-xs text-[var(--muted)]">
-            {src.short} → {dst.short} · 테스트넷 전용
-          </p>
-        </div>
+    <div className="mx-auto w-full max-w-md rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5">
+      <h2 className="text-sm font-semibold">Bridge</h2>
+      <p className="mt-1 text-xs text-[var(--muted)]">Move assets between chains</p>
 
-        {/* From */}
-        <ChainBox
-          title="From"
-          side={src}
-          balance={fmt(srcBal)}
-          onMax={setMax}
+      {/* Chains */}
+      <div className="mt-4 flex items-center gap-2">
+        <ChainBox title="Source chain" label={src.label} />
+        <button
+          type="button"
+          onClick={swapChains}
+          aria-label="Swap direction"
+          className="mt-5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--border-strong)] bg-[var(--surface)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)]"
         >
+          <ArrowDownUp className="h-4 w-4 rotate-90" />
+        </button>
+        <ChainBox title="Destination chain" label={dst.label} />
+      </div>
+
+      {/* Amount + token */}
+      <div className="mt-4 rounded-2xl border border-[var(--border)] px-4 py-3">
+        <div className="flex items-center justify-between text-xs text-[var(--muted)]">
+          <span>Amount</span>
+          <button onClick={setMax} className="transition-colors hover:text-[var(--foreground)]">
+            Balance: {formatNumber(balanceN, 4)}{" "}
+            <span className="font-medium text-[var(--accent)]">MAX</span>
+          </button>
+        </div>
+        <div className="mt-1.5 flex items-center justify-between gap-3">
           <input
             type="text"
             inputMode="decimal"
             value={formatAmountInput(amount)}
             onChange={(e) => setAmount(parseAmountInput(e.target.value))}
             placeholder="0"
-            className="w-full bg-transparent text-3xl font-semibold outline-none placeholder:text-[var(--muted-2)]"
+            className="w-full bg-transparent text-2xl font-semibold outline-none placeholder:text-[var(--muted-2)]"
           />
-        </ChainBox>
-
-        {/* Flip */}
-        <div className="relative z-10 -my-3 flex justify-center">
-          <button
-            onClick={flip}
-            disabled={busy}
-            aria-label="방향 전환"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border-4 border-[var(--card)] bg-[var(--surface-2)] text-[var(--muted)] transition-colors hover:text-[var(--foreground)] disabled:opacity-50"
-          >
-            <ArrowDownUp className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* To */}
-        <ChainBox title="To" side={dst} balance={fmt(dstBal)}>
-          <div className="text-3xl font-semibold text-[var(--foreground)]">
-            {amountNum > 0 ? formatNumber(amountNum, 6) : "0"}
-          </div>
-        </ChainBox>
-
-        {/* Details */}
-        <div className="space-y-1.5 rounded-2xl px-4 py-3 text-xs">
-          <div className="flex justify-between text-[var(--muted)]">
-            <span>브릿지 수수료</span>
-            <span>없음 (1:1 지급)</span>
-          </div>
-          <div className="flex justify-between text-[var(--muted)]">
-            <span>{dst.short} 지급 가능량</span>
-            <span>
-              {fmt(dstReserve)} {BRIDGE_TOKEN_SYMBOL}
-            </span>
-          </div>
-          {srcChainId === OPBNB_TESTNET_ID && (
-            <p className="pt-1 text-[var(--muted-2)]">
-              opBNB 테스트넷 가스(tBNB)가 필요합니다 —{" "}
-              <a
-                href="https://opbnb-testnet-bridge.bnbchain.org/deposit"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[var(--accent)] underline"
-              >
-                공식 브릿지로 받기
-              </a>
-            </p>
-          )}
-        </div>
-
-        {/* Progress */}
-        {(phase || doneTx) && (
-          <div className="mx-2 mb-1 space-y-2 rounded-2xl bg-[var(--surface)] p-4">
-            {(["approve", "lock", "relay"] as Step[]).map((s) => {
-              const order: Step[] = ["approve", "lock", "relay"];
-              const cur = phase ? order.indexOf(phase.step) : 3;
-              const idx = order.indexOf(s);
-              const done =
-                idx < cur || (idx === cur && phase?.status === "done");
-              const active = activeStep === s;
+          <div className="flex shrink-0 gap-1.5">
+            {tokens.map((t) => {
+              const sym = t.chains[sourceId]?.symbol ?? t.key;
+              const active = t.key === token?.key;
               return (
-                <div key={s} className="flex items-center gap-2.5 text-sm">
-                  {done ? (
-                    <Check className="h-4 w-4 text-[var(--up)]" />
-                  ) : active ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-[var(--accent)]" />
-                  ) : (
-                    <span className="h-4 w-4 rounded-full border border-[var(--border)]" />
-                  )}
-                  <span
-                    className={
-                      done || active
-                        ? "text-[var(--foreground)]"
-                        : "text-[var(--muted-2)]"
-                    }
-                  >
-                    {STEP_LABEL[s]}
-                  </span>
-                </div>
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setTokenKey(t.key)}
+                  className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-sm font-medium transition-colors ${
+                    active
+                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                      : "border-[var(--border)] text-[var(--muted)]"
+                  }`}
+                >
+                  <TokenLogo symbol={sym} size={18} />
+                  {sym}
+                </button>
               );
             })}
-            {doneTx && (
-              <a
-                href={`${BRIDGE_SIDES[doneTx.chainId].explorer}/tx/${doneTx.hash}`}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-[var(--accent)]"
-              >
-                도착 트랜잭션 보기 <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Action */}
-        <div className="p-2 pt-1">
-          {!hydrated ? (
-            <div className="h-14 w-full rounded-2xl bg-[var(--surface-2)] animate-pulse-soft" />
-          ) : !connected ? (
+      {/* Recipient */}
+      <div className="mt-3 rounded-2xl border border-[var(--border)] px-4 py-3">
+        <div className="flex items-center justify-between text-xs text-[var(--muted)]">
+          <span>Recipient ({dst.short})</span>
+          {address && (
             <button
-              onClick={() => openWalletModal()}
-              className="h-14 w-full rounded-2xl bg-[var(--accent)] text-base font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+              onClick={() => setRecipient(address)}
+              className="font-medium text-[var(--accent)] transition-colors hover:opacity-80"
             >
-              Connect Wallet
-            </button>
-          ) : (
-            <button
-              disabled={disabled}
-              onClick={bridge}
-              className="flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-[var(--accent)] text-base font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:text-[var(--muted-2)]"
-            >
-              {busy ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  {activeStep ? STEP_LABEL[activeStep] + "…" : "처리 중…"}
-                </>
-              ) : amountNum <= 0 ? (
-                "Enter an amount"
-              ) : insufficient ? (
-                `Insufficient ${BRIDGE_TOKEN_SYMBOL}`
-              ) : overReserve ? (
-                "지급 가능량 초과"
-              ) : (
-                `Bridge to ${dst.short}`
-              )}
+              Use my address
             </button>
           )}
         </div>
+        <input
+          type="text"
+          value={recipient}
+          onChange={(e) => setRecipient(e.target.value)}
+          placeholder={address ?? "0x…"}
+          spellCheck={false}
+          className="mt-1.5 w-full bg-transparent text-sm outline-none placeholder:text-[var(--muted-2)]"
+        />
+      </div>
+
+      {/* Summary */}
+      <div className="mt-3 space-y-1.5 rounded-2xl bg-[var(--surface)] px-4 py-3 text-xs">
+        <Row label="Bridge Amount" value={`${formatNumber(amountNum, 6)} ${srcTok?.symbol ?? ""}`} />
+        <Row label="Bridge Fee" value={`${feePercent}% · ${formatNumber(feeAmount, 6)}`} />
+        <Row
+          label="You Will Receive"
+          value={`${formatNumber(receiveAmount, 6)} ${dstTok?.symbol ?? ""}`}
+          strong
+        />
+        <div className="my-1 border-t border-[var(--border)]" />
+        <Row label="Min Amount" value={`${formatNumber(minN, 6)} ${srcTok?.symbol ?? ""}`} muted />
+        <Row label="Max Amount" value={`${formatNumber(maxN, 6)} ${srcTok?.symbol ?? ""}`} muted />
+        <Row label="Daily Limit" value={`${formatNumber(dailyLimitN)} ${srcTok?.symbol ?? ""}`} muted />
+        <Row label="Daily Used" value={`${formatNumber(dailyUsedN)} ${srcTok?.symbol ?? ""}`} muted />
+        <Row label="Remaining" value={`${formatNumber(remainingN)} ${srcTok?.symbol ?? ""}`} muted />
+      </div>
+
+      {error && amountNum > 0 && (
+        <p className="mt-2 text-center text-xs font-medium text-[var(--down)]">{error}</p>
+      )}
+
+      <button
+        onClick={bridge}
+        disabled={busy || !BRIDGE_ENABLED || (isConnected && (amountNum <= 0 || !!error))}
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+        {cta}
+      </button>
+
+      <a
+        href={`${src.explorer}/address/${bridgeAddr}`}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-3 flex items-center justify-center gap-1 text-[11px] text-[var(--muted-2)] transition-colors hover:text-[var(--muted)]"
+      >
+        Bridge contract <ExternalLink className="h-3 w-3" />
+      </a>
+    </div>
+  );
+}
+
+function ChainBox({ title, label }: { title: string; label: string }) {
+  return (
+    <div className="flex-1">
+      <div className="mb-1 text-xs text-[var(--muted)]">{title}</div>
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm font-semibold">
+        {label}
       </div>
     </div>
   );
 }
 
-function ChainBox({
-  title,
-  side,
-  balance,
-  onMax,
-  children,
+function Row({
+  label,
+  value,
+  strong,
+  muted,
 }: {
-  title: string;
-  side: { short: string };
-  balance: string;
-  onMax?: () => void;
-  children: React.ReactNode;
+  label: string;
+  value: string;
+  strong?: boolean;
+  muted?: boolean;
 }) {
   return (
-    <div className="rounded-2xl bg-[var(--surface)] p-4">
-      <div className="flex items-center justify-between text-xs text-[var(--muted)]">
-        <span>
-          {title} · {side.short}
-        </span>
-        {onMax ? (
-          <button
-            onClick={onMax}
-            className="transition-colors hover:text-[var(--foreground)]"
-          >
-            Balance: {balance}{" "}
-            <span className="font-medium text-[var(--accent)]">MAX</span>
-          </button>
-        ) : (
-          <span>Balance: {balance}</span>
-        )}
-      </div>
-      <div className="mt-2 flex items-center justify-between gap-3">
-        {children}
-        <div className="flex shrink-0 items-center gap-2 rounded-full bg-[var(--card)] py-1.5 pl-1.5 pr-3">
-          <TokenLogo symbol="USDT" size={24} />
-          <span className="text-sm font-semibold">USDT</span>
-        </div>
-      </div>
+    <div className="flex items-center justify-between">
+      <span className={muted ? "text-[var(--muted-2)]" : "text-[var(--muted)]"}>{label}</span>
+      <span
+        className={
+          strong
+            ? "font-semibold text-[var(--accent)]"
+            : muted
+              ? "text-[var(--muted)]"
+              : "font-medium"
+        }
+      >
+        {value}
+      </span>
     </div>
   );
 }

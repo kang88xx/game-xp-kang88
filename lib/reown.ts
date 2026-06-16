@@ -31,10 +31,24 @@ export const xphere = defineChain({
   },
 });
 
-/** The wallet-facing network — Xphere only. */
+// BNB Smart Chain — the bridge's destination/source counterpart to Xphere.
+// Added so the wallet can switch to BSC for BSC->Xphere bridging and so wagmi
+// has a transport for BSC reads. The rest of the app still gates on Xphere
+// (CHAIN_ID) and prompts a switch when needed.
+export const bscChain = defineChain({
+  id: 56,
+  caipNetworkId: "eip155:56",
+  chainNamespace: "eip155",
+  name: "BNB Smart Chain",
+  nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 },
+  rpcUrls: { default: { http: ["https://bsc-dataseed.bnbchain.org"] } },
+  blockExplorers: { default: { name: "BscScan", url: "https://bscscan.com" } },
+});
+
+/** The primary wallet-facing network. */
 export const ACTIVE_CHAIN: AppKitNetwork = xphere;
 
-export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [xphere];
+export const networks: [AppKitNetwork, ...AppKitNetwork[]] = [xphere, bscChain];
 
 export const wagmiAdapter = new WagmiAdapter({
   storage: createStorage({ storage: cookieStorage }),

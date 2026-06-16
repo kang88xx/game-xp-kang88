@@ -1,130 +1,183 @@
-// Cross-chain USDT bridge config — shared by the /bridge UI and the
-// /api/bridge relayer route. Pure data + ABI (no hooks), so it is safe to
-// import from both client and server code.
+// XPBridge-powered cross-chain bridge config — Xphere <-> BSC.
 //
-// RETIRED on Xphere: this lock/release bridge spans BSC Testnet (97) ↔
-// opBNB Testnet (5611) from the BSC era (contracts still live there).
-// On Xphere the /bridge page shows its "coming soon" placeholder until a
-// production bridge (e.g. XPBridge integration) is wired up — so
-// BRIDGE_ENABLED is hard false; the config below is kept for reference.
+// Thin frontend over the public XPBridge zk-bridge (the same contracts +
+// relayer that pumpkinswap.app/bridge uses). Flow:
+//   1. approve the source-chain bridge contract for `amount` of the token
+//   2. call initiateBridge(token, amount, destChainId, destAddress) — locks
+//      the token on the source chain and emits BridgeRequest
+//   3. the XPBridge relayer releases the paired token on the destination chain
+//      to `destAddress` (no further app interaction needed)
+//
+// Pure data + ABI (no hooks) so it's safe to import from client and server.
 
-export const BSC_TESTNET_ID = 97;
-export const OPBNB_TESTNET_ID = 5611;
+export const XPHERE_CHAIN_ID = 20250217;
+export const BSC_CHAIN_ID = 56;
 
-export interface BridgeSide {
+export interface BridgeChain {
   chainId: number;
-  /** Full network name (wallet-facing) */
+  key: "xphere" | "bsc";
   label: string;
-  /** Short name for compact UI */
   short: string;
   explorer: string;
-  rpc: string;
-  /** USDT (TestToken) contract on this chain */
-  usdt: `0x${string}` | "";
-  /** TestBridge contract on this chain */
-  bridge: `0x${string}` | "";
+  /** Source bridge contract on this chain (initiateBridge lives here). */
+  bridge: `0x${string}`;
 }
 
-export const BRIDGE_SIDES: Record<number, BridgeSide> = {
-  [BSC_TESTNET_ID]: {
-    chainId: BSC_TESTNET_ID,
-    label: "BNB Smart Chain Testnet",
-    short: "BSC Testnet",
-    explorer: "https://testnet.bscscan.com",
-    rpc:
-      process.env.NEXT_PUBLIC_BSC_TESTNET_RPC ??
-      "https://data-seed-prebsc-1-s1.bnbchain.org:8545",
-    usdt: (process.env.NEXT_PUBLIC_TUSDT_ADDRESS ?? "") as `0x${string}` | "",
-    bridge: (process.env.NEXT_PUBLIC_BRIDGE_TESTNET_BSC ?? "") as
-      | `0x${string}`
-      | "",
+export const BRIDGE_CHAINS: Record<number, BridgeChain> = {
+  [XPHERE_CHAIN_ID]: {
+    chainId: XPHERE_CHAIN_ID,
+    key: "xphere",
+    label: "Xphere Mainnet",
+    short: "Xphere",
+    explorer: "https://xp.tamsa.io",
+    bridge: (process.env.NEXT_PUBLIC_XPHERE_BRIDGE_CONTRACT ??
+      "0xE546C817791306A5c65D637dC0A40B121e409874") as `0x${string}`,
   },
-  [OPBNB_TESTNET_ID]: {
-    chainId: OPBNB_TESTNET_ID,
-    label: "opBNB Testnet",
-    short: "opBNB Testnet",
-    explorer: "https://testnet.opbnbscan.com",
-    rpc:
-      process.env.NEXT_PUBLIC_OPBNB_TESTNET_RPC ??
-      "https://opbnb-testnet-rpc.bnbchain.org",
-    usdt: (process.env.NEXT_PUBLIC_TUSDT_OPBNB_ADDRESS ?? "") as
-      | `0x${string}`
-      | "",
-    bridge: (process.env.NEXT_PUBLIC_BRIDGE_TESTNET_OPBNB ?? "") as
-      | `0x${string}`
-      | "",
+  [BSC_CHAIN_ID]: {
+    chainId: BSC_CHAIN_ID,
+    key: "bsc",
+    label: "BNB Smart Chain",
+    short: "BSC",
+    explorer: "https://bscscan.com",
+    bridge: (process.env.NEXT_PUBLIC_BSC_BRIDGE_CONTRACT ??
+      "0xa26c9A07684EAe63e3fF07FDd5Ecc8353bD06a57") as `0x${string}`,
   },
 };
 
-/** The one supported route, in canonical order. */
-export const BRIDGE_CHAIN_IDS = [BSC_TESTNET_ID, OPBNB_TESTNET_ID] as const;
+export const BRIDGE_CHAIN_IDS = [XPHERE_CHAIN_ID, BSC_CHAIN_ID] as const;
 
-/** Hard-disabled on Xphere — the BSC-era testnet bridge doesn't apply here. */
-export const BRIDGE_ENABLED = false;
+/** Relayer that watches BridgeRequest events and releases on the dest chain. */
+export const BRIDGE_RELAYER_API =
+  process.env.NEXT_PUBLIC_BRIDGE_RELAYER_API_URL ??
+  "https://xpbridge.app/zk-bridge-relayer/api";
 
-export const BRIDGE_TOKEN_SYMBOL = "USDT";
-export const BRIDGE_TOKEN_DECIMALS = 18;
+/** Live on Xphere — points at the deployed XPBridge contracts above. */
+export const BRIDGE_ENABLED = true;
 
-export const TEST_BRIDGE_ABI = [
+/** A bridgeable asset and its token contract (+decimals/symbol) per chain. */
+export interface BridgeToken {
+  /** Stable id for selection. */
+  key: string;
+  /** Logo under /public/tokens; falls back to a symbol badge. */
+  logo?: string;
+  chains: Record<
+    number,
+    { address: `0x${string}`; decimals: number; symbol: string }
+  >;
+}
+
+export const BRIDGE_TOKENS: BridgeToken[] = [
+  {
+    key: "usd",
+    logo: "/tokens/USDX.svg",
+    chains: {
+      [XPHERE_CHAIN_ID]: {
+        address: "0xb48e189b1059e4D5C8fd154021a0516ff71a8514",
+        decimals: 6,
+        symbol: "USDX",
+      },
+      [BSC_CHAIN_ID]: {
+        address: "0x55d398326f99059fF775485246999027B3197955",
+        decimals: 18,
+        symbol: "USDT",
+      },
+    },
+  },
+  {
+    key: "nova",
+    chains: {
+      [XPHERE_CHAIN_ID]: {
+        address: "0x0DFfFad57Bc67701244B1bdA37E830eeadb0d69F",
+        decimals: 18,
+        symbol: "NOVA",
+      },
+      [BSC_CHAIN_ID]: {
+        address: "0x49A756e34A5A0a7FDBFCce73d10228ee2C85CA8b",
+        decimals: 18,
+        symbol: "NOVA",
+      },
+    },
+  },
+];
+
+/** Tokens bridgeable FROM a given source chain (must exist on both sides). */
+export function bridgeTokensForChain(chainId: number): BridgeToken[] {
+  const other = otherChainId(chainId);
+  return BRIDGE_TOKENS.filter((t) => t.chains[chainId] && t.chains[other]);
+}
+
+export function otherChainId(chainId: number): number {
+  return chainId === XPHERE_CHAIN_ID ? BSC_CHAIN_ID : XPHERE_CHAIN_ID;
+}
+
+/**
+ * Fee percent from the contract's raw `bridgeFee` value. XPBridge stores the
+ * fee in hundredths of a percent (basis points / 100), so 200 -> 2.0%.
+ */
+export function bridgeFeePercent(raw: bigint | undefined): number {
+  return raw === undefined ? 0 : Number(raw) / 100;
+}
+
+// Minimal ABI — only what the bridge UI reads/calls.
+export const BRIDGE_ABI = [
   {
     type: "function",
-    name: "bridgeOut",
+    name: "initiateBridge",
     stateMutability: "nonpayable",
     inputs: [
+      { name: "token", type: "address" },
       { name: "amount", type: "uint256" },
-      { name: "dstChainId", type: "uint64" },
+      { name: "destinationChainId", type: "uint256" },
+      { name: "destinationAddress", type: "address" },
     ],
     outputs: [],
   },
   {
     type: "function",
-    name: "release",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "transferId", type: "bytes32" },
-      { name: "to", type: "address" },
-      { name: "amount", type: "uint256" },
-    ],
-    outputs: [],
-  },
-  {
-    type: "function",
-    name: "processed",
-    stateMutability: "view",
-    inputs: [{ name: "", type: "bytes32" }],
-    outputs: [{ name: "", type: "bool" }],
-  },
-  {
-    type: "function",
-    name: "reserve",
+    name: "bridgeFee",
     stateMutability: "view",
     inputs: [],
     outputs: [{ name: "", type: "uint256" }],
   },
   {
-    type: "event",
-    name: "BridgeOut",
-    inputs: [
-      { name: "from", type: "address", indexed: true },
-      { name: "amount", type: "uint256", indexed: false },
-      { name: "dstChainId", type: "uint64", indexed: true },
-      { name: "nonce", type: "uint64", indexed: false },
+    type: "function",
+    name: "defaultMinAmount",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "defaultMaxAmount",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "getTokenInfo",
+    stateMutability: "view",
+    inputs: [{ name: "token", type: "address" }],
+    outputs: [
+      {
+        type: "tuple",
+        components: [
+          { name: "supported", type: "bool" },
+          { name: "decimals", type: "uint8" },
+          { name: "minAmount", type: "uint256" },
+          { name: "maxAmount", type: "uint256" },
+          { name: "dailyLimit", type: "uint256" },
+          { name: "dailyUsage", type: "uint256" },
+          { name: "lastResetDay", type: "uint256" },
+        ],
+      },
     ],
   },
   {
-    type: "event",
-    name: "BridgeIn",
-    inputs: [
-      { name: "transferId", type: "bytes32", indexed: true },
-      { name: "to", type: "address", indexed: true },
-      { name: "amount", type: "uint256", indexed: false },
-    ],
+    type: "function",
+    name: "getRemainingDailyLimit",
+    stateMutability: "view",
+    inputs: [{ name: "token", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
   },
 ] as const;
-
-/** The opposite side of the route. */
-export function otherSide(chainId: number): BridgeSide {
-  return chainId === BSC_TESTNET_ID
-    ? BRIDGE_SIDES[OPBNB_TESTNET_ID]
-    : BRIDGE_SIDES[BSC_TESTNET_ID];
-}
