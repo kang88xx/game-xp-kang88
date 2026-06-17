@@ -11,6 +11,17 @@ function kstParts(ts: number): { date: string; time: string } {
   return { date: iso.slice(0, 10), time: iso.slice(11, 19) };
 }
 
+/** Escape values interpolated into the HTML — defense-in-depth at the sink so
+ *  the admin page is safe even if a non-hex address ever reaches storage. */
+const esc = (s: string): string =>
+  s.replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
+        c
+      ]!,
+  );
+
 // New-wallet connection log as a standalone HTML page — opened in a new tab
 // from the admin "Detail" button. Admin only. Collects nothing but the wallet
 // address and the time it first connected.
@@ -31,7 +42,7 @@ export async function GET() {
               <td class="num">${log.length - i}</td>
               <td>${date}</td>
               <td>${time}</td>
-              <td class="addr">${c.address}</td>
+              <td class="addr">${esc(c.address)}</td>
             </tr>`;
           })
           .join("");

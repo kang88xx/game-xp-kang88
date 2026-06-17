@@ -50,6 +50,11 @@ export function AddLiquidityModal({
   const [amount1, setAmount1] = useState("");
   const [supplying, setSupplying] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  // Which side the user last typed — the anchor whose entered amount is sent
+  // as-is; the dependent side is re-derived from raw reserves at submit time so
+  // the submitted ratio matches the on-chain reserve ratio exactly (display
+  // rounding to 6 decimals can otherwise drift outside the 1% slippage band).
+  const anchorSide = useRef<0 | 1>(0);
 
   const pool = useMemo(
     () => pools.find((p) => p.id === poolId) ?? null,
@@ -138,12 +143,14 @@ export function AddLiquidityModal({
   // With reserves, typing one side recomputes the other at the pair ratio.
   // First deposit: both sides are free.
   const onChange0 = (v: string) => {
+    anchorSide.current = 0;
     setAmount0(v);
     if (!hasReserves) return;
     const n = parseFloat(v);
     setAmount1(n > 0 && ratio01 > 0 ? fmtAmt(n * ratio01) : "");
   };
   const onChange1 = (v: string) => {
+    anchorSide.current = 1;
     setAmount1(v);
     if (!hasReserves) return;
     const n = parseFloat(v);
@@ -202,8 +209,21 @@ export function AddLiquidityModal({
 
     try {
       setSupplying(true);
-      const amtA = parseUnits(amount0, tA.decimals);
-      const amtB = parseUnits(amount1, tB.decimals);
+      let amtA = parseUnits(amount0, tA.decimals);
+      let amtB = parseUnits(amount1, tB.decimals);
+      // With reserves, re-derive the dependent side from the raw reserve
+      // bigints so the submitted ratio matches the on-chain reserve ratio
+      // exactly — the display amounts are rounded to 6 decimals, which can
+      // drift the pair off-ratio and exceed the 1% slippage band (revert).
+      // The user's typed side stays the anchor; only the other side is replaced.
+      if (hasReserves && onchain) {
+        const { reserveA, reserveB } = onchain;
+        if (anchorSide.current === 0 && amtA > 0n) {
+          amtB = (amtA * reserveB) / reserveA;
+        } else if (anchorSide.current === 1 && amtB > 0n) {
+          amtA = (amtB * reserveA) / reserveB;
+        }
+      }
       // First deposit sets the price exactly — no slippage needed.
       const minA = hasReserves
         ? applySlippage(amtA, LIQUIDITY_SLIPPAGE_PCT)

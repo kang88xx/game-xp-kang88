@@ -6,6 +6,7 @@ import {
   clearRateLimit,
   clientIp,
   rateLimitLogin,
+  sameOrigin,
   verifyPassword,
   verifySessionToken,
 } from "@/lib/admin-auth";
@@ -16,6 +17,9 @@ export const dynamic = "force-dynamic";
 // campaign): requires BOTH a valid admin session and the password again.
 // Shares the login rate limiter so brute-forcing here is throttled too.
 export async function POST(req: Request) {
+  if (!sameOrigin(req)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   if (!adminConfigured()) {
     return NextResponse.json({ error: "not configured" }, { status: 503 });
   }
@@ -25,7 +29,7 @@ export async function POST(req: Request) {
   }
 
   const ip = clientIp(req);
-  if (!rateLimitLogin(ip)) {
+  if (!(await rateLimitLogin(ip))) {
     return NextResponse.json(
       { error: "Too many attempts — try again in 10 minutes" },
       { status: 429 },
@@ -39,6 +43,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
   }
 
-  clearRateLimit(ip);
+  await clearRateLimit(ip);
   return NextResponse.json({ ok: true });
 }

@@ -265,11 +265,19 @@ contract MerkleAirdrop {
      * claims stop immediately, so use deliberately (claimers lose any time
      * they were promised). For already-ended campaigns this is just a
      * convenience one-click sweep.
+     *
+     * RESTRICTION (source fix for future redeploys; deployed bytecode is
+     * immutable): only DATED campaigns (endsAt != 0) are force-endable.
+     * Permanent campaigns (endsAt == 0) are documented as "funds committed
+     * forever" and sweep() rejects them; without this guard endAndSweep could
+     * force-set endsAt and sweep them, a single-key rug vector that breaks the
+     * anti-rug guarantee. Permanent campaigns therefore stay non-endable here.
      */
     function endAndSweep(uint256 id, address to) external onlyOwner {
         require(to != address(0), "to=0");
         Campaign storage c = campaigns[id];
         require(c.token != address(0), "no campaign");
+        require(c.endsAt != 0, "permanent campaign: not force-endable");
 
         c.active = false;
         // Pull the end time back so claim()'s `block.timestamp <= endsAt`
@@ -315,10 +323,7 @@ contract MerkleAirdrop {
             require(msg.value == amount, "bad msg.value");
         } else {
             require(msg.value == 0, "no native");
-            require(
-                IERC20(token).transferFrom(msg.sender, address(this), amount),
-                "fund failed"
-            );
+            _safeTransferFrom(token, msg.sender, address(this), amount, "fund failed");
         }
     }
 
@@ -332,8 +337,46 @@ contract MerkleAirdrop {
             (bool ok, ) = payable(to).call{value: amount}("");
             require(ok, "native xfer failed");
         } else {
-            require(IERC20(token).transfer(to, amount), "transfer failed");
+            _safeTransfer(token, to, amount, "transfer failed");
         }
+    }
+
+    /**
+     * SafeERC20-style helpers (source fix for future redeploys; deployed
+     * bytecode is immutable). Tolerate non-standard ERC-20s — e.g. USDT-style
+     * tokens that return no bool from transfer/transferFrom. Accept either no
+     * return data or a returned `true`; revert otherwise. Inlined (no import)
+     * to keep this contract self-contained for the repo's solc script.
+     */
+    function _safeTransfer(
+        address token,
+        address to,
+        uint256 amount,
+        string memory errMsg
+    ) internal {
+        (bool ok, bytes memory data) = token.call(
+            abi.encodeWithSelector(IERC20.transfer.selector, to, amount)
+        );
+        require(
+            ok && (data.length == 0 || abi.decode(data, (bool))),
+            errMsg
+        );
+    }
+
+    function _safeTransferFrom(
+        address token,
+        address from,
+        address to,
+        uint256 amount,
+        string memory errMsg
+    ) internal {
+        (bool ok, bytes memory data) = token.call(
+            abi.encodeWithSelector(IERC20.transferFrom.selector, from, to, amount)
+        );
+        require(
+            ok && (data.length == 0 || abi.decode(data, (bool))),
+            errMsg
+        );
     }
 
     function _verify(

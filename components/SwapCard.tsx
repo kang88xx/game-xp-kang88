@@ -242,17 +242,15 @@ export function SwapCard({
       await settleTx(hash, () => {
         toast.success(summary);
         recordTransaction("swap", summary);
-        // Report USD volume for analytics + per-pool Fee APR (best-effort).
-        // `pair` is the sorted symbol key so it matches the listed pool.
-        const volumeUsd = amountNum * pFrom;
-        if (volumeUsd > 0) {
-          const pair = [from, to].sort().join("-");
-          fetch("/api/analytics", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ event: "swap", volumeUsd, pair, txHash: hash }),
-          }).catch(() => {});
-        }
+        // Report the swap for analytics + per-pool Fee APR (best-effort). The
+        // server re-derives USD volume and the pair from this tx's on-chain
+        // Swap logs — we send only the hash, never a self-reported amount
+        // (which the server no longer trusts).
+        fetch("/api/analytics", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ event: "swap", txHash: hash }),
+        }).catch(() => {});
         setAmount("");
       });
     } catch {

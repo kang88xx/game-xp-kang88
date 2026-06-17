@@ -6,6 +6,7 @@ import {
   clientIp,
   createSessionToken,
   rateLimitLogin,
+  sameOrigin,
   SESSION_TTL_S,
   verifyPassword,
 } from "@/lib/admin-auth";
@@ -13,6 +14,9 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  if (!sameOrigin(req)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   if (!adminConfigured()) {
     return NextResponse.json(
       { error: "Admin login is not configured on this server" },
@@ -21,7 +25,7 @@ export async function POST(req: Request) {
   }
 
   const ip = clientIp(req);
-  if (!rateLimitLogin(ip)) {
+  if (!(await rateLimitLogin(ip))) {
     return NextResponse.json(
       { error: "Too many attempts — try again in 10 minutes" },
       { status: 429 },
@@ -36,11 +40,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
   }
 
-  clearRateLimit(ip);
+  await clearRateLimit(ip);
   const res = NextResponse.json({ ok: true });
   res.cookies.set(ADMIN_COOKIE, createSessionToken(), {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: SESSION_TTL_S,

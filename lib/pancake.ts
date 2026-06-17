@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { formatUnits, parseUnits } from "viem";
 import { useReadContracts } from "wagmi";
 import { TOKEN_MAP } from "./tokens";
-import { NATIVE_SYMBOL, PANCAKE_ROUTER, WNATIVE } from "./chain";
+import { CHAIN_ID, NATIVE_SYMBOL, PANCAKE_ROUTER, WNATIVE } from "./chain";
 import { useTokenRegistry, tokenTradable } from "./token-registry";
 import type { Token } from "./types";
 
@@ -155,6 +155,7 @@ export function useSwapQuote(
       abi: PANCAKE_ROUTER_ABI,
       functionName: "getAmountsOut" as const,
       args: [amountInWei, path] as const,
+      chainId: CHAIN_ID,
     })),
     query: { enabled, refetchInterval: 15_000 },
   });

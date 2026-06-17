@@ -179,10 +179,7 @@ contract KangLMS {
         uint8 tier = tierAt(r.betCount);
         require(amount >= betFloorForTier(tier), "below tier min");
 
-        require(
-            token.transferFrom(msg.sender, address(this), amount),
-            "transfer failed"
-        );
+        _safeTransferFrom(msg.sender, address(this), amount, "transfer failed");
 
         uint256 burnAmount = (amount * burnBps) / 10000;
         uint256 treasuryAmount = (amount * treasuryBps) / 10000;
@@ -202,8 +199,8 @@ contract KangLMS {
         // Reset the clock to the active tier's timer (halves every tierStep).
         r.deadline = uint64(block.timestamp) + durationForTier(tier);
 
-        require(token.transfer(burnWallet, burnAmount), "burn failed");
-        require(token.transfer(treasury, treasuryAmount), "treasury failed");
+        _safeTransfer(burnWallet, burnAmount, "burn failed");
+        _safeTransfer(treasury, treasuryAmount, "treasury failed");
 
         emit BetPlaced(currentRoundId, msg.sender, amount, r.prizePool, r.deadline);
     }
@@ -235,7 +232,7 @@ contract KangLMS {
                 w.amount -= pay;
                 if (w.amount == 0) w.claimed = true;
                 totalPendingPrize -= pay;
-                require(token.transfer(msg.sender, pay), "transfer failed");
+                _safeTransfer(msg.sender, pay, "transfer failed");
                 emit PrizeClaimed(msg.sender, roundId, pay);
                 return;
             }
@@ -267,7 +264,7 @@ contract KangLMS {
         }
         require(totalPaid > 0, "nothing to claim");
         totalPendingPrize -= totalPaid;
-        require(token.transfer(msg.sender, totalPaid), "transfer failed");
+        _safeTransfer(msg.sender, totalPaid, "transfer failed");
     }
 
     // ---------- Prize views ----------
@@ -370,7 +367,7 @@ contract KangLMS {
         uint256 liabilities = totalPendingPrize + rounds[currentRoundId].prizePool;
         require(bal >= liabilities, "liabilities exceed balance");
         require(amount <= bal - liabilities, "would touch liabilities");
-        require(token.transfer(owner, amount), "transfer failed");
+        _safeTransfer(owner, amount, "transfer failed");
         emit TokenWithdrawn(owner, amount);
     }
 
@@ -378,6 +375,34 @@ contract KangLMS {
         require(newOwner != address(0), "owner=0");
         emit OwnerTransferred(owner, newOwner);
         owner = newOwner;
+    }
+
+    // ---------- SafeERC20 helpers ----------
+
+    /**
+     * SafeERC20-style helpers (source fix for future redeploys; deployed
+     * bytecode is immutable). Tolerate non-standard ERC-20s — e.g. USDT-style
+     * tokens that return no bool from transfer/transferFrom. Accept either no
+     * return data or a returned `true`; revert otherwise. Inlined (no import)
+     * to keep this contract self-contained for the repo's solc script.
+     */
+    function _safeTransfer(address to, uint256 amount, string memory errMsg) internal {
+        (bool ok, bytes memory data) = address(token).call(
+            abi.encodeWithSelector(IERC20.transfer.selector, to, amount)
+        );
+        require(ok && (data.length == 0 || abi.decode(data, (bool))), errMsg);
+    }
+
+    function _safeTransferFrom(
+        address from,
+        address to,
+        uint256 amount,
+        string memory errMsg
+    ) internal {
+        (bool ok, bytes memory data) = address(token).call(
+            abi.encodeWithSelector(IERC20.transferFrom.selector, from, to, amount)
+        );
+        require(ok && (data.length == 0 || abi.decode(data, (bool))), errMsg);
     }
 
     // ---------- Views ----------

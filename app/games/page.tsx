@@ -749,7 +749,7 @@ function OnchainGame() {
     chainId: CHAIN_ID,
     query: { enabled: !!wallet, refetchInterval: 10_000 },
   });
-  const { data: minBetWei } = useReadContract({
+  const { data: minBetWei, refetch: refetchMinBet } = useReadContract({
     address: contract,
     abi: LMS_ABI,
     functionName: "currentMinBet",
@@ -930,9 +930,14 @@ function OnchainGame() {
 
   const doBet = async () => {
     if (!requireWallet() || !round || !kangAddr) return;
-    const amountWei = minBetWei ?? parseUnits(String(betAmt), dec);
     try {
       setBusy("bet");
+      // The min bet doubles every 10 bets; minBetWei is on a 30s poll, so at a
+      // tier boundary it can be one tier stale (too low) and the bet reverts.
+      // Re-read it fresh so the approval and the bet both use the live floor.
+      const { data: freshMinBet } = await refetchMinBet();
+      const amountWei =
+        freshMinBet ?? minBetWei ?? parseUnits(String(betAmt), dec);
       const allowance = await publicClient!.readContract({
         address: kangAddr,
         abi: erc20Abi,

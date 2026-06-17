@@ -74,7 +74,7 @@ contract TestBridge {
     function bridgeOut(uint256 amount, uint64 dstChainId) external nonReentrant {
         require(amount > 0, "amount=0");
         require(dstChainId != block.chainid, "dst=src");
-        require(token.transferFrom(msg.sender, address(this), amount), "transfer failed");
+        _safeTransferFrom(msg.sender, address(this), amount, "transfer failed");
         emit BridgeOut(msg.sender, amount, dstChainId, outNonce++);
     }
 
@@ -85,7 +85,7 @@ contract TestBridge {
         require(amount > 0, "amount=0");
         require(!processed[transferId], "processed");
         processed[transferId] = true;
-        require(token.transfer(to, amount), "transfer failed");
+        _safeTransfer(to, amount, "transfer failed");
         emit BridgeIn(transferId, to, amount);
     }
 
@@ -102,6 +102,34 @@ contract TestBridge {
 
     /** Owner can withdraw reserves (top-up mistakes, rebalancing, sunset). */
     function withdraw(address to, uint256 amount) external onlyOwner {
-        require(token.transfer(to, amount), "transfer failed");
+        _safeTransfer(to, amount, "transfer failed");
+    }
+
+    // ---------- SafeERC20 helpers ----------
+
+    /**
+     * SafeERC20-style helpers (source fix for future redeploys; deployed
+     * bytecode is immutable). Tolerate non-standard ERC-20s — e.g. USDT-style
+     * tokens that return no bool from transfer/transferFrom. Accept either no
+     * return data or a returned `true`; revert otherwise. Inlined (no import)
+     * to keep this contract self-contained for the repo's solc script.
+     */
+    function _safeTransfer(address to, uint256 amount, string memory errMsg) internal {
+        (bool ok, bytes memory data) = address(token).call(
+            abi.encodeWithSelector(IERC20.transfer.selector, to, amount)
+        );
+        require(ok && (data.length == 0 || abi.decode(data, (bool))), errMsg);
+    }
+
+    function _safeTransferFrom(
+        address from,
+        address to,
+        uint256 amount,
+        string memory errMsg
+    ) internal {
+        (bool ok, bytes memory data) = address(token).call(
+            abi.encodeWithSelector(IERC20.transferFrom.selector, from, to, amount)
+        );
+        require(ok && (data.length == 0 || abi.decode(data, (bool))), errMsg);
     }
 }
