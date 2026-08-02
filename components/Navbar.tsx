@@ -9,13 +9,10 @@ import { ThemeToggle } from "./ThemeToggle";
 import { GlyphX } from "./IOILogo";
 
 const LINKS = [
-  { href: "/", label: "Swap" },
-  { href: "/pools", label: "Pools" },
-  { href: "/bridge", label: "Bridge" },
-  { href: "/staking", label: "Staking", soon: true },
-  { href: "/airdrop", label: "Airdrop" },
   { href: "/games", label: "Games" },
-] as { href: string; label: string; soon?: boolean }[];
+  { href: "/airdrop", label: "Airdrop" },
+  { href: "/", label: "Swap" },
+] as { href: string; label: string }[];
 
 export function Navbar() {
   const pathname = usePathname();
@@ -34,33 +31,19 @@ export function Navbar() {
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">
-            {LINKS.map((l) =>
-              l.soon ? (
-                <span
-                  key={l.href}
-                  aria-disabled="true"
-                  title="Coming soon"
-                  className="flex cursor-not-allowed items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium text-[var(--down)]"
-                >
-                  {l.label}
-                  <span className="rounded-full bg-[var(--down-soft)] px-1.5 py-px text-[9px] font-bold uppercase tracking-wider">
-                    soon
-                  </span>
-                </span>
-              ) : (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                    isActive(l.href)
-                      ? "bg-[var(--surface-2)] text-[var(--foreground)]"
-                      : "text-[var(--muted)] hover:text-[var(--foreground)]"
-                  }`}
-                >
-                  {l.label}
-                </Link>
-              ),
-            )}
+            {LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                  isActive(l.href)
+                    ? "bg-[var(--surface-2)] text-[var(--foreground)]"
+                    : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                {l.label}
+              </Link>
+            ))}
           </nav>
         </div>
 
@@ -109,34 +92,20 @@ export function Navbar() {
             ...LINKS,
             { href: "/portfolio", label: "Portfolio" },
             { href: "/admin", label: "Admin" },
-          ].map((l) =>
-            l.soon ? (
-              <span
-                key={l.href}
-                aria-disabled="true"
-                title="Coming soon"
-                className="flex cursor-not-allowed items-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--down)]"
-              >
-                {l.label}
-                <span className="rounded-full bg-[var(--down-soft)] px-1.5 py-px text-[9px] font-bold uppercase tracking-wider">
-                  soon
-                </span>
-              </span>
-            ) : (
-              <Link
-                key={l.href}
-                href={l.href}
-                onClick={() => setMobileOpen(false)}
-                className={`block rounded-xl px-3 py-2.5 text-sm font-medium ${
-                  isActive(l.href)
-                    ? "bg-[var(--surface-2)]"
-                    : "text-[var(--muted)]"
-                }`}
-              >
-                {l.label}
-              </Link>
-            ),
-          )}
+          ].map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              onClick={() => setMobileOpen(false)}
+              className={`block rounded-xl px-3 py-2.5 text-sm font-medium ${
+                isActive(l.href)
+                  ? "bg-[var(--surface-2)]"
+                  : "text-[var(--muted)]"
+              }`}
+            >
+              {l.label}
+            </Link>
+          ))}
         </nav>
       )}
     </header>

@@ -1,7 +1,7 @@
 import type { Pool, AirdropCampaign } from "./types";
 import { TOKEN_MAP } from "./tokens";
 
-// Token registry moved to lib/tokens.ts (BSC). Re-exported here so existing
+// Token registry moved to lib/tokens.ts (Xphere). Re-exported here so existing
 // imports keep working during the production transition.
 export { TOKENS, TOKEN_MAP, getToken } from "./tokens";
 
@@ -16,9 +16,9 @@ export { TOKENS, TOKEN_MAP, getToken } from "./tokens";
 //  the price; XP/USDX anchors every token's USD price).
 // ------------------------------------------------------------------
 
+// Pools that actually exist on the PumpkinSwap factory today.
 export const POOLS: Pool[] = [
-  { id: "xp-usdx", token0: "XP", token1: "USDX", feeTier: 0.3, tvlUsd: 0, volume24h: 0, apr: 0 },
-  { id: "kdg-xp", token0: "KDG", token1: "XP", feeTier: 0.3, tvlUsd: 0, volume24h: 0, apr: 0 },
+  { id: "kdg-usdx", token0: "KDG", token1: "USDX", feeTier: 0.3, tvlUsd: 0, volume24h: 0, apr: 0 },
 ];
 
 export const POOL_MAP: Record<string, Pool> = Object.fromEntries(

@@ -32,7 +32,7 @@ export interface TokenRegistry {
   all: Token[];
   /** Tokens enabled for swapping (not disabled by admin). */
   enabled: Token[];
-  /** Enabled tokens that are actually swappable (have an address / are BNB). */
+  /** Enabled tokens that are actually swappable (have an address / are XP). */
   tradable: Token[];
   /** symbol → Token, over `enabled`. */
   map: Record<string, Token>;
@@ -41,7 +41,7 @@ export interface TokenRegistry {
 }
 
 /**
- * The effective token registry: the static BSC registry merged with any
+ * The effective token registry: the static Xphere registry merged with any
  * admin-added custom tokens, minus admin-disabled symbols. Drives the swap
  * token picker, quotes, and balances so admin changes take effect everywhere.
  */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Info } from "lucide-react";
 import { useAccount } from "wagmi";
 import { getToken } from "@/lib/tokens";
 import { CHAIN_LABEL } from "@/lib/chain";
@@ -13,7 +13,7 @@ type Eip1193 = { request(args: { method: string; params?: unknown }): Promise<un
 /**
  * "Add to MetaMask" — prompts the wallet to watch this ERC-20 via
  * `wallet_watchAsset` so it shows up in the user's token list.
- * Native coins (BNB, address === null) can't be watched, so we render nothing.
+ * Native coins (XP, address === null) can't be watched, so we render nothing.
  */
 export function AddToWalletButton({
   symbol,
@@ -70,15 +70,31 @@ export function AddToWalletButton({
   };
 
   return (
-    <button
-      type="button"
-      onClick={add}
-      disabled={busy}
-      title={`Add ${token.symbol} to your wallet`}
-      className={`inline-flex items-center gap-1 rounded-full border border-[var(--border)] px-2.5 py-1 text-xs font-medium text-[var(--muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--foreground)] disabled:opacity-60 ${className}`}
-    >
-      <Plus className="h-3 w-3" />
-      Add to wallet
-    </button>
+    <span className={`inline-flex items-center gap-1.5 ${className}`}>
+      <button
+        type="button"
+        onClick={add}
+        disabled={busy}
+        className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] px-2.5 py-1 text-xs font-medium text-[var(--muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--foreground)] disabled:opacity-60"
+      >
+        <Plus className="h-3 w-3" />
+        Add {token.symbol} to wallet
+      </button>
+      {/* ⓘ — hover/focus tooltip explaining what the button does */}
+      <span className="group relative inline-flex" tabIndex={0}>
+        <Info
+          aria-label={`What does "Add ${token.symbol} to wallet" do?`}
+          className="h-3.5 w-3.5 cursor-help text-[var(--muted-2)] transition-colors group-hover:text-[var(--foreground)] group-focus-within:text-[var(--foreground)]"
+        />
+        <span
+          role="tooltip"
+          className="pointer-events-none invisible absolute bottom-full right-0 z-30 mb-2 w-60 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 text-left text-[11px] font-normal leading-relaxed text-[var(--muted)] opacity-0 shadow-xl transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+        >
+          Registers {token.symbol} in your wallet&apos;s token list (MetaMask
+          etc.) so your balance shows up. Free — nothing is sent on-chain;
+          your wallet only asks you to confirm adding the token.
+        </span>
+      </span>
+    </span>
   );
 }

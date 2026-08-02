@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useAppKit } from "@reown/appkit/react";
 import {
   ArrowLeftRight,
@@ -32,7 +31,6 @@ const TX_ICON: Record<TxType, React.ReactNode> = {
   "remove-liquidity": <MinusCircle className="h-4 w-4" />,
   claim: <Gift className="h-4 w-4" />,
   bet: <Coins className="h-4 w-4" />,
-  bridge: <ArrowLeftRight className="h-4 w-4" />,
 };
 
 export default function PortfolioPage() {
@@ -176,12 +174,14 @@ export default function PortfolioPage() {
                 <p className="mt-2 text-sm text-[var(--muted)]">
                   No active positions
                 </p>
-                <Link
-                  href="/pools"
+                <a
+                  href="https://pumpkinswap.app/pool"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="mt-3 text-sm font-medium text-[var(--accent)]"
                 >
-                  Add liquidity →
-                </Link>
+                  Add liquidity on PumpkinSwap →
+                </a>
               </div>
             ) : (
               <div className="space-y-2">

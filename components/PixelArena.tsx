@@ -30,6 +30,16 @@ const P = {
   smoke: "#5A6072",
 };
 
+// Stage names shown in the arena's tier badge (index === stage).
+export const ARENA_STAGE_NAMES = [
+  "DAWN",
+  "DUSK",
+  "NIGHT",
+  "DEEP NIGHT",
+  "WITCHING",
+  "INFERNO",
+];
+
 // Per-tier sky gradients (top → horizon), from the LMS stage table.
 const SKY_STAGES = [
   ["#1A2540", "#3E4B73", "#6B5D7F", "#C98E7E"], // DAWN
@@ -105,7 +115,8 @@ export function PixelArena({
       const s = stateRef.current;
       const stage = Math.max(0, Math.min(5, s.tier));
       const sky = SKY_STAGES[stage];
-      const groundY = Math.round(H * 0.8);
+      // Thin ground strip (6% of height) — sky and tower dominate the frame.
+      const groundY = Math.round(H * 0.94);
       const u = Math.max(2, Math.round(Math.min(W, H) * 0.085 * S)); // base block unit
 
       // Sky.
@@ -137,30 +148,36 @@ export function PixelArena({
       }
 
       // House (right): wood walls + ruby roof, window glows at night.
-      const hw = u * 5;
-      const hh = u * 4;
+      // Drawn 40% smaller than the original (dims ×0.6) so the tower leads.
+      const hw = u * 3;
+      const hh = u * 2.4;
       const hx = W - hw - u * 2;
       const hy = groundY - hh;
       px(ctx, hx, hy, hw, hh, P.wood);
-      px(ctx, hx, hy, hw, Math.max(1, u * 0.5), P.woodDark);
-      const roofH = Math.round(u * 1.6);
+      px(ctx, hx, hy, hw, Math.max(1, u * 0.3), P.woodDark);
+      const roofH = Math.max(2, Math.round(u * 0.96));
       for (let r = 0; r < roofH; r++) {
-        const inset = (r / roofH) * (hw / 2 + u);
-        px(ctx, hx - u + inset, hy - r, hw + 2 * u - 2 * inset, 1, P.ruby);
+        const inset = (r / roofH) * (hw / 2 + u * 0.6);
+        px(ctx, hx - u * 0.6 + inset, hy - r, hw + 2 * u * 0.6 - 2 * inset, 1, P.ruby);
       }
-      px(ctx, hx + hw / 2 - u * 0.75, hy + hh - u * 2, u * 1.5, u * 2, P.woodDark); // door
+      px(ctx, hx + hw / 2 - u * 0.45, hy + hh - u * 1.2, u * 0.9, u * 1.2, P.woodDark); // door
       const winLit = stage >= 1 ? P.flameHot : P.inkSoft;
-      px(ctx, hx + u * 0.8, hy + u * 1.2, u, u, winLit);
-      px(ctx, hx + hw - u * 1.8, hy + u * 1.2, u, u, winLit);
+      px(ctx, hx + u * 0.5, hy + u * 0.7, u * 0.6, u * 0.6, winLit);
+      px(ctx, hx + hw - u * 1.1, hy + u * 0.7, u * 0.6, u * 0.6, winLit);
 
-      // Babel tower (center) — stacked stone, grows with bet count.
-      const levels = Math.min(12, Math.floor(s.betCount / 2));
+      // Babel tower (center) — stacked stone, grows 1 level per 2 bets.
+      // Capped by what fits the canvas, so a taller container (the card
+      // stretches with bet count) lets the tower keep climbing. The 5.5u
+      // headroom keeps the capstone + flame (1.6u) visible even at max fill;
+      // the gentle 0.18u taper keeps upper levels from thinning out.
+      const lh = Math.max(2, u * 1.1);
+      const maxFit = Math.max(4, Math.floor((groundY - u * 5.5) / lh));
+      const levels = Math.min(maxFit, Math.floor(s.betCount / 2));
       const cx = Math.round(W * 0.4);
       px(ctx, cx - u * 3, groundY - u, u * 6, u, P.stoneDark); // base
       px(ctx, cx - u * 2.3, groundY - u * 1.7, u * 4.6, u * 0.8, P.stone);
-      const lh = Math.max(2, u * 1.1);
       for (let l = 0; l < levels; l++) {
-        const lw = Math.max(u * 1.3, u * 4 - l * u * 0.25);
+        const lw = Math.max(u * 1.3, u * 4 - l * u * 0.18);
         const ly = groundY - u * 1.7 - (l + 1) * lh;
         px(ctx, cx - lw / 2, ly, lw, lh, l % 2 ? P.stone : P.stoneDark);
         px(ctx, cx - lw / 2, ly, lw, 1, P.goldDark);

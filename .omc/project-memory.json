@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1780363328365,
-  "projectRoot": "/Users/henry/Desktop/04_Project_AI/DEX",
+  "lastScanned": 1785667186937,
+  "projectRoot": "/mnt/c/Users/kslee/Desktop/무제 폴더/DEX",
   "techStack": {
     "languages": [
       {
@@ -50,12 +50,21 @@
       "dev": "next dev",
       "build": "next build",
       "start": "next start",
-      "lint": "eslint"
+      "lint": "eslint",
+      "deploy:token": "node scripts/deploy-token.mjs",
+      "compile:airdrop": "node scripts/compile-contract.mjs MerkleAirdrop",
+      "deploy:airdrop": "node scripts/deploy-airdrop.mjs",
+      "test:merkle": "node scripts/test-merkle.mjs",
+      "compile:lms": "node scripts/compile-contract.mjs KangLMS",
+      "deploy:lms": "node scripts/deploy-lms.mjs",
+      "compile:bridge": "node scripts/compile-contract.mjs TestBridge",
+      "fund:opbnb": "node scripts/fund-opbnb.mjs",
+      "deploy:bridge": "node scripts/deploy-bridge.mjs"
     }
   },
   "conventions": {
-    "namingStyle": "camelCase",
-    "importStyle": "ES modules",
+    "namingStyle": null,
+    "importStyle": null,
     "testPattern": null,
     "fileOrganization": null
   },
@@ -66,63 +75,256 @@
       "app",
       "components",
       "lib",
-      "public"
+      "public",
+      "scripts"
     ],
-    "gitBranches": null
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
   },
   "customNotes": [],
   "directoryMap": {
     "app": {
       "path": "app",
       "purpose": "Application code",
-      "fileCount": 4,
-      "lastAccessed": 1780363328344,
+      "fileCount": 20,
+      "lastAccessed": 1785667186852,
       "keyFiles": [
         "favicon.ico",
         "globals.css",
         "layout.tsx",
-        "page.tsx"
+        "page.tsx",
+        "providers.tsx"
       ]
     },
     "components": {
       "path": "components",
       "purpose": "UI components",
-      "fileCount": 13,
-      "lastAccessed": 1780363328344,
+      "fileCount": 36,
+      "lastAccessed": 1785667186860,
       "keyFiles": [
         "AddLiquidityModal.tsx",
+        "AddToWalletButton.tsx",
+        "BridgePanel.tsx",
         "IOILogo.tsx",
-        "MarketSection.tsx",
-        "Navbar.tsx",
-        "PerspectiveGrid.tsx"
+        "MarketSection.tsx"
+      ]
+    },
+    "contracts": {
+      "path": "contracts",
+      "purpose": null,
+      "fileCount": 16,
+      "lastAccessed": 1785667186867,
+      "keyFiles": [
+        "KangLMS.artifact.json",
+        "KangLMS.sol",
+        "MerkleAirdrop.artifact.json",
+        "MerkleAirdrop.sol",
+        "TestBridge.artifact.json"
+      ]
+    },
+    "dex-contracts": {
+      "path": "dex-contracts",
+      "purpose": null,
+      "fileCount": 26,
+      "lastAccessed": 1785667186874,
+      "keyFiles": [
+        "README.md",
+        "hardhat.config.ts",
+        "liquidity.config.json",
+        "package-lock.json",
+        "package.json"
       ]
     },
     "lib": {
       "path": "lib",
       "purpose": "Library code",
-      "fileCount": 4,
-      "lastAccessed": 1780363328348,
+      "fileCount": 46,
+      "lastAccessed": 1785667186881,
       "keyFiles": [
-        "format.ts",
-        "mock-data.ts",
-        "store.ts",
-        "types.ts"
+        "admin-auth.ts",
+        "airdrop.ts",
+        "analytics-store.ts",
+        "balances.ts",
+        "bridge.ts"
       ]
     },
     "public": {
       "path": "public",
       "purpose": "Public files",
-      "fileCount": 5,
-      "lastAccessed": 1780363328349,
+      "fileCount": 13,
+      "lastAccessed": 1785667186886,
       "keyFiles": [
         "file.svg",
         "globe.svg",
         "next.svg",
-        "vercel.svg",
-        "window.svg"
+        "og.png",
+        "vercel.svg"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 16,
+      "lastAccessed": 1785667186892,
+      "keyFiles": [
+        "airdrop-transfer-owner.mjs",
+        "compile-contract.mjs",
+        "deploy-airdrop.mjs",
+        "deploy-bridge.mjs",
+        "deploy-lms.mjs"
+      ]
+    },
+    "stubs": {
+      "path": "stubs",
+      "purpose": "Stub implementations",
+      "fileCount": 2,
+      "lastAccessed": 1785667186897,
+      "keyFiles": [
+        "empty.ts"
       ]
     }
   },
-  "hotPaths": [],
+  "hotPaths": [
+    {
+      "path": "app/games/page.tsx",
+      "accessCount": 17,
+      "lastAccessed": 1785687403464,
+      "type": "file"
+    },
+    {
+      "path": "components/PixelArena.tsx",
+      "accessCount": 7,
+      "lastAccessed": 1785687384883,
+      "type": "file"
+    },
+    {
+      "path": "components/Navbar.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1785683595092,
+      "type": "file"
+    },
+    {
+      "path": "lib/chain.ts",
+      "accessCount": 3,
+      "lastAccessed": 1785668914334,
+      "type": "file"
+    },
+    {
+      "path": "app/portfolio/page.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1785669454370,
+      "type": "file"
+    },
+    {
+      "path": "components/AddToWalletButton.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1785687098153,
+      "type": "file"
+    },
+    {
+      "path": "lib/reown.ts",
+      "accessCount": 2,
+      "lastAccessed": 1785668898965,
+      "type": "file"
+    },
+    {
+      "path": "lib/liquidity.ts",
+      "accessCount": 2,
+      "lastAccessed": 1785668949390,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 2,
+      "lastAccessed": 1785669068160,
+      "type": "file"
+    },
+    {
+      "path": ".env.example",
+      "accessCount": 2,
+      "lastAccessed": 1785669085762,
+      "type": "file"
+    },
+    {
+      "path": ".env.deploy.example",
+      "accessCount": 2,
+      "lastAccessed": 1785669099373,
+      "type": "file"
+    },
+    {
+      "path": "lib/mock-data.ts",
+      "accessCount": 2,
+      "lastAccessed": 1785669163868,
+      "type": "file"
+    },
+    {
+      "path": ".env.local",
+      "accessCount": 2,
+      "lastAccessed": 1785669569939,
+      "type": "file"
+    },
+    {
+      "path": "lib/tokens.ts",
+      "accessCount": 1,
+      "lastAccessed": 1785668538101,
+      "type": "file"
+    },
+    {
+      "path": "lib/lms.ts",
+      "accessCount": 1,
+      "lastAccessed": 1785668573897,
+      "type": "file"
+    },
+    {
+      "path": "contracts/KangLMS.sol",
+      "accessCount": 1,
+      "lastAccessed": 1785668574599,
+      "type": "file"
+    },
+    {
+      "path": "app/page.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1785668613534,
+      "type": "file"
+    },
+    {
+      "path": "app/api/prices/route.ts",
+      "accessCount": 1,
+      "lastAccessed": 1785668840841,
+      "type": "file"
+    },
+    {
+      "path": "lib/types.ts",
+      "accessCount": 1,
+      "lastAccessed": 1785668928945,
+      "type": "file"
+    },
+    {
+      "path": "lib/market.ts",
+      "accessCount": 1,
+      "lastAccessed": 1785668997113,
+      "type": "file"
+    },
+    {
+      "path": "app/layout.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1785669070343,
+      "type": "file"
+    },
+    {
+      "path": "scripts/deploy-lms.mjs",
+      "accessCount": 1,
+      "lastAccessed": 1785669126289,
+      "type": "file"
+    },
+    {
+      "path": "README.md",
+      "accessCount": 1,
+      "lastAccessed": 1785669146407,
+      "type": "file"
+    }
+  ],
   "userDirectives": []
 }

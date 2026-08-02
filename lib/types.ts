@@ -1,9 +1,9 @@
-// Domain types for the IOI DEX (BSC)
+// Domain types for the IOI DEX (Xphere)
 
 export interface Token {
   symbol: string;
   name: string;
-  /** BSC contract address; null for the native coin (BNB) or undeployed tokens */
+  /** Xphere contract address; null for the native coin (XP) or undeployed tokens */
   address: string | null;
   decimals: number;
   /** CoinGecko id for live market data; null = unlisted (mock market data) */
@@ -41,7 +41,7 @@ export interface Pool {
 export interface AdminToken {
   symbol: string;
   name: string;
-  address: string; // BSC contract — required so it is swappable
+  address: string; // Xphere contract — required so it is swappable
   decimals: number;
   color: string; // logo background color
 }
@@ -75,11 +75,12 @@ export interface AirdropCampaign {
 
 export type TxType =
   | "swap"
+  // add/remove-liquidity are no longer produced (LP lives on PumpkinSwap)
+  // but stay in the union so persisted history keeps rendering.
   | "add-liquidity"
   | "remove-liquidity"
   | "claim"
-  | "bet"
-  | "bridge";
+  | "bet";
 
 export interface Transaction {
   id: string;

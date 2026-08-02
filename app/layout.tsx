@@ -25,7 +25,7 @@ const plexMono = IBM_Plex_Mono({
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const TITLE = "IOI DEX — Trade. Earn. Grow Together.";
 const DESCRIPTION =
-  "IOI is a decentralized exchange: swap tokens, provide liquidity, track markets, stake, and claim airdrops. Built onchain, designed for scale.";
+  "IOI is a decentralized exchange on Xphere: swap tokens, track markets, play games, and claim airdrops. Built onchain, designed for scale.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

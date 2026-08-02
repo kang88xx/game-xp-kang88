@@ -121,7 +121,7 @@ const EMPTY_QUOTE: SwapQuote = {
 };
 
 /**
- * Live PancakeSwap V2 quote — re-fetched every 15s and whenever the input
+ * Live PumpkinSwap V2 quote — re-fetched every 15s and whenever the input
  * changes. `amountIn` must be the raw input string (decimal-safe).
  */
 export function useSwapQuote(

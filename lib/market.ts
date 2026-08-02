@@ -43,10 +43,20 @@ export function useMarket(): Record<string, MarketData> {
   return data ?? SEED;
 }
 
+// Safe fallback for symbols missing from both live data and seeds
+// (e.g. an admin-added token before its first price fetch).
+const EMPTY_MARKET: MarketData = {
+  priceUsd: 0,
+  change24h: 0,
+  volume24h: 0,
+  marketCap: 0,
+  spark7d: [],
+};
+
 /** Market data for a single token (seed values until live data arrives). */
 export function useTokenMarket(symbol: string): MarketData {
   const market = useMarket();
-  return market[symbol] ?? SEED[symbol] ?? SEED.BNB;
+  return market[symbol] ?? SEED[symbol] ?? EMPTY_MARKET;
 }
 
 /**

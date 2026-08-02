@@ -599,7 +599,7 @@ function PoolsManager() {
           Create pool
         </h2>
         <p className="mt-1 text-xs text-[var(--muted)]">
-          List a pool that exists on-chain. Seed real liquidity on PancakeSwap
+          List a pool that exists on-chain. Seed real liquidity on PumpkinSwap
           first, then record it here. TVL & APR are computed live from on-chain
           reserves and 24h volume — no need to enter them.
         </p>
@@ -633,7 +633,7 @@ function PoolsManager() {
               </select>
             </Field>
           </div>
-          <Field label="Fee % (PancakeSwap V2 = 0.25)">
+          <Field label="Fee % (PumpkinSwap V2 = 0.3)">
             <input
               type="number"
               value={feeTier}
@@ -825,7 +825,7 @@ function SwapTokensManager() {
     if (all.some((t) => t.symbol === sym))
       return toast.error(`${sym} already exists`);
     if (!/^0x[a-fA-F0-9]{40}$/.test(addr))
-      return toast.error("Invalid BSC contract address");
+      return toast.error("Invalid Xphere contract address");
     if (!Number.isInteger(dec) || dec < 0 || dec > 36)
       return toast.error("Decimals must be 0–36");
 
@@ -960,7 +960,7 @@ function SwapTokensManager() {
                   >
                     <Power className="h-4 w-4" />
                   </button>
-                  {/* BNB stays: it's the gas token and the routing hop. */}
+                  {/* XP stays: it is the gas token and the routing hop. */}
                   {t.symbol !== "XP" && (
                     <button
                       onClick={() => setDeleteTarget({ symbol: t.symbol, custom })}

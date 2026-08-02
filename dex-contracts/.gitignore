@@ -1,9 +1,0 @@
-node_modules
-.env
-cache
-artifacts
-typechain-types
-
-# Deployment outputs contain live addresses — keep the folder, ignore the JSON.
-deployments/*.json
-!deployments/.gitkeep

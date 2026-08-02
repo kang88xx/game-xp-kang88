@@ -1,22 +1,21 @@
-# IOI — DEX Platform Prototype
+# IOI — DEX Frontend on Xphere
 
-A clean, minimal **decentralized exchange (DEX)** prototype built with Next.js.
-Everything runs on **mock data** — no real wallet, no live blockchain — so you can
-explore the full product flow instantly.
+A clean, minimal **DEX frontend** built with Next.js, running on **Xphere
+Mainnet** (chainId 20250217). Swaps execute against **PumpkinSwap**'s
+Uniswap-V2-style contracts on Xphere — liquidity is provisioned on
+[pumpkinswap.app](https://pumpkinswap.app), not here.
 
-> Chain style: **Ethereum / EVM** · Design system: **Pharos v2** — Inter Tight + IBM Plex Mono, Pharos blue (`#1A1AEE`), light/dark.
+> Design system: **Pharos v2** — Inter Tight + IBM Plex Mono, Pharos blue (`#1A1AEE`), light/dark.
 
 ## Features
 
 | Page | What it does |
 | --- | --- |
-| **Swap** (`/`) | Token-to-token swap with live quote, slippage, fee & min-received. |
-| **Pools** (`/pools`) | Browse liquidity pools (TVL, volume, APR), add/remove liquidity, see your positions. |
-| **Staking** (`/staking`) | Tab present; UI placeholder (feature not yet implemented). |
-| **Market** (`/market`) | Price charts (1D/1W/1M/1Y), sortable token table with sparklines. |
-| **Portfolio** (`/portfolio`) | Total balance, token holdings, LP positions, and activity history. |
+| **Swap** (`/`) | Token-to-token swap with live quote, slippage, fee & min-received — routed to PumpkinSwap's router. |
+| **Games** (`/games`) | Last Man Standing — on-chain KDG betting game (KangLMS contract). |
+| **Portfolio** (`/portfolio`) | Total balance, token holdings, and activity history. |
 | **Airdrop** (`/airdrop`) | Claim token rewards from active campaigns (public / whitelist / LP-gated). |
-| **Admin** (`/admin`) | Create & manage airdrop campaigns and whitelists. |
+| **Admin** (`/admin`) | Create & manage tokens, pools registry, airdrop campaigns and whitelists. |
 
 ### Airdrop / Admin model
 

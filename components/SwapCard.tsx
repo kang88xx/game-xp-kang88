@@ -32,7 +32,7 @@ import { TokenSelectModal } from "./TokenSelectModal";
 import { toast } from "./toast";
 import { ArrowChip } from "./ui";
 
-const BSC_CHAIN_ID = CHAIN_ID;
+const XPHERE_CHAIN_ID = CHAIN_ID;
 // Keep a little XP aside for gas when pressing MAX
 const GAS_RESERVE = 0.005;
 
@@ -105,7 +105,7 @@ export function SwapCard({
 
   const insufficient = hydrated && connected && amountNum > fromBal;
   const wrongChain =
-    connected && chainId !== undefined && chainId !== BSC_CHAIN_ID;
+    connected && chainId !== undefined && chainId !== XPHERE_CHAIN_ID;
   const untradableSide = !tokenTradable(tokenMap[from])
     ? from
     : !tokenTradable(tokenMap[to])
@@ -164,7 +164,7 @@ export function SwapCard({
 
   const handleSwitchChain = async () => {
     try {
-      await switchChainAsync({ chainId: BSC_CHAIN_ID });
+      await switchChainAsync({ chainId: XPHERE_CHAIN_ID });
     } catch {
       toast.error("Network switch rejected");
     }
@@ -199,7 +199,7 @@ export function SwapCard({
           abi: erc20Abi,
           functionName: "approve",
           args: [PANCAKE_ROUTER, maxUint256],
-          chainId: BSC_CHAIN_ID,
+          chainId: XPHERE_CHAIN_ID,
         });
         const aReceipt = await publicClient.waitForTransactionReceipt({
           hash: approveHash,
@@ -220,7 +220,7 @@ export function SwapCard({
           functionName: "swapExactETHForTokens",
           args: [minOutWei, quote.path, address, deadline],
           value: quote.amountInWei,
-          chainId: BSC_CHAIN_ID,
+          chainId: XPHERE_CHAIN_ID,
         });
       } else if (to === NATIVE_SYMBOL) {
         hash = await writeContractAsync({
@@ -228,7 +228,7 @@ export function SwapCard({
           abi: PANCAKE_ROUTER_ABI,
           functionName: "swapExactTokensForETH",
           args: [quote.amountInWei, minOutWei, quote.path, address, deadline],
-          chainId: BSC_CHAIN_ID,
+          chainId: XPHERE_CHAIN_ID,
         });
       } else {
         hash = await writeContractAsync({
@@ -236,7 +236,7 @@ export function SwapCard({
           abi: PANCAKE_ROUTER_ABI,
           functionName: "swapExactTokensForTokens",
           args: [quote.amountInWei, minOutWei, quote.path, address, deadline],
-          chainId: BSC_CHAIN_ID,
+          chainId: XPHERE_CHAIN_ID,
         });
       }
       await settleTx(hash, () => {

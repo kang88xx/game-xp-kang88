@@ -4,9 +4,11 @@
 //  The DEX runs on XPHERE MAINNET (chainId 20250217) — a custom EVM
 //  chain with no viem/AppKit preset. The wallet network object lives in
 //  lib/reown.ts (AppKit defineChain); server code builds viem clients
-//  from XPHERE_VIEM below. Native coin is XP; WXP is our own WETH9
-//  wrapper deployed by dex-contracts alongside the Uniswap-V2-fork
-//  factory/router the swap + pools UIs talk to.
+//  from XPHERE_VIEM below. Native coin is XP.
+//
+//  Swaps execute against PUMPKINSWAP's Uniswap-V2-style contracts on
+//  Xphere (pumpkinswap.app) — this site is a frontend to their pools.
+//  LP is provisioned there, not here.
 // ------------------------------------------------------------------
 import type { Chain } from "viem";
 
@@ -30,20 +32,20 @@ export const XPHERE_VIEM: Chain = {
   blockExplorers: { default: { name: "Xplorium/TAMSA", url: EXPLORER_URL } },
 };
 
-// Our Uniswap-V2-fork DEX (deployed by dex-contracts — `npm run deploy`
-// there prints all three). Swaps/pools stay disabled while these are
-// empty. Export names keep the Pancake-era spelling so the rest of the
-// app doesn't churn: ROUTER/FACTORY semantics are identical (Router02 ABI,
-// getPair/getReserves), only the fee differs (0.30% here vs 0.25%).
+// PumpkinSwap's Uniswap-V2-style DEX on Xphere. Verified on-chain
+// (router.factory() and router.WETH() match). Export names keep the
+// Pancake-era spelling so the rest of the app doesn't churn:
+// ROUTER/FACTORY semantics are identical (Router02 ABI, getPair/
+// getReserves). Env vars still override for testing.
 export const PANCAKE_ROUTER = (process.env.NEXT_PUBLIC_DEX_ROUTER ??
-  "0x0000000000000000000000000000000000000000") as `0x${string}`;
+  "0xFCa5FC96a94bF6D98eE266de8E811Ed39B737e64") as `0x${string}`;
 
 export const PANCAKE_FACTORY = (process.env.NEXT_PUBLIC_DEX_FACTORY ??
-  "0x0000000000000000000000000000000000000000") as `0x${string}`;
+  "0xFca8cA57D8f3bA44428Ab6bd7CF2960496cA420E") as `0x${string}`;
 
-/** Wrapped native XP (WETH9) — the hop token in router paths. */
+/** Wrapped native XP (PumpkinSwap's WXP) — the hop token in router paths. */
 export const WNATIVE = (process.env.NEXT_PUBLIC_WXP ??
-  "0x0000000000000000000000000000000000000000") as `0x${string}`;
+  "0xB872ce6a30e63080488e5BAd468e870ABdc94FF5") as `0x${string}`;
 
 // MerkleAirdrop contract on Xphere — deploy with `npm run deploy:airdrop`,
 // then set the address here. Empty = on-chain claims disabled (admin shows

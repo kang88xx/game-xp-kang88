@@ -109,7 +109,9 @@ if (receipt.status !== "success" || !receipt.contractAddress) {
 
 console.log("\n✓ Deployed!");
 console.log("Contract   :", receipt.contractAddress);
+console.log("Block      :", receipt.blockNumber);
 console.log("Explorer   : https://xp.tamsa.io/address/" + receipt.contractAddress);
 console.log("\nNext step:");
 console.log(`  • Set NEXT_PUBLIC_LMS_CONTRACT=${receipt.contractAddress} in .env.local`);
+console.log(`  • Set NEXT_PUBLIC_LMS_DEPLOY_BLOCK=${receipt.blockNumber} (bounds /games event scans)`);
 console.log("    (and on Vercel for the deployed app), then restart the dev server.");

@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   turbopack: {
     resolveAlias: {
-      // Optional dep of @wagmi/core's Tempo connector (unused — BSC only).
+      // Optional dep of @wagmi/core's Tempo connector (unused).
       // Turbopack errors on the unresolved dynamic import without this stub.
       accounts: "./stubs/empty.ts",
     },

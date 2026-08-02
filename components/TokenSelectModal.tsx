@@ -19,7 +19,7 @@ export function TokenSelectModal({
   onClose: () => void;
   onSelect: (symbol: string) => void;
   exclude?: string;
-  /** Hide tokens without a swappable BSC contract (e.g. undeployed IOI) */
+  /** Hide tokens without a swappable Xphere contract */
   tradableOnly?: boolean;
 }) {
   const [query, setQuery] = useState("");

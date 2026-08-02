@@ -16,7 +16,8 @@ import { useBalance } from "@/lib/balances";
 import { formatNumber, shortAddress, timeAgoPure } from "@/lib/format";
 import { Eyebrow } from "@/components/ui";
 import { TokenLogo } from "@/components/TokenLogo";
-import { PixelArena } from "@/components/PixelArena";
+import { AddToWalletButton } from "@/components/AddToWalletButton";
+import { PixelArena, ARENA_STAGE_NAMES } from "@/components/PixelArena";
 import { toast } from "@/components/toast";
 import { TOKEN_MAP } from "@/lib/tokens";
 import { CHAIN_ID, CHAIN_LABEL, EXPLORER_URL } from "@/lib/chain";
@@ -463,7 +464,10 @@ function DemoGame() {
 
           {/* Place Your Bet card */}
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7 shadow-2xl">
-            <h2 className="text-base font-semibold mb-4">Place Your Bet</h2>
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <h2 className="text-base font-semibold">Place Your Bet</h2>
+              <AddToWalletButton symbol="KDG" />
+            </div>
 
             {/* Amount input */}
             <div className="rounded-2xl bg-[var(--surface)] p-4">
@@ -701,6 +705,15 @@ function DemoGame() {
 
 const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
 
+// Event queries scan from the contract's deploy block when configured —
+// Xphere mints ~1 block/second (40M+ blocks), so an "earliest" scan is a
+// full-chain getLogs on every poll. Set NEXT_PUBLIC_LMS_DEPLOY_BLOCK at
+// deploy time (deploy-lms.mjs prints it).
+const LMS_FROM_BLOCK: bigint | "earliest" = process.env
+  .NEXT_PUBLIC_LMS_DEPLOY_BLOCK
+  ? BigInt(process.env.NEXT_PUBLIC_LMS_DEPLOY_BLOCK)
+  : "earliest";
+
 /**
  * The real game — round state, bets, prizes all live on the KangLMS contract.
  * Anyone can settle an expired round (pull-payment prizes, no keeper needed).
@@ -769,6 +782,17 @@ function OnchainGame() {
     functionName: "paused",
     chainId: CHAIN_ID,
     query: { refetchInterval: 30_000 },
+  });
+  // The tier's full round timer — shown while the board waits for the first
+  // bet. Read on-chain (owner can retune baseDuration/minDuration) instead
+  // of assuming the 24h default.
+  const { data: tierDurationSec } = useReadContract({
+    address: contract,
+    abi: LMS_ABI,
+    functionName: "durationForTier",
+    args: [tierRaw ?? 0],
+    chainId: CHAIN_ID,
+    query: { refetchInterval: 60_000 },
   });
 
   // 1-second ticker drives the countdown.
@@ -864,7 +888,7 @@ function OnchainGame() {
         abi: LMS_ABI,
         eventName: "BetPlaced",
         args: { roundId: BigInt(round!.id) },
-        fromBlock: "earliest",
+        fromBlock: LMS_FROM_BLOCK,
         toBlock: "latest",
       });
       return logs
@@ -888,7 +912,7 @@ function OnchainGame() {
         address: contract,
         abi: LMS_ABI,
         eventName: "RoundSettled",
-        fromBlock: "earliest",
+        fromBlock: LMS_FROM_BLOCK,
         toBlock: "latest",
       });
       return logs
@@ -1066,16 +1090,16 @@ function OnchainGame() {
         </div>
       </div>
 
-      {/* Hero countdown card */}
-      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-4 sm:p-5 shadow-2xl mb-5">
-        <div className="flex h-44 items-stretch gap-4 sm:h-52">
-          {/* Left 70% — countdown */}
-          <div className="flex w-[70%] flex-col items-center justify-center text-center">
-            <span className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--muted)]">
+      <div className="grid gap-5 md:grid-cols-[1fr_340px]">
+        {/* Left column: countdown + stats + claims card + bet card + fee bar */}
+        <div className="flex flex-col gap-5">
+          {/* Countdown card */}
+          <div className="flex flex-col items-center rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 text-center shadow-2xl sm:p-8">
+            <span className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--muted)]">
               {heroWaiting ? "Round timer" : "Time Remaining"}
             </span>
             <div
-              className="font-mono text-3xl font-bold tabular-nums leading-none sm:text-5xl"
+              className="font-mono text-5xl font-bold tabular-nums leading-none sm:text-6xl"
               style={{
                 color:
                   !heroWaiting && remainingMs < 10_000
@@ -1084,7 +1108,11 @@ function OnchainGame() {
               }}
             >
               {heroWaiting
-                ? hhmmss(Math.max(30_000, Math.floor(86_400_000 / 2 ** tier)))
+                ? hhmmss(
+                    tierDurationSec != null
+                      ? Number(tierDurationSec) * 1000
+                      : Math.max(30_000, Math.floor(86_400_000 / 2 ** tier)),
+                  )
                 : hhmmss(remainingMs)}
             </div>
             {waiting && (
@@ -1098,7 +1126,7 @@ function OnchainGame() {
                 {unsettledWin > 0 && " — Your prize is ready to claim below"}
               </p>
             )}
-            <div className="mt-3 text-sm text-[var(--muted)]">
+            <div className="mt-4 text-sm text-[var(--muted)]">
               {displayLastBettor ? (
                 <>
                   Last bettor:{" "}
@@ -1119,50 +1147,34 @@ function OnchainGame() {
             </div>
           </div>
 
-          {/* Right 30% — Gold Babel pixel arena */}
-          <div className="w-[30%] overflow-hidden rounded-2xl border border-[var(--border)]">
-            <PixelArena
-              tier={tier}
-              betCount={displayBetCount ?? 0}
-              lastBettor={displayLastBettor}
-              active={!heroWaiting}
+          {/* Stats row */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatCard
+              icon={<TrendingUp className="h-4 w-4" />}
+              label="Prize Pool"
+              value={`${formatNumber(displayPrizePool, 2)} KDG`}
+              detail="80% of bets"
+              accent
+            />
+            <StatCard
+              icon={<Users className="h-4 w-4" />}
+              label="Players"
+              value={displayPlayers != null ? String(displayPlayers) : "—"}
+              detail="this round"
+            />
+            <StatCard
+              icon={<Clock className="h-4 w-4" />}
+              label="Total Bets"
+              value={displayBetCount != null ? String(displayBetCount) : "—"}
+              detail="this round"
+            />
+            <StatCard
+              icon={<Flame className="h-4 w-4" />}
+              label="Burned"
+              value={`${formatNumber(displayBurned, 2)} KDG`}
+              detail="5% of bets"
             />
           </div>
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <StatCard
-          icon={<TrendingUp className="h-4 w-4" />}
-          label="Prize Pool"
-          value={`${formatNumber(displayPrizePool, 2)} KDG`}
-          detail="80% of bets"
-          accent
-        />
-        <StatCard
-          icon={<Users className="h-4 w-4" />}
-          label="Players"
-          value={displayPlayers != null ? String(displayPlayers) : "—"}
-          detail="this round"
-        />
-        <StatCard
-          icon={<Clock className="h-4 w-4" />}
-          label="Total Bets"
-          value={displayBetCount != null ? String(displayBetCount) : "—"}
-          detail="this round"
-        />
-        <StatCard
-          icon={<Flame className="h-4 w-4" />}
-          label="Burned"
-          value={`${formatNumber(displayBurned, 2)} KDG`}
-          detail="5% of bets"
-        />
-      </div>
-
-      <div className="grid gap-5 md:grid-cols-[1fr_340px]">
-        {/* Left column: claims card + bet card + fee bar */}
-        <div className="flex flex-col gap-5">
           {/* Pull-payment prizes — one row per winning round, each claimable
               on its own (claimRound). A just-won pot settles when claimed. */}
           {hydrated && connected && prizeRows.length > 0 && (
@@ -1224,7 +1236,10 @@ function OnchainGame() {
 
           {/* Place Your Bet card */}
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7 shadow-2xl">
-            <h2 className="text-base font-semibold mb-4">Place Your Bet</h2>
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <h2 className="text-base font-semibold">Place Your Bet</h2>
+              <AddToWalletButton symbol="KDG" />
+            </div>
 
             <div className="rounded-2xl bg-[var(--surface)] p-4">
               <div className="flex items-center justify-between text-xs text-[var(--muted)]">
@@ -1370,8 +1385,30 @@ function OnchainGame() {
           </div>
         </div>
 
-        {/* Right column: recent bets + round history */}
+        {/* Right column: pixel arena + recent bets + round history */}
         <div className="flex flex-col gap-5">
+          {/* Gold Babel pixel arena — portrait card that stretches as bets
+              stack up (300px empty round → 780px cap at 60 bets). */}
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-2xl">
+            <div
+              className="relative overflow-hidden rounded-2xl border border-[var(--border)] transition-[height] duration-700 ease-out"
+              style={{
+                height: `${Math.min(780, 300 + (displayBetCount ?? 0) * 8)}px`,
+              }}
+            >
+              <PixelArena
+                tier={tier}
+                betCount={displayBetCount ?? 0}
+                lastBettor={displayLastBettor}
+                active={!heroWaiting}
+              />
+              {/* Stage · tier badge — top right, over the sky */}
+              <span className="absolute right-3 top-3 rounded-full border border-[#E8A33C]/50 bg-black/55 px-2.5 py-1 font-mono text-[10px] font-semibold tracking-[0.2em] text-[#FFE066]">
+                {ARENA_STAGE_NAMES[Math.min(5, tier)]} · TIER {tier}
+              </span>
+            </div>
+          </div>
+
           {/* Recent Bets */}
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5">
             <div className="flex items-center justify-between mb-3">

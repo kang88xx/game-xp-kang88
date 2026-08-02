@@ -46,7 +46,7 @@ const PAIR_ABI = [
 
 const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
 
-/** Sorted symbol key matching the server volume map, e.g. "BNB-USDT". */
+/** Sorted symbol key matching the server volume map, e.g. "KDG-USDX". */
 export function pairKey(a: string, b: string): string {
   return [a, b].sort().join("-");
 }
@@ -74,7 +74,7 @@ const UNAVAILABLE: PoolStats = {
  *  - APR  = Fee APR from this site's rolling 24h per-pool volume:
  *           (volume24h × feeTier% × 365) / TVL.
  *
- * Resolves each pool's pair via the PancakeSwap factory, so no pair address
+ * Resolves each pool's pair via the PumpkinSwap factory, so no pair address
  * needs to be stored. Refreshes every 60s.
  */
 export function usePoolStats(pools: Pool[]): Record<string, PoolStats> {

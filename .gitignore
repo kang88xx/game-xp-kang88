@@ -54,3 +54,8 @@ next-env.d.ts
 
 # runtime analytics counters (lib/analytics-store.ts)
 .data/
+
+# macOS AppleDouble junk
+._*
+**/._*
+.DS_Store
