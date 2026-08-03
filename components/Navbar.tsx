@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, ShieldCheck, PieChart } from "lucide-react";
+import { Menu, X, ShieldCheck } from "lucide-react";
 import { WalletButton } from "./WalletButton";
 import { ThemeToggle } from "./ThemeToggle";
 import { GlyphX } from "./IOILogo";
@@ -61,17 +61,6 @@ export function Navbar() {
             <ShieldCheck className="h-4 w-4" />
           </Link>
           <WalletButton />
-          <Link
-            href="/portfolio"
-            title="Portfolio"
-            className={`hidden h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] transition-colors hover:bg-[var(--surface)] sm:flex ${
-              pathname.startsWith("/portfolio")
-                ? "text-[var(--accent)]"
-                : "text-[var(--muted)]"
-            }`}
-          >
-            <PieChart className="h-4 w-4" />
-          </Link>
           <button
             className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] md:hidden"
             onClick={() => setMobileOpen((v) => !v)}
@@ -88,11 +77,7 @@ export function Navbar() {
 
       {mobileOpen && (
         <nav className="border-t border-[var(--border)] px-4 py-2 md:hidden">
-          {[
-            ...LINKS,
-            { href: "/portfolio", label: "Portfolio" },
-            { href: "/admin", label: "Admin" },
-          ].map((l) => (
+          {[...LINKS, { href: "/admin", label: "Admin" }].map((l) => (
             <Link
               key={l.href}
               href={l.href}
