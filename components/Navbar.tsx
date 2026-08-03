@@ -9,9 +9,9 @@ import { ThemeToggle } from "./ThemeToggle";
 import { GlyphX } from "./IOILogo";
 
 const LINKS = [
-  { href: "/games", label: "Games" },
+  { href: "/", label: "Games" },
   { href: "/airdrop", label: "Airdrop" },
-  { href: "/", label: "Swap" },
+  { href: "/swap", label: "Swap" },
 ] as { href: string; label: string }[];
 
 export function Navbar() {
