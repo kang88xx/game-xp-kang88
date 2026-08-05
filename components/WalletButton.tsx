@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, LogOut, Check, Wallet } from "lucide-react";
-import { useAppKit } from "@reown/appkit/react";
+import { Copy, LogOut, Check } from "lucide-react";
 import { useDisconnect } from "wagmi";
+import { useMetaMask } from "@/lib/use-metamask";
 import { useDexStore, useHydrated } from "@/lib/store";
 import { shortAddress } from "@/lib/format";
 import { toast } from "./toast";
@@ -13,7 +13,7 @@ export function WalletButton() {
   const hydrated = useHydrated();
   const connected = useDexStore((s) => s.connected);
   const address = useDexStore((s) => s.address);
-  const { open } = useAppKit();
+  const { open } = useMetaMask();
   const { disconnect } = useDisconnect();
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -31,7 +31,7 @@ export function WalletButton() {
         onClick={() => open()}
         className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] py-1.5 pl-4 pr-1.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
       >
-        Connect Wallet
+        Connect MetaMask
         <ArrowChip variant="onAccent" />
       </button>
     );
@@ -76,16 +76,6 @@ export function WalletButton() {
                 <Copy className="h-4 w-4 text-[var(--muted)]" />
               )}
               Copy address
-            </button>
-            <button
-              onClick={() => {
-                setMenuOpen(false);
-                open({ view: "Account" });
-              }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-[var(--surface)]"
-            >
-              <Wallet className="h-4 w-4 text-[var(--muted)]" />
-              Wallet details
             </button>
             <button
               onClick={() => {

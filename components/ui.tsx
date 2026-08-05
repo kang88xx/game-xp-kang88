@@ -31,8 +31,8 @@ export function ArrowChip({
 }) {
   const cls =
     variant === "onAccent"
-      ? "bg-white/20 text-white"
-      : "bg-[var(--accent)] text-white";
+      ? "bg-black/15 text-[var(--on-accent)]"
+      : "bg-[var(--accent)] text-[var(--on-accent)]";
   return (
     <span
       className={`inline-flex h-6 w-6 items-center justify-center rounded-[7px] ${cls}`}

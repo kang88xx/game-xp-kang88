@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Coins, Trophy, Clock, Flame, Users, TrendingUp, Loader2, Dices } from "lucide-react";
-import { useAppKit } from "@reown/appkit/react";
+import { useMetaMask } from "@/lib/use-metamask";
 import { erc20Abi, formatUnits, parseUnits } from "viem";
 import {
   useAccount,
@@ -204,7 +204,7 @@ function DemoGame() {
   const hydrated = useHydrated();
   const connected = useDexStore((s) => s.connected);
   const address = useDexStore((s) => s.address);
-  const { open: openWalletModal } = useAppKit();
+  const { open: openWalletModal } = useMetaMask();
   const round = useDexStore((s) => s.lms.round);
   const history = useDexStore((s) => s.lms.history);
   const pendingClaims = useDexStore((s) => s.lms.pendingClaims);
@@ -721,7 +721,7 @@ const LMS_FROM_BLOCK: bigint | "earliest" = process.env
 function OnchainGame() {
   const hydrated = useHydrated();
   const connected = useDexStore((s) => s.connected);
-  const { open: openWalletModal } = useAppKit();
+  const { open: openWalletModal } = useMetaMask();
   const { address: wallet, chainId } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();

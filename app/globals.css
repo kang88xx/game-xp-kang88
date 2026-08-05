@@ -1,43 +1,47 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ */
-/*  IOI — Pharos Design System v2                                       */
-/*  Black / off-white paper / Pharos blue. Inter Tight + IBM Plex Mono. */
+/*  XPULSE — DaffiOne Design System v1.0                                */
+/*  Daffodil yellow on deep midnight ink · mint/cyan support.           */
+/*  Inter Tight (display) + Inter (body, Pretendard KR fallback)        */
+/*  + JetBrains Mono (data/chrome).                                     */
 /* ------------------------------------------------------------------ */
 
 :root {
-  /* surfaces — paper hosts content, white hosts cards */
-  --background: #f0f0f2; /* paper */
+  /* surfaces — DaffiOne paper (light variant) */
+  --background: #f7f8fb; /* paper */
   --card: #ffffff;
-  --surface: #f4f4f6;
-  --surface-2: #e9e9ed;
-  --border: #e4e4e8;
-  --border-strong: #d6d6dc;
+  --surface: #f2f4f8; /* ink-50 */
+  --surface-2: #eef0f5; /* paper-2 */
+  --border: rgba(10, 15, 28, 0.08); /* rule-light */
+  --border-strong: rgba(10, 15, 28, 0.16); /* rule-light-2 */
 
   /* ink */
-  --foreground: #1a1a1a; /* ink */
-  --muted: #6b6b72; /* ink-3 */
-  --muted-2: #9a9aa2; /* ink-4 */
+  --foreground: #0a0f1c; /* ink-950 */
+  --muted: #56607f; /* ink-500 */
+  --muted-2: #7b85a3; /* ink-400 */
 
-  /* Pharos blue — the single saturated action color */
-  --accent: #1a1aee; /* blue-500 */
-  --accent-hover: #0f0fcc; /* blue-600 */
-  --accent-press: #0a0a99; /* blue-700 */
-  --accent-soft: #e8e8ff; /* blue-50 */
-  --blue-300: #5a5aff;
+  /* Daffodil yellow — the signature accent (600 on light for contrast) */
+  --accent: #d4a800; /* daffi-600 */
+  --accent-hover: #a88500; /* daffi-700 */
+  --accent-press: #8a6d00;
+  --accent-soft: #fff8d0; /* daffi-100 */
+  --blue-300: #f5c400; /* daffi-500 — bright highlight slot */
+  --on-accent: #050912; /* ink text on yellow fills */
 
-  /* accent dots — the X-palette (punctuation) */
-  --dot-yellow: #ffe920;
-  --dot-orange: #ff5722;
-  --dot-cyan: #3dbeff;
-  --dot-purple: #5b3fff;
-  --dot-blue: #1a1aee;
+  /* accent dots — DaffiOne support palette */
+  --dot-yellow: #f5c400; /* daffi-500 */
+  --dot-orange: #ff6b5a; /* coral-500 */
+  --dot-cyan: #2db4f2; /* cyan-500 */
+  --dot-purple: #00c892; /* mint-500 */
+  --dot-blue: #2db4f2;
 
-  /* market semantics */
-  --up: #16a34a;
-  --up-soft: #e9f8ef;
-  --down: #e5484d;
-  --down-soft: #fdecec;
+  /* market semantics — mint / coral */
+  --up: #009f73; /* mint-600 */
+  --up-soft: #dcfff4; /* mint-100 */
+  --down: #ff6b5a; /* coral-500 */
+  --down-soft: #ffe9e6;
 
   --radius: 16px;
 
@@ -45,33 +49,35 @@
 }
 
 .dark {
-  --background: #08080a; /* near-black */
-  --card: #141418;
-  --surface: #1a1a1f;
-  --surface-2: #24242b;
-  --border: #262630;
-  --border-strong: #383843;
+  /* DaffiOne midnight — dark-first brand ground */
+  --background: #050912; /* ink-1000 */
+  --card: #111729; /* ink-900 */
+  --surface: #1a2138; /* ink-800 */
+  --surface-2: #242c47; /* ink-700 */
+  --border: rgba(255, 255, 255, 0.08); /* rule */
+  --border-strong: rgba(255, 255, 255, 0.18); /* rule-strong */
 
-  --foreground: #f4f4f5;
-  --muted: #9a9aa4;
-  --muted-2: #6b6b75;
+  --foreground: #f2f4f8; /* ink-50 */
+  --muted: #7b85a3; /* ink-400 */
+  --muted-2: #56607f; /* ink-500 */
 
-  --accent: #5a5aff; /* blue-300 reads brighter on dark */
-  --accent-hover: #7170ff;
-  --accent-press: #4a4aee;
-  --accent-soft: #1a1947;
-  --blue-300: #7170ff;
+  --accent: #f5c400; /* daffi-500 — PRIMARY ACCENT */
+  --accent-hover: #ffd42e; /* daffi-400 */
+  --accent-press: #d4a800; /* daffi-600 */
+  --accent-soft: rgba(245, 196, 0, 0.12);
+  --blue-300: #ffe166; /* daffi-300 */
+  --on-accent: #050912;
 
-  --dot-yellow: #ffe920;
-  --dot-orange: #ff5722;
-  --dot-cyan: #3dbeff;
-  --dot-purple: #6b54ff;
-  --dot-blue: #5a5aff;
+  --dot-yellow: #ffd42e;
+  --dot-orange: #ff6b5a;
+  --dot-cyan: #7ad7ff; /* cyan-300 */
+  --dot-purple: #25e2ae; /* mint-400 */
+  --dot-blue: #2db4f2;
 
-  --up: #2ec07a;
-  --up-soft: #0f2a1d;
-  --down: #f06b6b;
-  --down-soft: #2c1517;
+  --up: #25e2ae; /* mint-400 */
+  --up-soft: rgba(0, 200, 146, 0.12);
+  --down: #ff6b5a; /* coral-500 */
+  --down-soft: rgba(255, 107, 90, 0.12);
 
   color-scheme: dark;
 }
@@ -98,8 +104,9 @@
   --color-down: var(--down);
   --color-down-soft: var(--down-soft);
 
-  --font-sans: var(--font-inter-tight);
-  --font-mono: var(--font-plex-mono);
+  --font-sans: var(--font-inter), "Pretendard Variable", ui-sans-serif,
+    system-ui;
+  --font-mono: var(--font-jetbrains);
 }
 
 * {
@@ -113,12 +120,28 @@ body {
 }
 
 body {
-  font-family: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-inter), "Pretendard Variable", Pretendard,
+    -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo",
+    "Noto Sans KR", sans-serif;
+  letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Pharos type: headlines run tight with negative tracking */
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* DaffiOne type: Inter Tight display headlines, tight negative tracking */
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-inter-tight), "Pretendard Variable", ui-sans-serif,
+    system-ui, sans-serif;
+}
 h1 {
   letter-spacing: -0.035em;
 }
@@ -130,13 +153,19 @@ h4 {
   letter-spacing: -0.015em;
 }
 
+/* Yellow fills carry ink text — white text is unreadable on daffodil.
+   Matches every `bg-[var(--accent)]` utility without touching markup. */
+[class*="bg-[var(--accent)]"] {
+  color: var(--on-accent);
+}
+
 .tabular {
   font-variant-numeric: tabular-nums;
 }
 
-/* Eyebrow: IBM Plex Mono, uppercase, wide-tracked chrome label */
+/* Eyebrow: JetBrains Mono, uppercase, wide-tracked chrome label */
 .eyebrow {
-  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-family: var(--font-jetbrains), ui-monospace, monospace;
   font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter_Tight, IBM_Plex_Mono } from "next/font/google";
+import { Inter, Inter_Tight, JetBrains_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import Script from "next/script";
 import "./globals.css";
@@ -11,21 +11,29 @@ import { GlyphX } from "@/components/IOILogo";
 // Runs before hydration to apply the saved (or system) theme and avoid a flash.
 const THEME_INIT = `(function(){try{var t=localStorage.getItem('ioi-theme');if(t==='dark'||(!t&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();`;
 
+// DaffiOne type stack: Inter Tight (display), Inter (body), JetBrains Mono
+// (data/chrome). Korean glyphs fall back to Pretendard Variable, loaded via
+// CDN @import in globals.css (next/font has no Pretendard).
 const interTight = Inter_Tight({
   variable: "--font-inter-tight",
   subsets: ["latin"],
 });
 
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const jetBrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
   weight: ["400", "500"],
   subsets: ["latin"],
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-const TITLE = "IOI DEX — Trade. Earn. Grow Together.";
+const TITLE = "Xpulse — Ignite the Xphere Mainnet";
 const DESCRIPTION =
-  "IOI is a decentralized exchange on Xphere: swap tokens, track markets, play games, and claim airdrops. Built onchain, designed for scale.";
+  "Xpulse is a mini dApp for Xphere mainnet activation: play onchain games and claim rewards with MetaMask, live on Xphere.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -33,7 +41,7 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   openGraph: {
     type: "website",
-    siteName: "IOI DEX",
+    siteName: "Xpulse",
     title: TITLE,
     description: DESCRIPTION,
     url: SITE_URL,
@@ -42,7 +50,7 @@ export const metadata: Metadata = {
         url: "/og.png",
         width: 1610,
         height: 977,
-        alt: "IOI DEX — Trade. Earn. Grow Together.",
+        alt: "Xpulse — Ignite the Xphere Mainnet",
       },
     ],
   },
@@ -66,7 +74,7 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${interTight.variable} ${plexMono.variable} h-full antialiased`}
+      className={`${interTight.variable} ${inter.variable} ${jetBrains.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[var(--background)]">
         <Script id="theme-init" strategy="beforeInteractive">
@@ -80,16 +88,16 @@ export default async function RootLayout({
             <div className="flex items-center gap-2.5">
               <GlyphX size={20} />
               <span className="text-sm font-semibold tracking-[0.22em]">
-                IOI
+                XPULSE
               </span>
               <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted-2)]">
-                Innovate · Own · Inspire
+                Xphere Mainnet Activation
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
               <span className="inline-flex items-center gap-2">
                 <span className="h-1.5 w-1.5 bg-[var(--dot-yellow)]" />
-                Beta · live swaps
+                Beta · live games
               </span>
               <span>Xphere Mainnet</span>
             </div>

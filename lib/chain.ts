@@ -1,10 +1,9 @@
 // ------------------------------------------------------------------
 //  Single source of truth for the chain the app runs on.
 //
-//  The DEX runs on XPHERE MAINNET (chainId 20250217) — a custom EVM
-//  chain with no viem/AppKit preset. The wallet network object lives in
-//  lib/reown.ts (AppKit defineChain); server code builds viem clients
-//  from XPHERE_VIEM below. Native coin is XP.
+//  The app runs on XPHERE MAINNET (chainId 20250217) — a custom EVM
+//  chain with no viem preset. The wagmi config (lib/wagmi.ts) and server
+//  code both build from XPHERE_VIEM below. Native coin is XP.
 //
 //  Swaps execute against PUMPKINSWAP's Uniswap-V2-style contracts on
 //  Xphere (pumpkinswap.app) — this site is a frontend to their pools.

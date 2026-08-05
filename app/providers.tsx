@@ -2,46 +2,11 @@
 
 import { type ReactNode, useEffect, useRef } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createAppKit } from "@reown/appkit/react";
-import { useAppKitTheme } from "@reown/appkit/react";
-import {
-  cookieToInitialState,
-  useAccount,
-  WagmiProvider,
-  type Config,
-} from "wagmi";
-import { projectId, wagmiAdapter, networks, ACTIVE_CHAIN } from "@/lib/reown";
+import { cookieToInitialState, useAccount, WagmiProvider } from "wagmi";
+import { wagmiConfig } from "@/lib/wagmi";
 import { useDexStore } from "@/lib/store";
 
 const queryClient = new QueryClient();
-
-const metadata = {
-  name: "IOI",
-  description:
-    "IOI is a decentralized exchange: swap tokens, provide liquidity, track markets, stake, and claim airdrops.",
-  url:
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://ioi.exchange",
-  icons: ["https://avatars.githubusercontent.com/u/179229932"],
-};
-
-createAppKit({
-  adapters: [wagmiAdapter],
-  projectId,
-  networks,
-  defaultNetwork: ACTIVE_CHAIN,
-  metadata,
-  features: {
-    analytics: true,
-    email: false,
-    socials: false,
-  },
-  themeVariables: {
-    "--w3m-accent": "#1A1AEE",
-    "--w3m-border-radius-master": "2px",
-  },
-});
 
 /**
  * Mirrors the real wagmi wallet session into the Zustand store so the rest
@@ -99,22 +64,6 @@ function AnalyticsTracker() {
   return null;
 }
 
-/** Keeps the AppKit modal theme in sync with the site light/dark toggle. */
-function AppKitThemeSync() {
-  const { setThemeMode } = useAppKitTheme();
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const apply = () => setThemeMode(root.classList.contains("dark") ? "dark" : "light");
-    apply();
-    const observer = new MutationObserver(apply);
-    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, [setThemeMode]);
-
-  return null;
-}
-
 export function Providers({
   children,
   cookies,
@@ -122,20 +71,13 @@ export function Providers({
   children: ReactNode;
   cookies: string | null;
 }) {
-  const initialState = cookieToInitialState(
-    wagmiAdapter.wagmiConfig as Config,
-    cookies,
-  );
+  const initialState = cookieToInitialState(wagmiConfig, cookies);
 
   return (
-    <WagmiProvider
-      config={wagmiAdapter.wagmiConfig as Config}
-      initialState={initialState}
-    >
+    <WagmiProvider config={wagmiConfig} initialState={initialState}>
       <QueryClientProvider client={queryClient}>
         <WalletSync />
         <AnalyticsTracker />
-        <AppKitThemeSync />
         {children}
       </QueryClientProvider>
     </WagmiProvider>

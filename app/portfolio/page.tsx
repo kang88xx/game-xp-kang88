@@ -1,6 +1,6 @@
 "use client";
 
-import { useAppKit } from "@reown/appkit/react";
+import { useMetaMask } from "@/lib/use-metamask";
 import {
   ArrowLeftRight,
   Coins,
@@ -37,7 +37,7 @@ export default function PortfolioPage() {
   const hydrated = useHydrated();
   const connected = useDexStore((s) => s.connected);
   const address = useDexStore((s) => s.address);
-  const { open: openWalletModal } = useAppKit();
+  const { open: openWalletModal } = useMetaMask();
   const balances = useBalances();
   const market = useMarket();
   const positions = usePositions().filter((p) => POOL_MAP[p.poolId]);

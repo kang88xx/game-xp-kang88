@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useAppKit } from "@reown/appkit/react";
+import { useMetaMask } from "@/lib/use-metamask";
 import { Gift, Check, Lock, Globe, ShieldCheck, Loader2 } from "lucide-react";
 import { formatUnits, parseUnits } from "viem";
 import {
@@ -109,7 +109,7 @@ function OnchainCampaignCard({
 }) {
   const connected = useDexStore((s) => s.connected);
   const recordClaim = useDexStore((s) => s.recordClaim);
-  const { open: openWalletModal } = useAppKit();
+  const { open: openWalletModal } = useMetaMask();
   const { address: wallet, chainId } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
