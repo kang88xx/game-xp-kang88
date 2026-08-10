@@ -29,7 +29,7 @@ export function WalletButton() {
     return (
       <button
         onClick={() => open()}
-        className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-[var(--accent)] py-1.5 pl-4 pr-1.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+        className="group inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-[var(--accent)] py-1.5 pl-4 pr-1.5 text-sm font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985]"
       >
         <span className="sm:hidden">Connect</span>
         <span className="hidden sm:inline">Connect MetaMask</span>

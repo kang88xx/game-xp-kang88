@@ -14,7 +14,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDexStore, useHydrated, LMS_CONFIG } from "@/lib/store";
 import { useBalance } from "@/lib/balances";
 import { formatNumber, shortAddress, timeAgoPure } from "@/lib/format";
-import { Eyebrow } from "@/components/ui";
+import { ArrowChip, Eyebrow } from "@/components/ui";
 import { TokenLogo } from "@/components/TokenLogo";
 import { AddToWalletButton } from "@/components/AddToWalletButton";
 import { PixelArena, ARENA_STAGE_NAMES } from "@/components/PixelArena";
@@ -159,9 +159,10 @@ function LmsIntroModal({ onClose }: { onClose: () => void }) {
         <div className="px-6 pb-6 pt-4">
           <button
             onClick={close}
-            className="w-full rounded-full bg-[var(--accent)] py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+            className="group flex w-full items-center justify-center gap-2.5 rounded-full bg-[var(--accent)] py-2.5 pl-4 pr-2 text-sm font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985]"
           >
             Enter Game
+            <ArrowChip variant="onAccent" />
           </button>
           <label className="mt-3 flex cursor-pointer select-none items-center justify-center gap-2 text-xs text-[var(--muted)]">
             <input
@@ -542,14 +543,14 @@ function DemoGame() {
               ) : !connected ? (
                 <button
                   onClick={() => openWalletModal()}
-                  className="h-12 w-full rounded-full bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+                  className="h-12 w-full rounded-full bg-[var(--accent)] font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985]"
                 >
                   Connect Wallet
                 </button>
               ) : (
                 <button
                   disabled
-                  className="h-12 w-full rounded-full bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:text-[var(--muted-2)]"
+                  className="h-12 w-full rounded-full bg-[var(--accent)] font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985] disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:text-[var(--muted-2)]"
                 >
                   {!isActive
                     ? "Round ended"
@@ -1290,7 +1291,7 @@ function OnchainGame() {
               ) : !connected ? (
                 <button
                   onClick={() => openWalletModal()}
-                  className="h-12 w-full rounded-full bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+                  className="h-12 w-full rounded-full bg-[var(--accent)] font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985]"
                 >
                   Connect Wallet
                 </button>
@@ -1298,7 +1299,7 @@ function OnchainGame() {
                 <button
                   onClick={doBet}
                   disabled={!canBet || busy !== null}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:text-[var(--muted-2)]"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985] disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:text-[var(--muted-2)]"
                 >
                   {busy === "bet" && <Loader2 className="h-5 w-5 animate-spin" />}
                   {busy === "bet"

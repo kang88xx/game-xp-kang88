@@ -95,7 +95,7 @@ export default async function RootLayout({
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--muted)]">
               <span className="inline-flex items-center gap-2">
-                <span className="h-1.5 w-1.5 bg-[var(--dot-yellow)]" />
+                <span className="dot-alive h-1.5 w-1.5 bg-[var(--dot-yellow)]" />
                 Beta · live games
               </span>
               <span>Xphere Mainnet</span>

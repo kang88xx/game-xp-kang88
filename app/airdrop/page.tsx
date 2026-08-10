@@ -24,7 +24,8 @@ import {
 } from "@/lib/onchain-campaigns";
 import { TokenLogo } from "@/components/TokenLogo";
 import { toast } from "@/components/toast";
-import { Eyebrow } from "@/components/ui";
+import { ArrowChip, Eyebrow } from "@/components/ui";
+import { XphereMark } from "@/components/XphereLogo";
 import type { AirdropCampaign } from "@/lib/types";
 
 export default function AirdropPage() {
@@ -66,11 +67,22 @@ export default function AirdropPage() {
 
       {loading ? (
         <div className="mt-8 grid gap-5 md:grid-cols-2">
-          <div className="h-64 rounded-3xl bg-[var(--surface-2)] animate-pulse-soft" />
-          <div className="h-64 rounded-3xl bg-[var(--surface-2)] animate-pulse-soft" />
+          <div className="flex h-64 items-center justify-center rounded-3xl bg-[var(--surface-2)] animate-pulse-soft">
+            <span className="x-spin opacity-25">
+              <XphereMark size={28} />
+            </span>
+          </div>
+          <div className="flex h-64 items-center justify-center rounded-3xl bg-[var(--surface-2)] animate-pulse-soft">
+            <span className="x-spin opacity-25">
+              <XphereMark size={28} />
+            </span>
+          </div>
         </div>
       ) : nothing ? (
         <div className="mt-10 rounded-3xl border border-dashed border-[var(--border-strong)] py-16 text-center">
+          <span className="dot-stagger mb-5">
+            <span /><span /><span /><span /><span />
+          </span>
           <p className="text-sm text-[var(--muted)]">
             No active campaigns right now.
           </p>
@@ -265,7 +277,7 @@ function OnchainCampaignCard({
     (c.isPublic || remainingAllocWei > 0n);
 
   return (
-    <div className="flex flex-col rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6">
+    <div className="flex flex-col rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 transition-all duration-200 hover:-translate-y-1 hover:border-[var(--border-strong)] hover:shadow-xl">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <TokenLogo symbol={c.tokenSymbol} size={44} />
@@ -315,7 +327,7 @@ function OnchainCampaignCard({
         </div>
         <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
           <div
-            className="h-full rounded-full bg-[var(--accent)] transition-all"
+            className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -342,14 +354,14 @@ function OnchainCampaignCard({
         {!connected ? (
           <button
             onClick={() => openWalletModal()}
-            className="h-12 w-full rounded-2xl bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+            className="h-12 w-full rounded-full bg-[var(--accent)] font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985]"
           >
             Connect to claim
           </button>
         ) : alreadyClaimed ? (
           <button
             disabled
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--up-soft)] font-semibold text-[var(--up)]"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--up-soft)] font-semibold text-[var(--up)]"
           >
             <Check className="h-5 w-5" />
             Claimed
@@ -358,17 +370,18 @@ function OnchainCampaignCard({
           <button
             onClick={doClaim}
             disabled={claiming}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="group flex h-12 w-full items-center justify-center gap-2.5 rounded-full bg-[var(--accent)] font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {claiming && <Loader2 className="h-5 w-5 animate-spin" />}
             {claiming
               ? "Claiming…"
               : `Claim ${claimableNow.toLocaleString()} ${c.tokenSymbol}`}
+            {!claiming && <ArrowChip variant="onAccent" />}
           </button>
         ) : (
           <button
             disabled
-            className="h-12 w-full rounded-2xl bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:text-[var(--muted-2)]"
+            className="h-12 w-full rounded-full bg-[var(--accent)] font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985] disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:text-[var(--muted-2)]"
           >
             {ended ? "Ended" : soldOut ? "Fully claimed" : "Not eligible"}
           </button>
@@ -387,7 +400,7 @@ function DraftCampaignCard({ campaign: c }: { campaign: AirdropCampaign }) {
   const ended = isPast(c.endsAt);
 
   return (
-    <div className="flex flex-col rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6">
+    <div className="flex flex-col rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 transition-all duration-200 hover:-translate-y-1 hover:border-[var(--border-strong)] hover:shadow-xl">
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <TokenLogo symbol={c.tokenSymbol} size={44} />
@@ -434,7 +447,7 @@ function DraftCampaignCard({ campaign: c }: { campaign: AirdropCampaign }) {
         </div>
         <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
           <div
-            className="h-full rounded-full bg-[var(--accent)] transition-all"
+            className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -443,7 +456,7 @@ function DraftCampaignCard({ campaign: c }: { campaign: AirdropCampaign }) {
       <div className="mt-auto pt-5">
         <button
           disabled
-          className="h-12 w-full rounded-2xl bg-[var(--surface-2)] font-semibold text-[var(--muted-2)]"
+          className="h-12 w-full rounded-full bg-[var(--surface-2)] font-semibold text-[var(--muted-2)]"
         >
           {airdropLive
             ? "Waiting for on-chain launch (Admin)"
