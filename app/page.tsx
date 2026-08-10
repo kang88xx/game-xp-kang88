@@ -1069,7 +1069,7 @@ function OnchainGame() {
               <h1 className="text-2xl font-bold tracking-tight">
                 Last Man Standing
               </h1>
-              <span className="inline-flex items-center gap-1 rounded-full border border-[var(--up)]/40 bg-[var(--up-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--up)]">
+              <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-[var(--up)]/40 bg-[var(--up-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--up)]">
                 On-chain · {displayRoundNo != null ? `Round #${displayRoundNo}` : "…"}
               </span>
             </div>
@@ -1521,7 +1521,7 @@ function LegendRow({
           target="_blank"
           rel="noopener noreferrer"
           title={address}
-          className="font-mono text-[var(--muted-2)] transition-colors hover:text-[var(--foreground)]"
+          className="-my-1.5 py-1.5 font-mono text-[var(--muted-2)] underline decoration-[var(--border-strong)] underline-offset-4 transition-colors hover:text-[var(--foreground)]"
         >
           {shortAddress(address)}
         </a>
