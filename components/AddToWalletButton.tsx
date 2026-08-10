@@ -75,9 +75,9 @@ export function AddToWalletButton({
         type="button"
         onClick={add}
         disabled={busy}
-        className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] px-2.5 py-1 text-xs font-medium text-[var(--muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--foreground)] disabled:opacity-60"
+        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] px-3.5 py-2 text-xs font-medium text-[var(--muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--foreground)] disabled:opacity-60"
       >
-        <Plus className="h-3 w-3" />
+        <Plus className="h-3.5 w-3.5" />
         Add {token.symbol} to wallet
       </button>
       {/* ⓘ — hover/focus tooltip explaining what the button does */}
