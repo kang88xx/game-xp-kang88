@@ -88,7 +88,7 @@ export function AddToWalletButton({
         />
         <span
           role="tooltip"
-          className="pointer-events-none invisible absolute bottom-full right-0 z-30 mb-2 w-60 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 text-left text-[11px] font-normal leading-relaxed text-[var(--muted)] opacity-0 shadow-xl transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+          className="pointer-events-none invisible absolute bottom-full right-0 z-30 mb-2 w-60 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 text-left text-xs font-normal leading-relaxed text-[var(--muted)] opacity-0 shadow-xl transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
         >
           Registers {token.symbol} in your wallet&apos;s token list (MetaMask
           etc.) so your balance shows up. Free — nothing is sent on-chain;

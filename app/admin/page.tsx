@@ -673,7 +673,7 @@ function PoolsManager() {
                   <div className="flex items-center gap-2 text-sm font-semibold">
                     {p.token0} / {p.token1}
                     {!visible && (
-                      <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] font-medium text-[var(--muted)]">
+                      <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]">
                         Hidden
                       </span>
                     )}
@@ -935,12 +935,12 @@ function SwapTokensManager() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold">{t.symbol}</span>
                       {custom && (
-                        <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--accent)]">
+                        <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--accent)]">
                           Custom
                         </span>
                       )}
                       {!tokenTradable(t) && (
-                        <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] font-medium text-[var(--muted)]">
+                        <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]">
                           No contract
                         </span>
                       )}
@@ -1053,7 +1053,7 @@ function AnalyticsPanel() {
   const detailBtn = (href: string) => (
     <button
       onClick={() => window.open(href, "_blank", "noopener,noreferrer")}
-      className="inline-flex items-center gap-1 rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-[11px] font-medium text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
+      className="inline-flex items-center gap-1 rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-xs font-medium text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
     >
       <ListFilter className="h-3 w-3" />
       Detail
@@ -1479,11 +1479,11 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
             <div className="flex items-center gap-2">
               <h3 className="font-semibold">{c.name}</h3>
               {isActive ? (
-                <span className="rounded-full bg-[var(--up-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--up)]">
+                <span className="rounded-full bg-[var(--up-soft)] px-2 py-0.5 text-xs font-medium text-[var(--up)]">
                   Active
                 </span>
               ) : (
-                <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] font-medium text-[var(--muted)]">
+                <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]">
                   Paused
                 </span>
               )}
@@ -1501,7 +1501,7 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
           <button
             onClick={() => openClaimDetail(c, isWl ? receivedRows : undefined)}
             title="View claim history"
-            className="inline-flex items-center gap-1 rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-[11px] font-medium text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
+            className="inline-flex items-center gap-1 rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-xs font-medium text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
           >
             <ListFilter className="h-3 w-3" />
             Detail
@@ -2377,7 +2377,7 @@ function WhitelistManager({
                   {launched ? (
                     <span
                       title="On-chain claim status (auto-synced)"
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
                         full
                           ? "bg-[var(--up-soft)] text-[var(--up)]"
                           : partial
@@ -2400,7 +2400,7 @@ function WhitelistManager({
                       title={
                         w.claimed ? "Mark as not received" : "Mark as received"
                       }
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold transition-colors ${
+                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition-colors ${
                         w.claimed
                           ? "bg-[var(--up-soft)] text-[var(--up)]"
                           : "bg-[var(--surface-2)] text-[var(--muted)] hover:text-[var(--foreground)]"

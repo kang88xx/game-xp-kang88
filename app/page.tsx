@@ -378,7 +378,7 @@ function DemoGame() {
               <span className="font-mono font-semibold text-[var(--foreground)]">
                 {shortAddress(round.lastBettor)}
                 {round.lastBettor === address && (
-                  <span className="ml-1.5 inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
+                  <span className="ml-1.5 inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-bold text-[var(--accent)]">
                     YOU
                   </span>
                 )}
@@ -558,7 +558,7 @@ function DemoGame() {
               )}
             </div>
 
-            <p className="mt-3 text-center text-[11px] text-[var(--muted-2)]">
+            <p className="mt-3 text-center text-xs text-[var(--muted-2)]">
               No randomness · last bettor wins the pool · on-chain version
               coming soon
             </p>
@@ -619,7 +619,7 @@ function DemoGame() {
             ) : (
               <div className="space-y-1.5">
                 {/* Header */}
-                <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 px-2 pb-1 text-[11px] text-[var(--muted-2)]">
+                <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 px-2 pb-1 text-xs text-[var(--muted-2)]">
                   <span>Time</span>
                   <span>Address</span>
                   <span>Amount</span>
@@ -644,7 +644,7 @@ function DemoGame() {
                     <span className="font-semibold text-right">
                       {formatNumber(bet.amount, 2)}
                     </span>
-                    <span className="text-[var(--muted-2)] text-right font-mono text-[10px]">
+                    <span className="text-[var(--muted-2)] text-right font-mono text-xs">
                       #{round.id.slice(-4)}
                     </span>
                   </div>
@@ -662,7 +662,7 @@ function DemoGame() {
               </p>
             ) : (
               <div className="space-y-1.5">
-                <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2 px-2 pb-1 text-[11px] text-[var(--muted-2)]">
+                <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2 px-2 pb-1 text-xs text-[var(--muted-2)]">
                   <span>Round</span>
                   <span>Winner</span>
                   <span>Prize</span>
@@ -673,7 +673,7 @@ function DemoGame() {
                     key={h.roundId}
                     className="grid grid-cols-[auto_1fr_auto_auto] gap-2 items-center rounded-xl px-2 py-1.5 text-xs"
                   >
-                    <span className="font-mono text-[var(--muted-2)] text-[10px]">
+                    <span className="font-mono text-[var(--muted-2)] text-xs">
                       #{h.roundId.slice(-4)}
                     </span>
                     <span className="font-mono truncate flex items-center gap-1">
@@ -1135,7 +1135,7 @@ function OnchainGame() {
                     {wallet &&
                       displayLastBettor.toLowerCase() ===
                         wallet.toLowerCase() && (
-                        <span className="ml-1.5 inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
+                        <span className="ml-1.5 inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-bold text-[var(--accent)]">
                           YOU
                         </span>
                       )}
@@ -1314,7 +1314,7 @@ function OnchainGame() {
               )}
             </div>
 
-            <p className="mt-3 text-center text-[11px] text-[var(--muted-2)]">
+            <p className="mt-3 text-center text-xs text-[var(--muted-2)]">
               No randomness · last bettor wins the pool · prizes are claimed
               from the contract (pull-payment)
             </p>
@@ -1403,7 +1403,7 @@ function OnchainGame() {
                 active={!heroWaiting}
               />
               {/* Stage · tier badge — top right, over the sky */}
-              <span className="absolute right-3 top-3 rounded-full border border-[#E8A33C]/50 bg-black/55 px-2.5 py-1 font-mono text-[10px] font-semibold text-[#FFE066]">
+              <span className="absolute right-3 top-3 rounded-full border border-[#E8A33C]/50 bg-black/55 px-2.5 py-1 font-mono text-xs font-semibold text-[#FFE066]">
                 {ARENA_STAGE_NAMES[Math.min(5, tier)]} · TIER {tier}
               </span>
             </div>
@@ -1423,7 +1423,7 @@ function OnchainGame() {
               </p>
             ) : (
               <div className="space-y-1.5">
-                <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-2 pb-1 text-[11px] text-[var(--muted-2)]">
+                <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-2 pb-1 text-xs text-[var(--muted-2)]">
                   <span>Address</span>
                   <span>Amount</span>
                   <span>Block</span>
@@ -1445,7 +1445,7 @@ function OnchainGame() {
                     <span className="font-semibold text-right">
                       {formatNumber(bet.amount, 2)}
                     </span>
-                    <span className="text-[var(--muted-2)] text-right font-mono text-[10px]">
+                    <span className="text-[var(--muted-2)] text-right font-mono text-xs">
                       {bet.block}
                     </span>
                   </div>
@@ -1463,7 +1463,7 @@ function OnchainGame() {
               </p>
             ) : (
               <div className="space-y-1.5">
-                <div className="grid grid-cols-[auto_1fr_auto] gap-2 px-2 pb-1 text-[11px] text-[var(--muted-2)]">
+                <div className="grid grid-cols-[auto_1fr_auto] gap-2 px-2 pb-1 text-xs text-[var(--muted-2)]">
                   <span>Round</span>
                   <span>Winner</span>
                   <span>Prize</span>
@@ -1473,7 +1473,7 @@ function OnchainGame() {
                     key={h.roundId}
                     className="grid grid-cols-[auto_1fr_auto] gap-2 items-center rounded-xl px-2 py-1.5 text-xs"
                   >
-                    <span className="font-mono text-[var(--muted-2)] text-[10px]">
+                    <span className="font-mono text-[var(--muted-2)] text-xs">
                       #{h.roundId + 1}
                     </span>
                     <span className="font-mono truncate">
@@ -1545,7 +1545,7 @@ function StatCard({
 }) {
   return (
     <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
-      <div className="flex items-center gap-1.5 text-[11px] text-[var(--muted)] mb-2">
+      <div className="flex items-center gap-1.5 text-xs text-[var(--muted)] mb-2">
         <span
           style={{ color: accent ? "var(--accent)" : "var(--muted)" }}
         >
@@ -1559,7 +1559,7 @@ function StatCard({
       >
         {value}
       </div>
-      <div className="text-[11px] text-[var(--muted-2)] mt-0.5">{detail}</div>
+      <div className="text-xs text-[var(--muted-2)] mt-0.5">{detail}</div>
     </div>
   );
 }
