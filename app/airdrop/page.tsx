@@ -51,14 +51,14 @@ export default function AirdropPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <Eyebrow dot="yellow" className="mb-4">
-        04 — Airdrops
+        Claim · Airdrop Campaigns
       </Eyebrow>
       <div className="flex items-center gap-3">
         <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)]">
           <Gift className="h-6 w-6 text-[var(--accent)]" />
         </span>
         <div>
-          <h1 className="text-3xl font-medium tracking-tight">Airdrops</h1>
+          <h1 className="text-3xl font-medium tracking-tight">Claim</h1>
           <p className="text-sm text-[var(--muted)]">
             Claim token rewards from active campaigns.
           </p>

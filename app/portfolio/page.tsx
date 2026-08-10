@@ -90,7 +90,7 @@ export default function PortfolioPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <Eyebrow dot="blue" className="mb-4">
-        03 — Portfolio
+        Portfolio
       </Eyebrow>
       {/* Header / total */}
       <div className="rounded-3xl border border-[var(--border)] bg-gradient-to-br from-[var(--card)] to-[var(--surface)] p-6 sm:p-8">

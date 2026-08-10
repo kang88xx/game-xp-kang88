@@ -353,7 +353,7 @@ function AdminDashboard() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <Eyebrow dot="orange" className="mb-4">
-        05 — Admin Console
+        Admin Console
       </Eyebrow>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">

@@ -356,7 +356,7 @@ function DemoGame() {
       </div>
 
       {/* Hero countdown card */}
-      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 sm:p-10 shadow-2xl mb-5 flex flex-col items-center text-center">
+      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 sm:p-7 shadow-2xl mb-5 flex flex-col items-center text-center">
         <span className="text-xs font-medium text-[var(--muted)] mb-3">
           Time Remaining
         </span>
@@ -424,9 +424,9 @@ function DemoGame() {
         />
       </div>
 
-      <div className="grid gap-5 md:grid-cols-[1fr_340px]">
+      <div className="grid gap-4 md:grid-cols-[1fr_340px]">
         {/* Left column: claims card + bet card + fee bar */}
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4 max-md:contents">
           {/* Your Claims card — only rendered when there are pending claims */}
           {myClaims.length > 0 && (
             <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7 shadow-2xl">
@@ -569,8 +569,8 @@ function DemoGame() {
             </p>
           </div>
 
-          {/* Fee distribution bar */}
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5">
+          {/* Fee distribution bar — reference info, stacks last on mobile */}
+          <div className="max-md:order-last rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5">
             <h3 className="text-sm font-semibold mb-3">Fee Distribution</h3>
             <div className="flex h-3 w-full overflow-hidden rounded-full">
               <div
@@ -608,7 +608,7 @@ function DemoGame() {
         </div>
 
         {/* Right column: recent bets + round history */}
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4 max-md:contents">
           {/* Recent Bets */}
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5">
             <div className="flex items-center justify-between mb-3">
@@ -1095,11 +1095,11 @@ function OnchainGame() {
         </div>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-[1fr_340px]">
+      <div className="grid gap-4 md:grid-cols-[1fr_340px]">
         {/* Left column: countdown + stats + claims card + bet card + fee bar */}
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4 max-md:contents">
           {/* Countdown card */}
-          <div className="flex flex-col items-center rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 text-center shadow-2xl sm:p-8">
+          <div className="flex flex-col items-center rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 text-center shadow-2xl sm:p-6">
             <span className="mb-3 text-xs font-medium text-[var(--muted)]">
               {heroWaiting ? "Round timer" : "Time Remaining"}
             </span>
@@ -1352,8 +1352,8 @@ function OnchainGame() {
             </div>
           </div>
 
-          {/* Fee distribution bar */}
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5">
+          {/* Fee distribution bar — reference info, stacks last on mobile */}
+          <div className="max-md:order-last rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5">
             <h3 className="text-sm font-semibold mb-3">Fee Distribution</h3>
             <div className="flex h-3 w-full overflow-hidden rounded-full">
               <div
@@ -1391,7 +1391,7 @@ function OnchainGame() {
         </div>
 
         {/* Right column: pixel arena + recent bets + round history */}
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-4 max-md:contents">
           {/* Gold Babel pixel arena — portrait card that stretches as bets
               stack up (300px empty round → 780px cap at 60 bets). */}
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-2xl">
