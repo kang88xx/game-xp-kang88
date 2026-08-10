@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Menu, X, ShieldCheck } from "lucide-react";
 import { WalletButton } from "./WalletButton";
 import { ThemeToggle } from "./ThemeToggle";
-import { GlyphX } from "./IOILogo";
+import { XphereMark } from "./XphereLogo";
 
 const LINKS = [
   { href: "/", label: "Games" },
@@ -25,8 +25,8 @@ export function Navbar() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2.5">
-            <GlyphX size={26} />
-            <span className="text-lg font-semibold tracking-[0.2em]">XPULSE</span>
+            <XphereMark size={26} />
+            <span className="text-lg font-semibold">Xphere</span>
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">

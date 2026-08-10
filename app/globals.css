@@ -2,46 +2,46 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ */
-/*  XPULSE — DaffiOne Design System v1.0                                */
-/*  Daffodil yellow on deep midnight ink · mint/cyan support.           */
-/*  Inter Tight (display) + Inter (body, Pretendard KR fallback)        */
-/*  + JetBrains Mono (data/chrome).                                     */
+/*  XPHERE — Pharos Design System v2                                    */
+/*  Electric Pharos Blue on black↔paper contrast · accent-dot palette.  */
+/*  Inter Tight (display + body, Pretendard KR fallback)                */
+/*  + IBM Plex Mono (data/chrome).                                      */
 /* ------------------------------------------------------------------ */
 
 :root {
-  /* surfaces — DaffiOne paper (light variant) */
-  --background: #f7f8fb; /* paper */
+  /* surfaces — Pharos paper (light sections) */
+  --background: #f0f0f2; /* paper */
   --card: #ffffff;
-  --surface: #f2f4f8; /* ink-50 */
-  --surface-2: #eef0f5; /* paper-2 */
-  --border: rgba(10, 15, 28, 0.08); /* rule-light */
-  --border-strong: rgba(10, 15, 28, 0.16); /* rule-light-2 */
+  --surface: #f7f7f9; /* paper-2 */
+  --surface-2: #e6e6ea; /* paper-3 */
+  --border: #e2e2e6; /* rule-light */
+  --border-strong: #d2d2d8; /* rule-light-2 */
 
   /* ink */
-  --foreground: #0a0f1c; /* ink-950 */
-  --muted: #56607f; /* ink-500 */
-  --muted-2: #7b85a3; /* ink-400 */
+  --foreground: #0a0a0a; /* ink */
+  --muted: #6b6b6b; /* ink-4 */
+  --muted-2: #9a9a9a; /* ink-5 */
 
-  /* Daffodil yellow — the signature accent (600 on light for contrast) */
-  --accent: #d4a800; /* daffi-600 */
-  --accent-hover: #a88500; /* daffi-700 */
-  --accent-press: #8a6d00;
-  --accent-soft: #fff8d0; /* daffi-100 */
-  --blue-300: #f5c400; /* daffi-500 — bright highlight slot */
-  --on-accent: #050912; /* ink text on yellow fills */
+  /* Pharos Blue — the signature accent */
+  --accent: #1a1aee; /* blue-500 — primary */
+  --accent-hover: #0f0fcc; /* blue-600 */
+  --accent-press: #0a0a99; /* blue-700 */
+  --accent-soft: #e8e8ff; /* blue-50 */
+  --blue-300: #5a5aff; /* bright highlight slot */
+  --on-accent: #ffffff; /* white text on blue fills */
 
-  /* accent dots — DaffiOne support palette */
-  --dot-yellow: #f5c400; /* daffi-500 */
-  --dot-orange: #ff6b5a; /* coral-500 */
-  --dot-cyan: #2db4f2; /* cyan-500 */
-  --dot-purple: #00c892; /* mint-500 */
-  --dot-blue: #2db4f2;
+  /* accent dots — the X-glyph palette */
+  --dot-yellow: #ffe920; /* the "sun" */
+  --dot-orange: #ff5722;
+  --dot-cyan: #3dbeff;
+  --dot-purple: #5b3fff;
+  --dot-blue: #1a1aee;
 
-  /* market semantics — mint / coral */
-  --up: #009f73; /* mint-600 */
-  --up-soft: #dcfff4; /* mint-100 */
-  --down: #ff6b5a; /* coral-500 */
-  --down-soft: #ffe9e6;
+  /* market semantics */
+  --up: #16a34a; /* positive */
+  --up-soft: #dcfce7;
+  --down: #dc2626; /* negative */
+  --down-soft: #fee2e2;
 
   --radius: 16px;
 
@@ -49,35 +49,35 @@
 }
 
 .dark {
-  /* DaffiOne midnight — dark-first brand ground */
-  --background: #050912; /* ink-1000 */
-  --card: #111729; /* ink-900 */
-  --surface: #1a2138; /* ink-800 */
-  --surface-2: #242c47; /* ink-700 */
-  --border: rgba(255, 255, 255, 0.08); /* rule */
-  --border-strong: rgba(255, 255, 255, 0.18); /* rule-strong */
+  /* Pharos black — dark sections ground */
+  --background: #000000; /* black */
+  --card: #0a0a0a; /* ink */
+  --surface: #1a1a1a; /* ink-2 */
+  --surface-2: #2e2e2e;
+  --border: rgba(255, 255, 255, 0.1); /* on-dark-rule */
+  --border-strong: rgba(255, 255, 255, 0.16); /* on-dark-5 */
 
-  --foreground: #f2f4f8; /* ink-50 */
-  --muted: #7b85a3; /* ink-400 */
-  --muted-2: #56607f; /* ink-500 */
+  --foreground: #ffffff; /* on-dark-1 */
+  --muted: rgba(255, 255, 255, 0.56); /* on-dark-3 */
+  --muted-2: rgba(255, 255, 255, 0.36); /* on-dark-4 */
 
-  --accent: #f5c400; /* daffi-500 — PRIMARY ACCENT */
-  --accent-hover: #ffd42e; /* daffi-400 */
-  --accent-press: #d4a800; /* daffi-600 */
-  --accent-soft: rgba(245, 196, 0, 0.12);
-  --blue-300: #ffe166; /* daffi-300 */
-  --on-accent: #050912;
+  --accent: #5a5aff; /* blue-300 — legible electric on black */
+  --accent-hover: #7c7cff;
+  --accent-press: #1a1aee; /* blue-500 */
+  --accent-soft: rgba(90, 90, 255, 0.16);
+  --blue-300: #c9c9ff; /* blue-100 */
+  --on-accent: #ffffff;
 
-  --dot-yellow: #ffd42e;
-  --dot-orange: #ff6b5a;
-  --dot-cyan: #7ad7ff; /* cyan-300 */
-  --dot-purple: #25e2ae; /* mint-400 */
-  --dot-blue: #2db4f2;
+  --dot-yellow: #ffe920;
+  --dot-orange: #ff5722;
+  --dot-cyan: #3dbeff;
+  --dot-purple: #5b3fff;
+  --dot-blue: #5a5aff;
 
-  --up: #25e2ae; /* mint-400 */
-  --up-soft: rgba(0, 200, 146, 0.12);
-  --down: #ff6b5a; /* coral-500 */
-  --down-soft: rgba(255, 107, 90, 0.12);
+  --up: #22c55e;
+  --up-soft: rgba(22, 163, 74, 0.14);
+  --down: #ef4444;
+  --down-soft: rgba(220, 38, 38, 0.14);
 
   color-scheme: dark;
 }
@@ -104,9 +104,9 @@
   --color-down: var(--down);
   --color-down-soft: var(--down-soft);
 
-  --font-sans: var(--font-inter), "Pretendard Variable", ui-sans-serif,
-    system-ui;
-  --font-mono: var(--font-jetbrains);
+  --font-sans: var(--font-inter-tight), var(--font-inter),
+    "Pretendard Variable", ui-sans-serif, system-ui;
+  --font-mono: var(--font-plex-mono);
 }
 
 * {
@@ -120,10 +120,10 @@ body {
 }
 
 body {
-  font-family: var(--font-inter), "Pretendard Variable", Pretendard,
-    -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo",
-    "Noto Sans KR", sans-serif;
-  letter-spacing: -0.005em;
+  font-family: var(--font-inter-tight), var(--font-inter),
+    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  letter-spacing: -0.015em; /* Pharos --track-tight */
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   transition: background-color 0.2s ease, color 0.2s ease;
@@ -134,7 +134,7 @@ body {
   color: var(--on-accent);
 }
 
-/* DaffiOne type: Inter Tight display headlines, tight negative tracking */
+/* Pharos type: Inter Tight display headlines, tight negative tracking */
 h1,
 h2,
 h3,
@@ -143,17 +143,17 @@ h4 {
     system-ui, sans-serif;
 }
 h1 {
-  letter-spacing: -0.035em;
+  letter-spacing: -0.035em; /* --track-display */
 }
 h2 {
   letter-spacing: -0.025em;
 }
 h3,
 h4 {
-  letter-spacing: -0.015em;
+  letter-spacing: -0.015em; /* --track-tight */
 }
 
-/* Yellow fills carry ink text — white text is unreadable on daffodil.
+/* Red fills carry white text.
    Matches every `bg-[var(--accent)]` utility without touching markup. */
 [class*="bg-[var(--accent)]"] {
   color: var(--on-accent);
@@ -163,22 +163,22 @@ h4 {
   font-variant-numeric: tabular-nums;
 }
 
-/* Eyebrow: JetBrains Mono, uppercase, wide-tracked chrome label */
+/* Eyebrow: Pharos chrome — mono small caps with a colored square dot */
 .eyebrow {
-  font-family: var(--font-jetbrains), ui-monospace, monospace;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
   font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.06em; /* --track-chrome */
   color: var(--muted);
   display: inline-flex;
   align-items: center;
   gap: 10px;
 }
 .eyebrow .bdot {
-  width: 7px;
-  height: 7px;
-  background: var(--accent);
+  width: 8px;
+  height: 8px;
+  background: var(--dot-blue);
   display: inline-block;
 }
 .eyebrow .bdot--yellow {

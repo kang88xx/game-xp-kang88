@@ -115,7 +115,7 @@ function LmsIntroModal({ onClose }: { onClose: () => void }) {
         className="animate-fade-in relative w-full max-w-md overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-2xl"
       >
         <div className="px-6 pt-6 pb-5 text-center">
-          <div className="text-xs font-semibold tracking-[0.3em] text-[var(--muted-2)]">
+          <div className="text-xs font-semibold text-[var(--muted-2)]">
             LMS
           </div>
           <h2 className="mt-2 text-2xl font-bold tracking-tight">
@@ -313,7 +313,7 @@ function DemoGame() {
     setAmount(kang > 0 ? String(Math.floor(kang)) : "0");
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <Eyebrow dot="yellow" className="mb-5">
         Play · Last Man Standing
       </Eyebrow>
@@ -352,7 +352,7 @@ function DemoGame() {
 
       {/* Hero countdown card */}
       <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 sm:p-10 shadow-2xl mb-5 flex flex-col items-center text-center">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted)] mb-3">
+        <span className="text-xs font-medium text-[var(--muted)] mb-3">
           Time Remaining
         </span>
 
@@ -619,7 +619,7 @@ function DemoGame() {
             ) : (
               <div className="space-y-1.5">
                 {/* Header */}
-                <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 px-2 pb-1 text-[10px] uppercase tracking-widest text-[var(--muted-2)]">
+                <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 px-2 pb-1 text-[11px] text-[var(--muted-2)]">
                   <span>Time</span>
                   <span>Address</span>
                   <span>Amount</span>
@@ -662,7 +662,7 @@ function DemoGame() {
               </p>
             ) : (
               <div className="space-y-1.5">
-                <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2 px-2 pb-1 text-[10px] uppercase tracking-widest text-[var(--muted-2)]">
+                <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2 px-2 pb-1 text-[11px] text-[var(--muted-2)]">
                   <span>Round</span>
                   <span>Winner</span>
                   <span>Prize</span>
@@ -1053,7 +1053,7 @@ function OnchainGame() {
     round != null && !isPaused && !overBalance && betAmt >= minBet;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
       <Eyebrow dot="yellow" className="mb-5">
         Play · Last Man Standing
       </Eyebrow>
@@ -1095,7 +1095,7 @@ function OnchainGame() {
         <div className="flex flex-col gap-5">
           {/* Countdown card */}
           <div className="flex flex-col items-center rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 text-center shadow-2xl sm:p-8">
-            <span className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-[var(--muted)]">
+            <span className="mb-3 text-xs font-medium text-[var(--muted)]">
               {heroWaiting ? "Round timer" : "Time Remaining"}
             </span>
             <div
@@ -1325,7 +1325,7 @@ function OnchainGame() {
                   · every 10 bets: bet ×2, timer ÷2
                 </span>
               </div>
-              <div className="flex justify-between text-[10px] uppercase tracking-wide text-[var(--muted-2)]">
+              <div className="flex justify-between text-[11px] text-[var(--muted-2)]">
                 <span className="w-1/3">Bets</span>
                 <span className="w-1/3 text-center">Min Bet</span>
                 <span className="w-1/3 text-right">Timer</span>
@@ -1403,7 +1403,7 @@ function OnchainGame() {
                 active={!heroWaiting}
               />
               {/* Stage · tier badge — top right, over the sky */}
-              <span className="absolute right-3 top-3 rounded-full border border-[#E8A33C]/50 bg-black/55 px-2.5 py-1 font-mono text-[10px] font-semibold tracking-[0.2em] text-[#FFE066]">
+              <span className="absolute right-3 top-3 rounded-full border border-[#E8A33C]/50 bg-black/55 px-2.5 py-1 font-mono text-[10px] font-semibold text-[#FFE066]">
                 {ARENA_STAGE_NAMES[Math.min(5, tier)]} · TIER {tier}
               </span>
             </div>
@@ -1423,7 +1423,7 @@ function OnchainGame() {
               </p>
             ) : (
               <div className="space-y-1.5">
-                <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-2 pb-1 text-[10px] uppercase tracking-widest text-[var(--muted-2)]">
+                <div className="grid grid-cols-[1fr_auto_auto] gap-2 px-2 pb-1 text-[11px] text-[var(--muted-2)]">
                   <span>Address</span>
                   <span>Amount</span>
                   <span>Block</span>
@@ -1463,7 +1463,7 @@ function OnchainGame() {
               </p>
             ) : (
               <div className="space-y-1.5">
-                <div className="grid grid-cols-[auto_1fr_auto] gap-2 px-2 pb-1 text-[10px] uppercase tracking-widest text-[var(--muted-2)]">
+                <div className="grid grid-cols-[auto_1fr_auto] gap-2 px-2 pb-1 text-[11px] text-[var(--muted-2)]">
                   <span>Round</span>
                   <span>Winner</span>
                   <span>Prize</span>
@@ -1545,7 +1545,7 @@ function StatCard({
 }) {
   return (
     <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-[var(--muted)] mb-2">
+      <div className="flex items-center gap-1.5 text-[11px] text-[var(--muted)] mb-2">
         <span
           style={{ color: accent ? "var(--accent)" : "var(--muted)" }}
         >

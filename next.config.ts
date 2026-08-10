@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // The repo lives on an exFAT external drive where Turbopack's persistent
+    // dev cache gets corrupted ("Failed to open database" on startup).
+    turbopackFileSystemCacheForDev: false,
+  },
   turbopack: {
     resolveAlias: {
       // Optional dep of @wagmi/core's Tempo connector (unused).

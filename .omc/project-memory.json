@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1785667186937,
-  "projectRoot": "/mnt/c/Users/kslee/Desktop/무제 폴더/DEX",
+  "lastScanned": 1786287709351,
+  "projectRoot": "/mnt/j/01_Project/DEX",
   "techStack": {
     "languages": [
       {
@@ -51,19 +51,15 @@
       "build": "next build",
       "start": "next start",
       "lint": "eslint",
-      "deploy:token": "node scripts/deploy-token.mjs",
       "compile:airdrop": "node scripts/compile-contract.mjs MerkleAirdrop",
       "deploy:airdrop": "node scripts/deploy-airdrop.mjs",
       "test:merkle": "node scripts/test-merkle.mjs",
       "compile:lms": "node scripts/compile-contract.mjs KangLMS",
-      "deploy:lms": "node scripts/deploy-lms.mjs",
-      "compile:bridge": "node scripts/compile-contract.mjs TestBridge",
-      "fund:opbnb": "node scripts/fund-opbnb.mjs",
-      "deploy:bridge": "node scripts/deploy-bridge.mjs"
+      "deploy:lms": "node scripts/deploy-lms.mjs"
     }
   },
   "conventions": {
-    "namingStyle": null,
+    "namingStyle": "camelCase",
     "importStyle": null,
     "testPattern": null,
     "fileOrganization": null
@@ -88,8 +84,8 @@
     "app": {
       "path": "app",
       "purpose": "Application code",
-      "fileCount": 20,
-      "lastAccessed": 1785667186852,
+      "fileCount": 10,
+      "lastAccessed": 1786287709179,
       "keyFiles": [
         "favicon.ico",
         "globals.css",
@@ -101,60 +97,47 @@
     "components": {
       "path": "components",
       "purpose": "UI components",
-      "fileCount": 36,
-      "lastAccessed": 1785667186860,
+      "fileCount": 13,
+      "lastAccessed": 1786287709197,
       "keyFiles": [
-        "AddLiquidityModal.tsx",
         "AddToWalletButton.tsx",
-        "BridgePanel.tsx",
-        "IOILogo.tsx",
-        "MarketSection.tsx"
+        "Navbar.tsx",
+        "PixelArena.tsx",
+        "ThemeToggle.tsx",
+        "TokenLogo.tsx"
       ]
     },
     "contracts": {
       "path": "contracts",
       "purpose": null,
-      "fileCount": 16,
-      "lastAccessed": 1785667186867,
+      "fileCount": 6,
+      "lastAccessed": 1786287709214,
       "keyFiles": [
         "KangLMS.artifact.json",
         "KangLMS.sol",
         "MerkleAirdrop.artifact.json",
         "MerkleAirdrop.sol",
-        "TestBridge.artifact.json"
-      ]
-    },
-    "dex-contracts": {
-      "path": "dex-contracts",
-      "purpose": null,
-      "fileCount": 26,
-      "lastAccessed": 1785667186874,
-      "keyFiles": [
-        "README.md",
-        "hardhat.config.ts",
-        "liquidity.config.json",
-        "package-lock.json",
-        "package.json"
+        "TestToken.artifact.json"
       ]
     },
     "lib": {
       "path": "lib",
       "purpose": "Library code",
-      "fileCount": 46,
-      "lastAccessed": 1785667186881,
+      "fileCount": 26,
+      "lastAccessed": 1786287709234,
       "keyFiles": [
         "admin-auth.ts",
         "airdrop.ts",
         "analytics-store.ts",
         "balances.ts",
-        "bridge.ts"
+        "chain.ts"
       ]
     },
     "public": {
       "path": "public",
       "purpose": "Public files",
-      "fileCount": 13,
-      "lastAccessed": 1785667186886,
+      "fileCount": 8,
+      "lastAccessed": 1786287709247,
       "keyFiles": [
         "file.svg",
         "globe.svg",
@@ -166,24 +149,31 @@
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
-      "fileCount": 16,
-      "lastAccessed": 1785667186892,
+      "fileCount": 5,
+      "lastAccessed": 1786287709266,
       "keyFiles": [
         "airdrop-transfer-owner.mjs",
         "compile-contract.mjs",
         "deploy-airdrop.mjs",
-        "deploy-bridge.mjs",
-        "deploy-lms.mjs"
+        "deploy-lms.mjs",
+        "test-merkle.mjs"
       ]
     },
     "stubs": {
       "path": "stubs",
       "purpose": "Stub implementations",
-      "fileCount": 2,
-      "lastAccessed": 1785667186897,
+      "fileCount": 1,
+      "lastAccessed": 1786287709287,
       "keyFiles": [
         "empty.ts"
       ]
+    },
+    "app/api": {
+      "path": "app/api",
+      "purpose": "API routes",
+      "fileCount": 0,
+      "lastAccessed": 1786287709313,
+      "keyFiles": []
     }
   },
   "hotPaths": [

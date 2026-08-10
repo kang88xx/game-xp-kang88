@@ -2,7 +2,7 @@
 
 type DotColor = "blue" | "yellow" | "orange" | "cyan" | "purple";
 
-/** Mono uppercase eyebrow with a leading colored square dot. */
+/** Small sentence-case section label with a leading colored square dot. */
 export function Eyebrow({
   children,
   dot = "blue",

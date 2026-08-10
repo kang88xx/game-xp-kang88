@@ -1,19 +1,20 @@
 import type { Metadata } from "next";
-import { Inter, Inter_Tight, JetBrains_Mono } from "next/font/google";
+import { IBM_Plex_Mono, Inter, Inter_Tight } from "next/font/google";
 import { headers } from "next/headers";
 import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Navbar } from "@/components/Navbar";
 import { Toaster } from "@/components/toast";
-import { GlyphX } from "@/components/IOILogo";
+import { XphereMark } from "@/components/XphereLogo";
 
 // Runs before hydration to apply the saved (or system) theme and avoid a flash.
 const THEME_INIT = `(function(){try{var t=localStorage.getItem('ioi-theme');if(t==='dark'||(!t&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();`;
 
-// DaffiOne type stack: Inter Tight (display), Inter (body), JetBrains Mono
-// (data/chrome). Korean glyphs fall back to Pretendard Variable, loaded via
-// CDN @import in globals.css (next/font has no Pretendard).
+// Pharos type stack: Inter Tight (display + body), Inter (fallback),
+// IBM Plex Mono (data/chrome). Korean glyphs fall back to Pretendard
+// Variable, loaded via CDN @import in globals.css (next/font has no
+// Pretendard).
 const interTight = Inter_Tight({
   variable: "--font-inter-tight",
   subsets: ["latin"],
@@ -24,8 +25,8 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const jetBrains = JetBrains_Mono({
-  variable: "--font-jetbrains",
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
   weight: ["400", "500"],
   subsets: ["latin"],
 });
@@ -74,7 +75,7 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${interTight.variable} ${inter.variable} ${jetBrains.variable} h-full antialiased`}
+      className={`${interTight.variable} ${inter.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[var(--background)]">
         <Script id="theme-init" strategy="beforeInteractive">
@@ -86,15 +87,13 @@ export default async function RootLayout({
         <footer className="border-t border-[var(--border)] py-7">
           <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2.5">
-              <GlyphX size={20} />
-              <span className="text-sm font-semibold tracking-[0.22em]">
-                XPULSE
-              </span>
-              <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted-2)]">
+              <XphereMark size={20} />
+              <span className="text-sm font-semibold">Xphere</span>
+              <span className="text-xs text-[var(--muted-2)]">
                 Xphere Mainnet Activation
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] uppercase tracking-[0.06em] text-[var(--muted)]">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--muted)]">
               <span className="inline-flex items-center gap-2">
                 <span className="h-1.5 w-1.5 bg-[var(--dot-yellow)]" />
                 Beta · live games
