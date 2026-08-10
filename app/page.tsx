@@ -1332,7 +1332,7 @@ function OnchainGame() {
               </div>
               <div className="flex justify-between text-xs text-[var(--muted-2)]">
                 <span className="w-1/3">Bets</span>
-                <span className="w-1/3 text-center">Min Bet</span>
+                <span className="w-1/3 text-right">Min Bet</span>
                 <span className="w-1/3 text-right">Timer</span>
               </div>
               {TIER_ROWS.map((r, t) => (
@@ -1345,7 +1345,7 @@ function OnchainGame() {
                   }`}
                 >
                   <span className="w-1/3">{r.bets}</span>
-                  <span className="w-1/3 text-center">{r.bet} KDG</span>
+                  <span className="w-1/3 text-right">{r.bet} KDG</span>
                   <span className="w-1/3 text-right">{r.timer}</span>
                 </div>
               ))}
