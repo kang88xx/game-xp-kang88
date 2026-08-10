@@ -29,9 +29,10 @@ export function WalletButton() {
     return (
       <button
         onClick={() => open()}
-        className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] py-1.5 pl-4 pr-1.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+        className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-[var(--accent)] py-1.5 pl-4 pr-1.5 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
       >
-        Connect MetaMask
+        <span className="sm:hidden">Connect</span>
+        <span className="hidden sm:inline">Connect MetaMask</span>
         <ArrowChip variant="onAccent" />
       </button>
     );
