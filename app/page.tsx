@@ -18,6 +18,7 @@ import { Eyebrow } from "@/components/ui";
 import { TokenLogo } from "@/components/TokenLogo";
 import { AddToWalletButton } from "@/components/AddToWalletButton";
 import { PixelArena, ARENA_STAGE_NAMES } from "@/components/PixelArena";
+import { PerspectiveGrid } from "@/components/PerspectiveGrid";
 import { toast } from "@/components/toast";
 import { TOKEN_MAP } from "@/lib/tokens";
 import { CHAIN_ID, CHAIN_LABEL, EXPLORER_URL } from "@/lib/chain";
@@ -87,7 +88,10 @@ export default function GamesPage() {
   return (
     <>
       {showIntro && <LmsIntroModal onClose={() => setDismissed(true)} />}
-      {lmsLive ? <OnchainGame /> : <DemoGame />}
+      <div className="relative isolate">
+        <PerspectiveGrid />
+        {lmsLive ? <OnchainGame /> : <DemoGame />}
+      </div>
     </>
   );
 }
@@ -186,9 +190,9 @@ function LmsStep({
   body: string;
 }) {
   return (
-    <div className="flex items-start gap-4 border-b border-[var(--border)] px-6 py-4 last:border-b-0">
+    <div className="group flex items-start gap-4 border-b border-[var(--border)] px-6 py-4 last:border-b-0">
       <span className="mt-0.5 font-mono text-sm text-[var(--muted-2)]">{n}</span>
-      <span className="mt-0.5 shrink-0 text-[var(--accent)]">{icon}</span>
+      <span className="icontile shrink-0 text-[var(--accent)]">{icon}</span>
       <div>
         <div className="text-sm font-semibold">{title}</div>
         <div className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
@@ -1544,9 +1548,10 @@ function StatCard({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
-      <div className="flex items-center gap-1.5 text-xs text-[var(--muted)] mb-2">
+    <div className="dotgrid group rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--border-strong)] hover:shadow-lg">
+      <div className="mb-2 flex items-center gap-2.5 text-xs text-[var(--muted)]">
         <span
+          className="icontile"
           style={{ color: accent ? "var(--accent)" : "var(--muted)" }}
         >
           {icon}

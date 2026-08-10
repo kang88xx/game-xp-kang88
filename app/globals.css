@@ -45,6 +45,10 @@
 
   --radius: 16px;
 
+  /* background ornaments */
+  --grid-line: rgba(10, 10, 10, 0.08);
+  --dot-grid: rgba(10, 10, 10, 0.1);
+
   color-scheme: light;
 }
 
@@ -78,6 +82,10 @@
   --up-soft: rgba(22, 163, 74, 0.14);
   --down: #ef4444;
   --down-soft: rgba(220, 38, 38, 0.14);
+
+  /* background ornaments */
+  --grid-line: rgba(255, 255, 255, 0.09);
+  --dot-grid: rgba(255, 255, 255, 0.1);
 
   color-scheme: dark;
 }
@@ -216,6 +224,77 @@ input[type="number"] {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--muted-2);
+}
+
+/* Perspective grid — rays draw out from the vanishing point on load */
+.pgrid line,
+.pgrid rect[pathLength] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: pgrid-draw 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes pgrid-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pgrid line,
+  .pgrid rect[pathLength] {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Dot-grid texture — fades toward the card's lower half so data stays clean */
+.dotgrid {
+  position: relative;
+  overflow: hidden;
+}
+.dotgrid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(var(--dot-grid) 1px, transparent 1px);
+  background-size: 12px 12px;
+  mask-image: linear-gradient(to bottom, black, transparent 72%);
+  -webkit-mask-image: linear-gradient(to bottom, black, transparent 72%);
+}
+
+/* Icon tile — pictogram plate with Illustrator-style corner vertex dots */
+.icontile {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--surface);
+}
+.icontile::before,
+.icontile::after {
+  content: "";
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--dot-blue);
+  opacity: 0.65;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+.icontile::before {
+  top: -2px;
+  left: -2px;
+}
+.icontile::after {
+  bottom: -2px;
+  right: -2px;
+}
+.group:hover .icontile::before,
+.group:hover .icontile::after {
+  opacity: 1;
+  transform: scale(1.5);
 }
 
 @keyframes fade-in {
