@@ -155,7 +155,7 @@ function LmsIntroModal({ onClose }: { onClose: () => void }) {
         <div className="px-6 pb-6 pt-4">
           <button
             onClick={close}
-            className="w-full rounded-2xl bg-[var(--accent)] py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+            className="w-full rounded-full bg-[var(--accent)] py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
           >
             Enter Game
           </button>
@@ -538,14 +538,14 @@ function DemoGame() {
               ) : !connected ? (
                 <button
                   onClick={() => openWalletModal()}
-                  className="h-12 w-full rounded-2xl bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+                  className="h-12 w-full rounded-full bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
                 >
                   Connect Wallet
                 </button>
               ) : (
                 <button
                   disabled
-                  className="h-12 w-full rounded-2xl bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:text-[var(--muted-2)]"
+                  className="h-12 w-full rounded-full bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:text-[var(--muted-2)]"
                 >
                   {!isActive
                     ? "Round ended"
@@ -1286,7 +1286,7 @@ function OnchainGame() {
               ) : !connected ? (
                 <button
                   onClick={() => openWalletModal()}
-                  className="h-12 w-full rounded-2xl bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+                  className="h-12 w-full rounded-full bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
                 >
                   Connect Wallet
                 </button>
@@ -1294,7 +1294,7 @@ function OnchainGame() {
                 <button
                   onClick={doBet}
                   disabled={!canBet || busy !== null}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:text-[var(--muted-2)]"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:text-[var(--muted-2)]"
                 >
                   {busy === "bet" && <Loader2 className="h-5 w-5 animate-spin" />}
                   {busy === "bet"
