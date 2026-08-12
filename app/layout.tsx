@@ -6,7 +6,9 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { Navbar } from "@/components/Navbar";
 import { Toaster } from "@/components/toast";
-import { XphereMark } from "@/components/XphereLogo";
+import { XphereLockup } from "@/components/XphereLogo";
+import { AddNetworkButton } from "@/components/AddNetworkButton";
+import { TopBanner } from "@/components/TopBanner";
 
 // Runs before hydration to apply the saved (or system) theme and avoid a flash.
 const THEME_INIT = `(function(){try{var t=localStorage.getItem('ioi-theme');if(t==='dark'||(!t&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();`;
@@ -83,22 +85,22 @@ export default async function RootLayout({
         </Script>
         <Providers cookies={cookies}>
         <Navbar />
+        <TopBanner />
         <main className="flex-1">{children}</main>
         <footer className="border-t border-[var(--border)] py-7">
           <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2.5">
-              <XphereMark size={20} />
-              <span className="text-sm font-semibold">Xphere</span>
+              <XphereLockup size={20} />
               <span className="text-xs text-[var(--muted-2)]">
                 Xphere Mainnet Activation
               </span>
             </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[var(--muted)]">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--muted)]">
               <span className="inline-flex items-center gap-2">
-                <span className="dot-alive h-1.5 w-1.5 bg-[var(--dot-yellow)]" />
+                <span className="dot-alive h-1.5 w-1.5 bg-[var(--dot-red)]" />
                 Beta · live games
               </span>
-              <span>Xphere Mainnet</span>
+              <AddNetworkButton />
             </div>
           </div>
         </footer>

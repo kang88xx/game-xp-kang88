@@ -14,7 +14,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDexStore, useHydrated, LMS_CONFIG } from "@/lib/store";
 import { useBalance } from "@/lib/balances";
 import { formatNumber, shortAddress, timeAgoPure } from "@/lib/format";
-import { ArrowChip, Eyebrow } from "@/components/ui";
+import { ArrowChip } from "@/components/ui";
 import { TokenLogo } from "@/components/TokenLogo";
 import { AddToWalletButton } from "@/components/AddToWalletButton";
 import { PixelArena, ARENA_STAGE_NAMES } from "@/components/PixelArena";
@@ -49,7 +49,7 @@ const TIER_ROWS = [
   { bets: "60–69", bet: "64,000", timer: "22.5m" },
   { bets: "70–79", bet: "128,000", timer: "11.25m" },
   { bets: "80–89", bet: "256,000", timer: "5.6m" },
-  { bets: "90+", bet: "512,000+", timer: "→30s" },
+  { bets: "90+", bet: "512,000+", timer: "min 30s" },
 ];
 
 function mmss(ms: number): string {
@@ -319,10 +319,6 @@ function DemoGame() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      <Eyebrow dot="yellow" className="mb-5">
-        Play · Last Man Standing
-      </Eyebrow>
-
       {/* Title row */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
@@ -525,15 +521,21 @@ function DemoGame() {
             </div>
 
             {/* Payout preview */}
-            <div className="mt-3 flex items-center justify-between rounded-2xl border border-[var(--border)] px-4 py-3 text-sm">
-              <span className="text-[var(--muted)]">
-                Payout if you hold the last bet
-              </span>
-              <span className="font-semibold">
-                {betAmt > 0
-                  ? `${formatNumber(previewPrize, 2)} KDG`
-                  : "—"}
-              </span>
+            <div className="mt-3 rounded-2xl border border-[var(--border)] px-4 py-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--muted)]">
+                  Payout if you hold the last bet
+                </span>
+                <span className="font-semibold">
+                  {betAmt > 0
+                    ? `${formatNumber(previewPrize, 2)} KDG`
+                    : "—"}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-[var(--muted-2)]">
+                80% of every bet feeds the pool — the payout grows with each
+                new bet.
+              </p>
             </div>
 
             {/* Action button */}
@@ -1059,10 +1061,6 @@ function OnchainGame() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      <Eyebrow dot="yellow" className="mb-5">
-        Play · Last Man Standing
-      </Eyebrow>
-
       {/* Title row */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
@@ -1075,7 +1073,7 @@ function OnchainGame() {
                 Last Man Standing
               </h1>
               <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-[var(--up)]/40 bg-[var(--up-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--up)]">
-                On-chain · {displayRoundNo != null ? `Round #${displayRoundNo}` : "…"}
+                {displayRoundNo != null ? `Round #${displayRoundNo}` : "…"}
               </span>
             </div>
             <p className="text-sm text-[var(--muted)]">
@@ -1275,13 +1273,19 @@ function OnchainGame() {
             </div>
 
             {/* Payout preview */}
-            <div className="mt-3 flex items-center justify-between rounded-2xl border border-[var(--border)] px-4 py-3 text-sm">
-              <span className="text-[var(--muted)]">
-                Payout if you hold the last bet
-              </span>
-              <span className="font-semibold">
-                {betAmt > 0 ? `${formatNumber(previewPrize, 2)} KDG` : "—"}
-              </span>
+            <div className="mt-3 rounded-2xl border border-[var(--border)] px-4 py-3 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--muted)]">
+                  Payout if you hold the last bet
+                </span>
+                <span className="font-semibold">
+                  {betAmt > 0 ? `${formatNumber(previewPrize, 2)} KDG` : "—"}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-[var(--muted-2)]">
+                80% of every bet feeds the pool — the payout grows with each
+                new bet.
+              </p>
             </div>
 
             {/* Action button */}
@@ -1320,8 +1324,8 @@ function OnchainGame() {
             </div>
 
             <p className="mt-3 text-center text-xs text-[var(--muted-2)]">
-              No randomness · last bettor wins the pool · prizes are claimed
-              from the contract (pull-payment)
+              No randomness · last bettor wins the pool · prizes aren&apos;t
+              sent automatically — claim yours from the claims card above
             </p>
             <div className="mt-4 rounded-2xl border border-[var(--border)] p-3">
               <div className="mb-2 text-xs font-semibold">
@@ -1333,7 +1337,7 @@ function OnchainGame() {
               <div className="flex justify-between text-xs text-[var(--muted-2)]">
                 <span className="w-1/3">Bets</span>
                 <span className="w-1/3 text-right">Min Bet</span>
-                <span className="w-1/3 text-right">Timer</span>
+                <span className="w-1/3 text-right">Resets to</span>
               </div>
               {TIER_ROWS.map((r, t) => (
                 <div

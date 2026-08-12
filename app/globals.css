@@ -31,6 +31,7 @@
   --on-accent: #ffffff; /* white text on blue fills */
 
   /* accent dots — the X-glyph palette */
+  --dot-red: #bb0022; /* brand X red */
   --dot-yellow: #ffe920; /* the "sun" */
   --dot-orange: #ff5722;
   --dot-cyan: #3dbeff;
@@ -72,6 +73,7 @@
   --blue-300: #c9c9ff; /* blue-100 */
   --on-accent: #ffffff;
 
+  --dot-red: #ef4444; /* brand red, lifted for black ground */
   --dot-yellow: #ffe920;
   --dot-orange: #ff5722;
   --dot-cyan: #3dbeff;
@@ -103,6 +105,7 @@
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-soft: var(--accent-soft);
+  --color-dot-red: var(--dot-red);
   --color-dot-yellow: var(--dot-yellow);
   --color-dot-orange: var(--dot-orange);
   --color-dot-cyan: var(--dot-cyan);
@@ -188,6 +191,9 @@ h4 {
   height: 8px;
   background: var(--dot-blue);
   display: inline-block;
+}
+.eyebrow .bdot--red {
+  background: var(--dot-red);
 }
 .eyebrow .bdot--yellow {
   background: var(--dot-yellow);

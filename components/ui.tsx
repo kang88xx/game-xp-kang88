@@ -1,6 +1,6 @@
 // Shared IOI / Pharos design-system primitives.
 
-type DotColor = "blue" | "yellow" | "orange" | "cyan" | "purple";
+type DotColor = "blue" | "red" | "yellow" | "orange" | "cyan" | "purple";
 
 /** Small sentence-case section label with a leading colored square dot. */
 export function Eyebrow({

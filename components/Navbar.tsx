@@ -6,11 +6,11 @@ import { useState } from "react";
 import { Menu, X, ShieldCheck } from "lucide-react";
 import { WalletButton } from "./WalletButton";
 import { ThemeToggle } from "./ThemeToggle";
-import { XphereMark } from "./XphereLogo";
+import { XphereLockup } from "./XphereLogo";
 
 const LINKS = [
   { href: "/", label: "Games" },
-  { href: "/airdrop", label: "Claim" },
+  { href: "/claim", label: "Claim" },
 ] as { href: string; label: string }[];
 
 export function Navbar() {
@@ -24,9 +24,8 @@ export function Navbar() {
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2.5">
-            <XphereMark size={26} />
-            <span className="text-lg font-semibold">Xphere</span>
+          <Link href="/" className="flex items-center">
+            <XphereLockup size={26} />
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">

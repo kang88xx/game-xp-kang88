@@ -1752,7 +1752,7 @@ function resolveOnchainReward(
 /**
  * On-chain launch for a PUBLIC campaign: approve the airdrop contract for the
  * total allocation, then createCampaign with no Merkle root and a fixed
- * amountPerClaim. Once launched, any wallet can claim from the /airdrop page
+ * amountPerClaim. Once launched, any wallet can claim from the /claim page
  * (read straight from the chain — no whitelist, no per-user data sharing).
  * Must be run by the contract owner holding enough reward tokens.
  */

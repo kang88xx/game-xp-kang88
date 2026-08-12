@@ -8,6 +8,7 @@ import { useDexStore, useHydrated } from "@/lib/store";
 import { shortAddress } from "@/lib/format";
 import { toast } from "./toast";
 import { ArrowChip } from "./ui";
+import { AddNetworkButton } from "./AddNetworkButton";
 
 export function WalletButton() {
   const hydrated = useHydrated();
@@ -78,6 +79,7 @@ export function WalletButton() {
               )}
               Copy address
             </button>
+            <AddNetworkButton variant="menu" />
             <button
               onClick={() => {
                 disconnect();
