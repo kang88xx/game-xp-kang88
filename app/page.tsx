@@ -1622,13 +1622,24 @@ function StatCard({
       className={`dotgrid lift-card group rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 ${className}`}
     >
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 text-sm text-[var(--muted)]">
-          <span
-            className="icontile"
-            style={{ color: accent ? "var(--accent)" : "var(--muted)" }}
-          >
-            {icon}
-          </span>
+        {/* valueColor cards (Prize Pool / Burned): bare icon, no tile plate,
+            and the label matches the number's color. */}
+        <div
+          className="flex items-center gap-2.5 text-sm"
+          style={{ color: valueColor ?? "var(--muted)" }}
+        >
+          {valueColor ? (
+            <span className="flex h-5 w-5 items-center justify-center">
+              {icon}
+            </span>
+          ) : (
+            <span
+              className="icontile"
+              style={{ color: accent ? "var(--accent)" : "var(--muted)" }}
+            >
+              {icon}
+            </span>
+          )}
           {label}
         </div>
         <div className="text-right">
