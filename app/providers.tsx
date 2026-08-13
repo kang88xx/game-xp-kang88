@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useRef } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cookieToInitialState, useAccount, WagmiProvider } from "wagmi";
 import { wagmiConfig } from "@/lib/wagmi";
+import { WalletPickerHost } from "@/lib/use-wallet";
 import { useDexStore } from "@/lib/store";
 
 const queryClient = new QueryClient();
@@ -78,6 +79,7 @@ export function Providers({
       <QueryClientProvider client={queryClient}>
         <WalletSync />
         <AnalyticsTracker />
+        <WalletPickerHost />
         {children}
       </QueryClientProvider>
     </WagmiProvider>
