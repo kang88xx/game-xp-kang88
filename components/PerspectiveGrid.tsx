@@ -86,14 +86,6 @@ export function PerspectiveGrid({ className = "" }: { className?: string }) {
           <rect x="290" y="240" width="620" height="230" pathLength={1} />
           <rect x="440" y="205" width="320" height="130" pathLength={1} />
         </g>
-        {/* corner-dot motif: a tiny sun at the vanishing point */}
-        <rect
-          x={VP.x - 3}
-          y={VP.y - 3}
-          width="6"
-          height="6"
-          fill="var(--dot-yellow)"
-        />
       </svg>
     </div>
   );

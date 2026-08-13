@@ -416,6 +416,7 @@ function DemoGame() {
           label="Prize Pool"
           value={`${formatNumber(round.prizePool, 2)} KDG`}
           accent
+          valueColor="var(--accent-bright)"
         />
         <StatCard
           icon={<Users className="h-5 w-5" />}
@@ -433,7 +434,7 @@ function DemoGame() {
           icon={<Flame className="flamebob h-5 w-5" stroke="url(#flame-grad)" fill="url(#flame-grad)" />}
           label="Burned"
           value={`${formatNumber(round.burnedPool, 2)} KDG`}
-          valueColor="var(--accent-bright)"
+          valueColor="var(--accent)"
         />
       </div>
 
@@ -1197,13 +1198,14 @@ function OnchainGame() {
               icon={<Flame className="flamebob h-5 w-5" stroke="url(#flame-grad)" fill="url(#flame-grad)" />}
               label="Burned"
               value={`${formatNumber(displayBurned, 2)} KDG`}
-              valueColor="var(--accent-bright)"
+              valueColor="var(--accent)"
             />
             <StatCard
               icon={<TrendingUp className="h-5 w-5" />}
               label="Prize Pool"
               value={`${formatNumber(displayPrizePool, 2)} KDG`}
               accent
+              valueColor="var(--accent-bright)"
               className="sm:col-span-2"
             />
           </div>
