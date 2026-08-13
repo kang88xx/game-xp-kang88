@@ -4,17 +4,14 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { useSyncExternalStore } from "react";
 import type {
-  AdminToken,
   AirdropCampaign,
-  LpPosition,
   LmsBet,
   LmsRound,
   LmsHistoryEntry,
   LmsPendingClaim,
-  Pool,
   Transaction,
 } from "./types";
-import { seedCampaigns, seedPools } from "./mock-data";
+import { seedCampaigns } from "./mock-data";
 
 // NOTE: token balances are no longer stored here — they are read live from
 // BSC via wagmi (see lib/balances.ts). Trade execution (swap/LP/claims/bets)
@@ -147,22 +144,11 @@ interface DexState {
   connected: boolean;
   address: string | null;
 
-  // per-address data (LP positions / airdrop claims — populated again once
-  // on-chain execution ships)
-  positions: Record<string, LpPosition[]>;
+  // per-address airdrop claim records
   claims: Record<string, string[]>;
 
   transactions: Transaction[];
   campaigns: AirdropCampaign[];
-
-  // admin-managed swap token registry (merged with the static registry)
-  adminTokens: AdminToken[];
-  disabledTokens: string[]; // symbols hidden from swapping
-  removedTokens: string[]; // static-registry symbols delisted entirely (restorable)
-
-  // admin-managed liquidity pools (only pools that actually exist)
-  pools: Pool[];
-  hiddenPools: string[]; // pool ids hidden from the public /pools list
 
   // Last Man Standing
   lms: {
@@ -206,20 +192,6 @@ interface DexState {
     claimed: boolean,
   ) => void;
   recordClaim: (campaignId: string) => void;
-
-  // admin — swap token registry
-  addAdminToken: (token: AdminToken) => void;
-  removeAdminToken: (symbol: string) => void;
-  setTokenEnabled: (symbol: string, enabled: boolean) => void;
-  /** Delist a static-registry token entirely (reversible via restoreToken). */
-  removeToken: (symbol: string) => void;
-  restoreToken: (symbol: string) => void;
-
-  // admin — liquidity pools
-  addPool: (pool: Omit<Pool, "id">) => void;
-  removePool: (id: string) => void;
-  /** Hide/show a pool on the public /pools list (positions stay withdrawable). */
-  setPoolVisible: (id: string, visible: boolean) => void;
 }
 
 export const useDexStore = create<DexState>()(
@@ -227,15 +199,9 @@ export const useDexStore = create<DexState>()(
     (set, get) => ({
       connected: false,
       address: null,
-      positions: {},
       claims: {},
       transactions: [],
       campaigns: seedCampaigns(),
-      adminTokens: [],
-      disabledTokens: [],
-      removedTokens: [],
-      pools: seedPools(),
-      hiddenPools: [],
       lms: {
         round: makeFreshRound(Date.now()),
         history: [],
@@ -475,75 +441,6 @@ export const useDexStore = create<DexState>()(
           };
         }),
 
-      addAdminToken: (token) =>
-        set((s) => {
-          const symbol = token.symbol.trim().toUpperCase();
-          if (!symbol || s.adminTokens.some((t) => t.symbol === symbol)) {
-            return s;
-          }
-          return {
-            adminTokens: [
-              ...s.adminTokens,
-              { ...token, symbol, address: token.address.trim() },
-            ],
-            // a freshly added token is enabled by default
-            disabledTokens: s.disabledTokens.filter((sym) => sym !== symbol),
-          };
-        }),
-
-      removeAdminToken: (symbol) =>
-        set((s) => ({
-          adminTokens: s.adminTokens.filter((t) => t.symbol !== symbol),
-          disabledTokens: s.disabledTokens.filter((sym) => sym !== symbol),
-        })),
-
-      setTokenEnabled: (symbol, enabled) =>
-        set((s) => ({
-          disabledTokens: enabled
-            ? s.disabledTokens.filter((sym) => sym !== symbol)
-            : s.disabledTokens.includes(symbol)
-              ? s.disabledTokens
-              : [...s.disabledTokens, symbol],
-        })),
-
-      removeToken: (symbol) =>
-        set((s) => ({
-          removedTokens: (s.removedTokens ?? []).includes(symbol)
-            ? s.removedTokens
-            : [...(s.removedTokens ?? []), symbol],
-          disabledTokens: s.disabledTokens.filter((sym) => sym !== symbol),
-        })),
-
-      restoreToken: (symbol) =>
-        set((s) => ({
-          removedTokens: (s.removedTokens ?? []).filter(
-            (sym) => sym !== symbol,
-          ),
-        })),
-
-      addPool: (pool) =>
-        set((s) => {
-          const base = `${pool.token0}-${pool.token1}`.toLowerCase();
-          let id = base;
-          let n = 2;
-          while (s.pools.some((p) => p.id === id)) id = `${base}-${n++}`;
-          return { pools: [...s.pools, { ...pool, id }] };
-        }),
-
-      removePool: (id) =>
-        set((s) => ({
-          pools: s.pools.filter((p) => p.id !== id),
-          hiddenPools: (s.hiddenPools ?? []).filter((pid) => pid !== id),
-        })),
-
-      setPoolVisible: (id, visible) =>
-        set((s) => ({
-          hiddenPools: visible
-            ? (s.hiddenPools ?? []).filter((pid) => pid !== id)
-            : (s.hiddenPools ?? []).includes(id)
-              ? s.hiddenPools
-              : [...(s.hiddenPools ?? []), id],
-        })),
     }),
     {
       // bumped from helix-dex-store → reseeds with IOI tokens/campaigns
@@ -564,7 +461,11 @@ export const useDexStore = create<DexState>()(
       //      respawned in every fresh browser after the admin deleted them
       // v13: chain moved BSC → Xphere Mainnet — every persisted pool/token/
       //      campaign/tx references retired BSC contracts, so wipe to seeds
-      version: 13,
+      // v14: swap + LP pool features removed — pools/adminTokens/positions and
+      //      friends dropped from the store entirely
+      // v15: airdrop claim history purge — campaigns, per-wallet claim records
+      //      and claim-type activity rows wiped (on-chain funds swept by admin)
+      version: 15,
       storage: createJSONStorage(() => localStorage),
       partialize: (s) =>
         Object.fromEntries(
@@ -577,6 +478,24 @@ export const useDexStore = create<DexState>()(
         delete p.connected;
         delete p.address;
         delete p.balances;
+        // v13 → v14: swap/LP removal — drop the orphaned persisted slices.
+        delete p.positions;
+        delete p.adminTokens;
+        delete p.disabledTokens;
+        delete p.removedTokens;
+        delete p.pools;
+        delete p.hiddenPools;
+        // v14 → v15: purge airdrop claim history — old campaigns and claim
+        // records are retired (remaining on-chain funds swept by the admin).
+        if (version < 15) {
+          delete p.campaigns;
+          delete p.claims;
+          if (Array.isArray(p.transactions)) {
+            p.transactions = (p.transactions as Transaction[]).filter(
+              (t) => t.type === "bet",
+            );
+          }
+        }
         // v12 → v13: BSC → Xphere. Pools, admin tokens, campaigns and tx
         // history all point at BSC-era contracts — reset to fresh seeds.
         if (version < 13) {
@@ -649,16 +568,9 @@ export function useHydrated(): boolean {
 // NB: return *stable* empty references so zustand v5's Object.is snapshot
 // comparison does not trigger an infinite render loop.
 
-const EMPTY_POSITIONS: LpPosition[] = [];
 const EMPTY_IDS: string[] = [];
 
 // Token balances moved on-chain — see useBalances/useBalance in lib/balances.ts
-
-export function usePositions(): LpPosition[] {
-  return useDexStore((s) =>
-    s.address ? s.positions[s.address] ?? EMPTY_POSITIONS : EMPTY_POSITIONS,
-  );
-}
 
 export function useClaimedIds(): string[] {
   return useDexStore((s) =>

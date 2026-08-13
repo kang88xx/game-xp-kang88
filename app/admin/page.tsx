@@ -7,8 +7,10 @@ import {
   usePublicClient,
   useReadContract,
   useReadContracts,
+  useSignMessage,
   useWriteContract,
 } from "wagmi";
+import { useMetaMask } from "@/lib/use-metamask";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ShieldCheck,
@@ -19,31 +21,25 @@ import {
   UserPlus,
   X,
   Power,
-  Coins,
-  Droplets,
   Check,
   Users,
   Wallet,
-  TrendingUp,
   ListFilter,
   Rocket,
   Loader2,
 } from "lucide-react";
 import { useDexStore, useHydrated } from "@/lib/store";
-import { useTokenRegistry, tokenTradable } from "@/lib/token-registry";
-import { usePoolStats } from "@/lib/pool-stats";
 import { CHAIN_ID, NATIVE_SYMBOL } from "@/lib/chain";
 import { TOKEN_MAP } from "@/lib/tokens";
 import { merkleRoot } from "@/lib/merkle";
 import { AIRDROP_ABI, AIRDROP_CONTRACT, NATIVE_TOKEN, airdropLive } from "@/lib/airdrop";
 import {
   daysUntil,
-  formatUsd,
   shortAddress,
   formatAmountInput,
   parseAmountInput,
 } from "@/lib/format";
-import { TokenLogo, TokenPair } from "@/components/TokenLogo";
+import { TokenLogo } from "@/components/TokenLogo";
 import { toast } from "@/components/toast";
 import { Eyebrow } from "@/components/ui";
 import type { AirdropCampaign, Eligibility } from "@/lib/types";
@@ -247,12 +243,18 @@ function useWhitelistClaimStatus(c: AirdropCampaign): WlClaimStatus {
 }
 
 /** Server-verified admin session (HTTP-only cookie, see /api/admin/*) */
+interface AdminSessionInfo {
+  isAdmin: boolean;
+  role: "none" | "password" | "admin" | "super";
+  address: string | null;
+}
+
 function useAdminSession() {
-  return useQuery<{ isAdmin: boolean }>({
+  return useQuery<AdminSessionInfo>({
     queryKey: ["admin-session"],
     queryFn: async () => {
       const res = await fetch("/api/admin/session");
-      if (!res.ok) return { isAdmin: false };
+      if (!res.ok) return { isAdmin: false, role: "none" as const, address: null };
       return res.json();
     },
     staleTime: 60_000,
@@ -271,7 +273,91 @@ export default function AdminPage() {
     );
   }
 
-  return session?.isAdmin ? <AdminDashboard /> : <AdminLogin />;
+  if (session?.isAdmin) return <AdminDashboard />;
+  // Password accepted but the wallet step is still pending (production flow).
+  if (session?.role === "password") return <WalletGate />;
+  return <AdminLogin />;
+}
+
+/**
+ * Second login step: prove ownership of an allow-listed wallet. The connected
+ * wallet signs a one-time nonce; the server checks the signature against the
+ * super/regular admin lists and upgrades the session cookie with the role.
+ */
+function WalletGate() {
+  const queryClient = useQueryClient();
+  const { address, isConnected } = useAccount();
+  const { signMessageAsync } = useSignMessage();
+  const { open: openWalletModal } = useMetaMask();
+  const [verifying, setVerifying] = useState(false);
+
+  const verify = async () => {
+    if (!address || verifying) return;
+    setVerifying(true);
+    try {
+      const nonceRes = await fetch("/api/admin/wallet-nonce", {
+        method: "POST",
+      });
+      if (!nonceRes.ok) throw new Error("nonce request failed");
+      const { nonce, message } = (await nonceRes.json()) as {
+        nonce: string;
+        message: string;
+      };
+      const signature = await signMessageAsync({ message });
+      const res = await fetch("/api/admin/wallet-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address, signature, nonce }),
+      });
+      if (res.ok) {
+        toast.success("Wallet verified — admin access granted");
+        await queryClient.invalidateQueries({ queryKey: ["admin-session"] });
+      } else {
+        const body = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        toast.error(body?.error ?? "Wallet verification failed");
+      }
+    } catch {
+      toast.error("Signature cancelled or failed");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto flex max-w-md flex-col items-center px-4 py-24 text-center">
+      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent-soft)]">
+        <Wallet className="h-7 w-7 text-[var(--accent)]" />
+      </span>
+      <h1 className="mt-5 text-xl font-bold">Verify admin wallet</h1>
+      <p className="mt-2 text-sm text-[var(--muted)]">
+        Password accepted. Connect an admin wallet and sign a one-time message
+        to finish signing in.
+      </p>
+      {isConnected && address && (
+        <p className="mt-3 font-mono text-xs text-[var(--muted-2)]">
+          {shortAddress(address)}
+        </p>
+      )}
+      {isConnected ? (
+        <button
+          onClick={verify}
+          disabled={verifying}
+          className="mt-6 w-full rounded-2xl bg-[var(--accent)] py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {verifying ? "Waiting for signature…" : "Sign & verify"}
+        </button>
+      ) : (
+        <button
+          onClick={() => openWalletModal()}
+          className="mt-6 w-full rounded-2xl bg-[var(--accent)] py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
+        >
+          Connect wallet
+        </button>
+      )}
+    </div>
+  );
 }
 
 function AdminLogin() {
@@ -423,17 +509,14 @@ function AdminDashboard() {
               </div>
             )}
 
+            <OnchainRecovery />
             <LegacySweepTool />
           </div>
         </div>
       </div>
 
       <div className="mt-10">
-        <SwapTokensManager />
-      </div>
-
-      <div className="mt-10">
-        <PoolsManager />
+        <AdminWalletsManager />
       </div>
     </div>
   );
@@ -449,6 +532,150 @@ const LEGACY_AIRDROP_V4 = "0x755f35bf4fa91fda72301d7ce374b710bf87670b";
  * talk to the current contract). Calls endAndSweep(id, wallet) on any
  * MerkleAirdrop address with the connected owner wallet.
  */
+/**
+ * On-chain campaign recovery: lists every campaign still holding unclaimed
+ * funds on the CURRENT airdrop contract and lets the contract owner end it
+ * and sweep the remainder back to their wallet in one click.
+ */
+function OnchainRecovery() {
+  const { address: wallet, chainId } = useAccount();
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
+  const [busyId, setBusyId] = useState<number | null>(null);
+
+  const { data: count } = useReadContract({
+    address: AIRDROP_CONTRACT as `0x${string}`,
+    abi: AIRDROP_ABI,
+    functionName: "campaignCount",
+    chainId: CHAIN_ID,
+    query: { enabled: airdropLive },
+  });
+
+  const n = Number(count ?? 0);
+  const { data: rows, refetch } = useReadContracts({
+    contracts: Array.from({ length: n }, (_, i) => ({
+      address: AIRDROP_CONTRACT as `0x${string}`,
+      abi: AIRDROP_ABI,
+      functionName: "campaigns",
+      args: [BigInt(i + 1)],
+      chainId: CHAIN_ID,
+    })),
+    query: { enabled: airdropLive && n > 0 },
+  });
+
+  const tokenBySymbolAddr = (addr: string) => {
+    if (addr.toLowerCase() === NATIVE_TOKEN.toLowerCase())
+      return { symbol: NATIVE_SYMBOL, decimals: 18 };
+    const t = Object.values(TOKEN_MAP).find(
+      (t) => t.address?.toLowerCase() === addr.toLowerCase(),
+    );
+    return t
+      ? { symbol: t.symbol, decimals: t.decimals }
+      : { symbol: shortAddress(addr), decimals: 18 };
+  };
+
+  const campaigns = (rows ?? [])
+    .map((r, i) => {
+      if (r.status !== "success") return null;
+      const [token, , funded, claimed, , endsAt, active] = r.result as unknown as [
+        string,
+        string,
+        bigint,
+        bigint,
+        bigint,
+        bigint,
+        boolean,
+      ];
+      const remaining = funded - claimed;
+      return {
+        id: i + 1,
+        token,
+        remaining,
+        endsAt: Number(endsAt) * 1000,
+        active,
+        ...tokenBySymbolAddr(token),
+      };
+    })
+    .filter((c): c is NonNullable<typeof c> => c !== null && c.remaining > 0n);
+
+  const sweep = async (id: number) => {
+    if (!wallet || !publicClient) return toast.error("Connect your wallet");
+    if (chainId !== CHAIN_ID)
+      return toast.error("Switch your wallet network to Xphere");
+    try {
+      setBusyId(id);
+      const owner = (await publicClient.readContract({
+        address: AIRDROP_CONTRACT as `0x${string}`,
+        abi: AIRDROP_ABI,
+        functionName: "owner",
+      })) as string;
+      if (owner.toLowerCase() !== wallet.toLowerCase())
+        return toast.error(
+          `Not the contract owner — connect with ${shortAddress(owner)} (current: ${shortAddress(wallet)})`,
+        );
+      toast.info("Submitting end & sweep… confirm in your wallet");
+      const hash = await writeContractAsync({
+        address: AIRDROP_CONTRACT as `0x${string}`,
+        abi: AIRDROP_ABI,
+        functionName: "endAndSweep",
+        args: [BigInt(id), wallet],
+        chainId: CHAIN_ID,
+      });
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status !== "success") return toast.error("Transaction failed");
+      toast.success(`Campaign #${id} swept — funds returned to your wallet`);
+      await refetch();
+    } catch {
+      toast.error("Sweep failed — check owner wallet and try again");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (!airdropLive || campaigns.length === 0) return null;
+
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
+      <h3 className="text-sm font-semibold">
+        On-chain funds to recover ({campaigns.length})
+      </h3>
+      <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
+        Campaigns on the airdrop contract still holding unclaimed tokens.
+        Connect the contract owner wallet and sweep each one — the campaign is
+        ended and the remainder returns to your wallet.
+      </p>
+      <div className="mt-3 space-y-2">
+        {campaigns.map((c) => (
+          <div
+            key={c.id}
+            className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[var(--surface)] px-3 py-2.5"
+          >
+            <div className="text-sm">
+              <span className="font-semibold">#{c.id}</span>{" "}
+              <span className="font-mono tabular-nums">
+                {Number(formatUnits(c.remaining, c.decimals)).toLocaleString()}{" "}
+                {c.symbol}
+              </span>{" "}
+              <span className="text-xs text-[var(--muted)]">
+                unclaimed · ended {new Date(c.endsAt).toISOString().slice(0, 10)}
+                {c.active ? "" : " · inactive"}
+              </span>
+            </div>
+            <button
+              onClick={() => sweep(c.id)}
+              disabled={busyId !== null}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--down)] px-3.5 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busyId === c.id && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {busyId === c.id ? "Sweeping…" : "End + Sweep"}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LegacySweepTool() {
   const { address: wallet, chainId } = useAccount();
   const { writeContractAsync } = useWriteContract();
@@ -547,483 +774,166 @@ function LegacySweepTool() {
   );
 }
 
-/** Admin management of liquidity pools (only pools that actually exist). */
-function PoolsManager() {
-  const pools = useDexStore((s) => s.pools);
-  const hiddenPools = useDexStore((s) => s.hiddenPools);
-  const addPool = useDexStore((s) => s.addPool);
-  const removePool = useDexStore((s) => s.removePool);
-  const setPoolVisible = useDexStore((s) => s.setPoolVisible);
-  const { tradable } = useTokenRegistry();
-  const symbols = tradable.map((t) => t.symbol);
 
-  const [token0, setToken0] = useState(symbols[0] ?? "XP");
-  const [token1, setToken1] = useState(symbols[1] ?? "USDT");
-  const [feeTier, setFeeTier] = useState("0.25");
-  // Delete goes through the password-gated confirm modal.
-  const [deleteTarget, setDeleteTarget] = useState<(typeof pools)[number] | null>(
-    null,
-  );
-  // TVL / volume / APR are computed live from on-chain reserves + 24h volume
-  // (see usePoolStats), so they're no longer entered here — stored as 0.
-  const stats = usePoolStats(pools);
-
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (token0 === token1) return toast.error("Pick two different tokens");
-    if (
-      pools.some(
-        (p) =>
-          (p.token0 === token0 && p.token1 === token1) ||
-          (p.token0 === token1 && p.token1 === token0),
-      )
-    )
-      return toast.error(`${token0}/${token1} pool already exists`);
-    const fee = parseFloat(feeTier);
-    if (!Number.isFinite(fee) || fee < 0 || fee > 100)
-      return toast.error("Fee must be 0–100%");
-
-    addPool({ token0, token1, feeTier: fee, tvlUsd: 0, volume24h: 0, apr: 0 });
-    toast.success(`Created ${token0}/${token1} pool`);
-  };
-
-  return (
-    <div className="grid gap-6 lg:grid-cols-5">
-      {/* Create pool */}
-      <form
-        onSubmit={submit}
-        className="lg:col-span-2 h-fit rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5"
-      >
-        <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <Droplets className="h-4 w-4 text-[var(--accent)]" />
-          Create pool
-        </h2>
-        <p className="mt-1 text-xs text-[var(--muted)]">
-          List a pool that exists on-chain. Seed real liquidity on PumpkinSwap
-          first, then record it here. TVL & APR are computed live from on-chain
-          reserves and 24h volume — no need to enter them.
-        </p>
-
-        <div className="mt-4 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Token A">
-              <select
-                value={token0}
-                onChange={(e) => setToken0(e.target.value)}
-                className={INPUT}
-              >
-                {symbols.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Token B">
-              <select
-                value={token1}
-                onChange={(e) => setToken1(e.target.value)}
-                className={INPUT}
-              >
-                {symbols.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </Field>
-          </div>
-          <Field label="Fee % (PumpkinSwap V2 = 0.3)">
-            <input
-              type="number"
-              value={feeTier}
-              onChange={(e) => setFeeTier(e.target.value)}
-              className={INPUT}
-            />
-          </Field>
-        </div>
-
-        <button
-          type="submit"
-          className="mt-5 w-full rounded-2xl bg-[var(--accent)] py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
-        >
-          Create pool
-        </button>
-      </form>
-
-      {/* Pool list */}
-      <div className="lg:col-span-3">
-        <h2 className="mb-3 text-sm font-semibold">Pools ({pools.length})</h2>
-        <div className="space-y-2">
-          {pools.length === 0 && (
-            <div className="rounded-3xl border border-dashed border-[var(--border-strong)] py-12 text-center text-sm text-[var(--muted)]">
-              No pools — create one on the left.
-            </div>
-          )}
-          {pools.map((p) => {
-            const visible = !(hiddenPools ?? []).includes(p.id);
-            return (
-            <div
-              key={p.id}
-              className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
-            >
-              <div className="flex items-center gap-3">
-                <TokenPair token0={p.token0} token1={p.token1} />
-                <div>
-                  <div className="flex items-center gap-2 text-sm font-semibold">
-                    {p.token0} / {p.token1}
-                    {!visible && (
-                      <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]">
-                        Hidden
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-[var(--muted)]">
-                    {p.feeTier}% fee ·{" "}
-                    {stats[p.id]?.loading
-                      ? "…"
-                      : stats[p.id]?.available
-                        ? `${formatUsd(stats[p.id].tvlUsd, { compact: true })} TVL · ${stats[p.id].apr.toLocaleString(undefined, { maximumFractionDigits: 2 })}% APR`
-                        : "no on-chain liquidity"}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => {
-                    setPoolVisible(p.id, !visible);
-                    toast.info(
-                      visible
-                        ? `${p.token0}/${p.token1} pool hidden — existing LPs can still withdraw`
-                        : `${p.token0}/${p.token1} pool is now visible`,
-                    );
-                  }}
-                  title={visible ? "Hide from frontend" : "Show on frontend"}
-                  className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[var(--surface)] ${
-                    visible ? "text-[var(--up)]" : "text-[var(--muted-2)]"
-                  }`}
-                >
-                  <Power className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setDeleteTarget(p)}
-                  title="Remove pool"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--down)] transition-colors hover:bg-[var(--down-soft)]"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <DeleteConfirmModal
-        open={deleteTarget !== null}
-        title={`${deleteTarget?.token0 ?? ""}/${deleteTarget?.token1 ?? ""} Delete Pool`}
-        description={
-          // Deleting only drops the site listing — the on-chain pair and
-          // users' LP tokens are untouched, but holders lose this site's
-          // withdraw UI. Warn extra when the pool has liquidity.
-          (deleteTarget &&
-          stats[deleteTarget.id]?.available &&
-          stats[deleteTarget.id].tvlUsd > 0
-            ? `⚠️ This pool has on-chain liquidity (${formatUsd(stats[deleteTarget.id].tvlUsd, { compact: true })}). Deleting it keeps on-chain funds intact but LP holders will lose the withdraw UI on this site — consider hiding it (power button) instead.\n\n`
-            : "") +
-          "Removes this pool from the site listing. The on-chain pair and LP tokens are unaffected."
-        }
-        onConfirm={() => {
-          if (!deleteTarget) return;
-          removePool(deleteTarget.id);
-          toast.info(`Removed ${deleteTarget.token0}/${deleteTarget.token1} pool`);
-          setDeleteTarget(null);
-        }}
-        onClose={() => setDeleteTarget(null)}
-      />
-    </div>
-  );
-}
-
-/** Admin control of which tokens are swappable + adding custom tokens. */
-function SwapTokensManager() {
-  const { all } = useTokenRegistry();
-  const adminTokens = useDexStore((s) => s.adminTokens);
-  const disabledTokens = useDexStore((s) => s.disabledTokens);
-  const removedTokens = useDexStore((s) => s.removedTokens);
-  const addAdminToken = useDexStore((s) => s.addAdminToken);
-  const removeAdminToken = useDexStore((s) => s.removeAdminToken);
-  const setTokenEnabled = useDexStore((s) => s.setTokenEnabled);
-  const removeToken = useDexStore((s) => s.removeToken);
-  const restoreToken = useDexStore((s) => s.restoreToken);
-
-  const [address, setAddress] = useState("");
-  // Delete goes through the password-gated confirm modal.
-  const [deleteTarget, setDeleteTarget] = useState<{
-    symbol: string;
-    custom: boolean;
-  } | null>(null);
-  // Manual edits, scoped to the address they were typed for, so switching
-  // addresses re-shows that token's auto-detected values (no effect needed).
-  const [edits, setEdits] = useState<{
-    addr: string;
-    symbol?: string;
-    name?: string;
-    decimals?: string;
-  }>({ addr: "" });
-
-  const adminSymbols = new Set(adminTokens.map((t) => t.symbol));
-
-  // Auto-detect: read symbol/name/decimals straight from the contract so the
-  // admin only pastes an address. Values are derived (not stored) — manual
-  // edits override the detected ones until the address changes.
-  const addrTrim = address.trim();
-  const addrKey = addrTrim.toLowerCase();
-  const validAddr = /^0x[a-fA-F0-9]{40}$/.test(addrTrim);
-
-  const { data: tokenInfo, isLoading: infoLoading } = useReadContracts({
-    contracts: validAddr
-      ? ([
-          { address: addrTrim as `0x${string}`, abi: erc20Abi, functionName: "symbol", chainId: CHAIN_ID },
-          { address: addrTrim as `0x${string}`, abi: erc20Abi, functionName: "name", chainId: CHAIN_ID },
-          { address: addrTrim as `0x${string}`, abi: erc20Abi, functionName: "decimals", chainId: CHAIN_ID },
-        ] as const)
-      : [],
-    query: { enabled: validAddr },
+/**
+ * Admin wallet roster. Super admins (contract deploy wallets / env-configured)
+ * can add or remove regular admin wallets; regular admins see a read-only
+ * list. That add/remove right is the only difference between the two tiers.
+ */
+function AdminWalletsManager() {
+  const queryClient = useQueryClient();
+  const { data, isLoading } = useQuery<{
+    supers: string[];
+    admins: string[];
+    role: "password" | "admin" | "super";
+    address: string | null;
+  }>({
+    queryKey: ["admin-wallets"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/wallets");
+      if (!res.ok) throw new Error("wallet roster fetch failed");
+      return res.json();
+    },
   });
 
-  const auto = {
-    symbol:
-      tokenInfo?.[0]?.status === "success" ? String(tokenInfo[0].result) : undefined,
-    name:
-      tokenInfo?.[1]?.status === "success" ? String(tokenInfo[1].result) : undefined,
-    decimals:
-      tokenInfo?.[2]?.status === "success" ? String(tokenInfo[2].result) : undefined,
-  };
+  const [newAddr, setNewAddr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const isSuper = data?.role === "super";
 
-  const detectFailed =
-    validAddr && !infoLoading && tokenInfo?.[0]?.status === "failure";
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: ["admin-wallets"] });
 
-  // Effective (displayed) values: this-address edits → auto-detected → default.
-  const ov: { symbol?: string; name?: string; decimals?: string } =
-    edits.addr === addrKey ? edits : {};
-  const symbol = ov.symbol ?? auto.symbol ?? "";
-  const name = ov.name ?? auto.name ?? "";
-  const decimals = ov.decimals ?? auto.decimals ?? "18";
-
-  const setEdit = (patch: Partial<typeof edits>) =>
-    setEdits((e) => ({ addr: addrKey, ...(e.addr === addrKey ? e : {}), ...patch }));
-  const setSymbol = (v: string) => setEdit({ symbol: v });
-  const setDecimals = (v: string) => setEdit({ decimals: v });
-
-  const submit = (e: React.FormEvent) => {
+  const add = async (e: React.FormEvent) => {
     e.preventDefault();
-    const sym = symbol.trim().toUpperCase();
-    const addr = address.trim();
-    const dec = parseInt(decimals, 10);
-    if (!sym) return toast.error("Enter a token symbol");
-    if (all.some((t) => t.symbol === sym))
-      return toast.error(`${sym} already exists`);
-    if (!/^0x[a-fA-F0-9]{40}$/.test(addr))
-      return toast.error("Invalid Xphere contract address");
-    if (!Number.isInteger(dec) || dec < 0 || dec > 36)
-      return toast.error("Decimals must be 0–36");
-
-    addAdminToken({
-      symbol: sym,
-      name: name.trim() || sym,
-      address: addr,
-      decimals: dec,
-      color: "#6366f1",
-    });
-    toast.success(`Added ${sym} to the swap list`);
-    setAddress("");
-    setEdits({ addr: "" });
+    const addr = newAddr.trim();
+    if (!/^0x[a-fA-F0-9]{40}$/.test(addr)) {
+      return toast.error("Invalid wallet address");
+    }
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/wallets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: addr }),
+      });
+      const body = (await res.json().catch(() => null)) as {
+        error?: string;
+      } | null;
+      if (res.ok) {
+        toast.success(`Added admin wallet ${addr.slice(0, 6)}…${addr.slice(-4)}`);
+        setNewAddr("");
+        await refresh();
+      } else {
+        toast.error(body?.error ?? "Failed to add wallet");
+      }
+    } finally {
+      setBusy(false);
+    }
   };
+
+  const remove = async (addr: string) => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/admin/wallets", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: addr }),
+      });
+      if (res.ok) {
+        toast.info(`Removed admin wallet ${addr.slice(0, 6)}…${addr.slice(-4)}`);
+        await refresh();
+      } else {
+        const body = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        toast.error(body?.error ?? "Failed to remove wallet");
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const row = (addr: string, tier: "super" | "admin") => (
+    <div
+      key={addr}
+      className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
+    >
+      <div className="flex items-center gap-3">
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+            tier === "super"
+              ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+              : "bg-[var(--surface-2)] text-[var(--muted)]"
+          }`}
+        >
+          {tier === "super" ? "Super" : "Admin"}
+        </span>
+        <span className="font-mono text-sm">{addr}</span>
+        {data?.address === addr && (
+          <span className="rounded-full bg-[var(--up-soft)] px-2 py-0.5 text-xs font-medium text-[var(--up)]">
+            You
+          </span>
+        )}
+      </div>
+      {tier === "admin" && isSuper && (
+        <button
+          onClick={() => remove(addr)}
+          disabled={busy}
+          title="Remove admin wallet"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--down)] transition-colors hover:bg-[var(--down-soft)] disabled:opacity-50"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  );
 
   return (
-    <div className="grid gap-6 lg:grid-cols-5">
-      {/* Add custom token */}
-      <form
-        onSubmit={submit}
-        className="lg:col-span-2 h-fit rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5"
-      >
-        <h2 className="flex items-center gap-2 text-sm font-semibold">
-          <Coins className="h-4 w-4 text-[var(--accent)]" />
-          Add swap token
-        </h2>
-        <p className="mt-1 text-xs text-[var(--muted)]">
-          Paste a contract address — symbol, name and decimals are read straight
-          from the token (editable). On testnet, use your deployed test-token
-          address.
-        </p>
+    <div>
+      <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold">
+        <ShieldCheck className="h-4 w-4 text-[var(--accent)]" />
+        Admin wallets
+      </h2>
+      <p className="mb-3 text-xs text-[var(--muted)]">
+        Wallets allowed into this panel. Super admins are the contract deploy
+        wallets (env-configurable) and are the only ones who can add or remove
+        regular admins.
+      </p>
 
-        <div className="mt-4 space-y-3">
-          <Field label="Contract address">
-            <input
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="0x… paste to auto-fill"
-              className={`${INPUT} font-mono`}
-            />
-          </Field>
-          {validAddr && (
-            <p className="-mt-1 text-xs">
-              {infoLoading ? (
-                <span className="text-[var(--muted)]">
-                  Loading token info…
-                </span>
-              ) : detectFailed ? (
-                <span className="text-[var(--down)]">
-                  Could not read on-chain data — enter details manually below.
-                </span>
-              ) : (
-                <span className="text-[var(--up)]">
-                  ✓ Auto-filled from on-chain (editable)
-                </span>
-              )}
-            </p>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Symbol">
-              <input
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
-                placeholder="USDT"
-                className={INPUT}
-              />
-            </Field>
-            <Field label="Decimals">
-              <input
-                type="number"
-                value={decimals}
-                onChange={(e) => setDecimals(e.target.value)}
-                className={INPUT}
-              />
-            </Field>
+      {isSuper && (
+        <form onSubmit={add} className="mb-3 flex gap-2">
+          <input
+            value={newAddr}
+            onChange={(e) => setNewAddr(e.target.value)}
+            placeholder="0x… wallet address to grant admin access"
+            className={`${INPUT} font-mono flex-1`}
+          />
+          <button
+            type="submit"
+            disabled={busy}
+            className="inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] disabled:opacity-60"
+          >
+            <UserPlus className="h-4 w-4" />
+            Add
+          </button>
+        </form>
+      )}
+
+      <div className="space-y-2">
+        {isLoading && (
+          <div className="rounded-2xl border border-dashed border-[var(--border-strong)] py-6 text-center text-sm text-[var(--muted)]">
+            Loading…
           </div>
-          {/* Name is auto-read from the contract (shown in the token picker /
-              portfolio); falls back to the symbol — no manual input needed. */}
-        </div>
-
-        <button
-          type="submit"
-          className="mt-5 w-full rounded-2xl bg-[var(--accent)] py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)]"
-        >
-          Add token
-        </button>
-      </form>
-
-      {/* Token list with enable/disable */}
-      <div className="lg:col-span-3">
-        <h2 className="mb-3 text-sm font-semibold">
-          Swap tokens ({all.filter((t) => !disabledTokens.includes(t.symbol)).length}{" "}
-          enabled)
-        </h2>
-        <div className="space-y-2">
-          {all.map((t) => {
-            const enabled = !disabledTokens.includes(t.symbol);
-            const custom = adminSymbols.has(t.symbol);
-            return (
-              <div
-                key={t.symbol}
-                className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
-              >
-                <div className="flex items-center gap-3">
-                  <TokenLogo symbol={t.symbol} size={34} />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold">{t.symbol}</span>
-                      {custom && (
-                        <span className="rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-medium text-[var(--accent)]">
-                          Custom
-                        </span>
-                      )}
-                      {!tokenTradable(t) && (
-                        <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]">
-                          No contract
-                        </span>
-                      )}
-                    </div>
-                    <div className="font-mono text-xs text-[var(--muted)]">
-                      {t.address ? shortAddress(t.address) : "native"}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setTokenEnabled(t.symbol, !enabled)}
-                    title={enabled ? "Disable for swapping" : "Enable for swapping"}
-                    className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[var(--surface)] ${
-                      enabled ? "text-[var(--up)]" : "text-[var(--muted-2)]"
-                    }`}
-                  >
-                    <Power className="h-4 w-4" />
-                  </button>
-                  {/* XP stays: it is the gas token and the routing hop. */}
-                  {t.symbol !== "XP" && (
-                    <button
-                      onClick={() => setDeleteTarget({ symbol: t.symbol, custom })}
-                      title={custom ? "Remove custom token" : "Delist (remove from list)"}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--down)] transition-colors hover:bg-[var(--down-soft)]"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Delisted static tokens — restorable (custom tokens delete outright). */}
-        {(removedTokens ?? []).length > 0 && (
-          <div className="mt-4 rounded-2xl border border-dashed border-[var(--border-strong)] px-4 py-3">
-            <p className="text-xs font-medium text-[var(--muted)]">
-              Delisted tokens
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {removedTokens.map((sym) => (
-                <button
-                  key={sym}
-                  onClick={() => {
-                    restoreToken(sym);
-                    toast.success(`${sym} restored`);
-                  }}
-                  title="Restore"
-                  className="inline-flex items-center gap-1 rounded-full border border-[var(--border-strong)] px-3 py-1 text-xs font-medium text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
-                >
-                  <Plus className="h-3 w-3" />
-                  {sym}
-                </button>
-              ))}
-            </div>
+        )}
+        {data?.supers.map((a) => row(a, "super"))}
+        {data?.admins.map((a) => row(a, "admin"))}
+        {data && data.admins.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-[var(--border-strong)] py-6 text-center text-sm text-[var(--muted)]">
+            No regular admin wallets yet
+            {isSuper ? " — add one above." : "."}
           </div>
         )}
       </div>
-
-      <DeleteConfirmModal
-        open={deleteTarget !== null}
-        title={`${deleteTarget?.symbol ?? ""} ${deleteTarget?.custom ? "Delete" : "Delist"}`}
-        description={
-          deleteTarget?.custom
-            ? `Permanently delete custom token ${deleteTarget.symbol}. You will need to re-register it by contract address to use it again.`
-            : `${deleteTarget?.symbol} will be delisted — it will disappear from the swap list and home price ticker. You can restore it under 'Delisted tokens'.`
-        }
-        confirmLabel={deleteTarget?.custom ? "Delete" : "Delist"}
-        onConfirm={() => {
-          if (!deleteTarget) return;
-          if (deleteTarget.custom) removeAdminToken(deleteTarget.symbol);
-          else removeToken(deleteTarget.symbol);
-          toast.info(
-            deleteTarget.custom
-              ? `Removed ${deleteTarget.symbol}`
-              : `${deleteTarget.symbol} delisted — restorable below`,
-          );
-          setDeleteTarget(null);
-        }}
-        onClose={() => setDeleteTarget(null)}
-      />
     </div>
   );
 }
@@ -1033,7 +943,6 @@ interface AnalyticsSummary {
   visitors: number;
   visitorsTotal: number;
   connections: number;
-  volumeUsd: number;
 }
 
 function AnalyticsPanel() {
@@ -1078,23 +987,13 @@ function AnalyticsPanel() {
       icon: <Wallet className="h-4 w-4" />,
       action: detailBtn("/api/analytics/connections"),
     },
-    {
-      label: "Volume (today)",
-      value:
-        data === undefined
-          ? "—"
-          : formatUsd(data.volumeUsd, { compact: true }),
-      sub: undefined as string | undefined,
-      icon: <TrendingUp className="h-4 w-4" />,
-      action: null as React.ReactNode,
-    },
   ];
 
   return (
     <div className="mt-8">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-sm font-semibold">
-          Visitors & volume are today (KST) · wallet connections are total cumulative
+          Visitors are today (KST) · wallet connections are total cumulative
         </h2>
         {data && (
           <span className="font-mono text-xs text-[var(--muted-2)]">

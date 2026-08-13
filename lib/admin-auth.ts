@@ -73,21 +73,53 @@ export function verifyPassword(password: string): boolean {
   return safeEqual(password, expected);
 }
 
-/** Stateless HMAC session token: "<expiresAtMs>.<signature>" */
-export function createSessionToken(): string {
-  const expires = String(Date.now() + SESSION_TTL_S * 1000);
-  return `${expires}.${sign(expires)}`;
+// ─── Session token ──────────────────────────────────────────────────────────
+// Stateless HMAC token: "v2.<base64url(JSON payload)>.<signature>".
+// The payload carries the wallet identity once the admin proves ownership of
+// an allow-listed wallet (see /api/admin/wallet-verify):
+//   role "password" — password unlocked, wallet not verified yet
+//   role "admin"    — wallet in the regular-admin list
+//   role "super"    — wallet in the super-admin list (can manage admins)
+
+export type AdminRole = "password" | "admin" | "super";
+
+export interface AdminSession {
+  exp: number; // epoch ms
+  role: AdminRole;
+  address?: string; // lower-cased wallet, present once wallet-verified
 }
 
-export function verifySessionToken(token: string | undefined): boolean {
-  if (!token || !secret()) return false;
-  const dot = token.indexOf(".");
-  if (dot <= 0) return false;
-  const expires = token.slice(0, dot);
-  const sig = token.slice(dot + 1);
-  const expiresAt = Number(expires);
-  if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return false;
-  return safeEqual(sign(expires), sig);
+const b64url = (s: string) => Buffer.from(s, "utf8").toString("base64url");
+const unb64url = (s: string) => Buffer.from(s, "base64url").toString("utf8");
+
+export function createSessionToken(
+  wallet?: { address: string; role: Exclude<AdminRole, "password"> },
+): string {
+  const payload: AdminSession = {
+    exp: Date.now() + SESSION_TTL_S * 1000,
+    role: wallet?.role ?? "password",
+    ...(wallet ? { address: wallet.address.toLowerCase() } : {}),
+  };
+  const body = b64url(JSON.stringify(payload));
+  return `v2.${body}.${sign(body)}`;
+}
+
+/** Parsed session payload when the token is valid and unexpired, else null. */
+export function verifySessionToken(
+  token: string | undefined,
+): AdminSession | null {
+  if (!token || !secret()) return null;
+  const [ver, body, sig] = token.split(".");
+  if (ver !== "v2" || !body || !sig) return null;
+  if (!safeEqual(sign(body), sig)) return null;
+  try {
+    const payload = JSON.parse(unb64url(body)) as AdminSession;
+    if (!Number.isFinite(payload.exp) || payload.exp < Date.now()) return null;
+    if (!["password", "admin", "super"].includes(payload.role)) return null;
+    return payload;
+  } catch {
+    return null;
+  }
 }
 
 // ─── Login rate limit ───────────────────────────────────────────────────────

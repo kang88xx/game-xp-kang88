@@ -1,34 +1,9 @@
-import type { Pool, AirdropCampaign } from "./types";
+import type { AirdropCampaign } from "./types";
 import { TOKEN_MAP } from "./tokens";
 
 // Token registry moved to lib/tokens.ts (Xphere). Re-exported here so existing
 // imports keep working during the production transition.
 export { TOKENS, TOKEN_MAP, getToken } from "./tokens";
-
-// ------------------------------------------------------------------
-//  Liquidity pools — only pools that actually exist on-chain.
-//
-//  This is the SEED for the admin-managed pool list (see lib/store.ts
-//  `pools`). Admins add/remove pools at runtime from /admin; the Pools
-//  page, add-liquidity modal, and campaign form read the store list.
-//  Xphere DEX (our Uniswap-V2 fork) fee tier is 0.30%. These pools start
-//  EMPTY on the new factory — seed them from /pools (first deposit sets
-//  the price; XP/USDX anchors every token's USD price).
-// ------------------------------------------------------------------
-
-// Pools that actually exist on the PumpkinSwap factory today.
-export const POOLS: Pool[] = [
-  { id: "kdg-usdx", token0: "KDG", token1: "USDX", feeTier: 0.3, tvlUsd: 0, volume24h: 0, apr: 0 },
-];
-
-export const POOL_MAP: Record<string, Pool> = Object.fromEntries(
-  POOLS.map((p) => [p.id, p]),
-);
-
-/** Fresh copy of the seed pools for the store's initial state. */
-export function seedPools(): Pool[] {
-  return POOLS.map((p) => ({ ...p }));
-}
 
 // ------------------------------------------------------------------
 //  Deterministic price-history generator (stable across SSR/CSR)

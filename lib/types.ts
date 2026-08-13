@@ -27,25 +27,6 @@ export interface MarketData {
   spark7d: number[]; // 7-day sparkline prices (may be empty)
 }
 
-export interface Pool {
-  id: string;
-  token0: string; // token symbol
-  token1: string; // token symbol
-  feeTier: number; // percent, e.g. 0.3
-  tvlUsd: number;
-  volume24h: number;
-  apr: number; // percent
-}
-
-/** Admin-added custom swap token (persisted client-side, merged into the registry) */
-export interface AdminToken {
-  symbol: string;
-  name: string;
-  address: string; // Xphere contract — required so it is swappable
-  decimals: number;
-  color: string; // logo background color
-}
-
 export type Eligibility = "public" | "whitelist";
 
 /** One whitelisted wallet: its allocation and whether it has been received. */
@@ -88,12 +69,6 @@ export interface Transaction {
   summary: string;
   timestamp: number;
   address: string;
-}
-
-export interface LpPosition {
-  poolId: string;
-  amountUsd: number; // value supplied
-  sharePct: number; // pool share %
 }
 
 // ─── Last Man Standing ───────────────────────────────────────────────────────

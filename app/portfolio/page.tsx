@@ -4,14 +4,13 @@ import { useMetaMask } from "@/lib/use-metamask";
 import {
   ArrowLeftRight,
   Coins,
-  Droplets,
   Gift,
   Wallet,
   PlusCircle,
   MinusCircle,
 } from "lucide-react";
-import { POOL_MAP, TOKEN_MAP } from "@/lib/mock-data";
-import { useDexStore, useHydrated, usePositions } from "@/lib/store";
+import { TOKEN_MAP } from "@/lib/mock-data";
+import { useDexStore, useHydrated } from "@/lib/store";
 import { useBalances } from "@/lib/balances";
 import { useMarket } from "@/lib/market";
 import {
@@ -21,7 +20,7 @@ import {
   shortAddress,
   timeAgo,
 } from "@/lib/format";
-import { TokenLogo, TokenPair } from "@/components/TokenLogo";
+import { TokenLogo } from "@/components/TokenLogo";
 import { Eyebrow } from "@/components/ui";
 import type { TxType } from "@/lib/types";
 
@@ -40,7 +39,6 @@ export default function PortfolioPage() {
   const { open: openWalletModal } = useMetaMask();
   const balances = useBalances();
   const market = useMarket();
-  const positions = usePositions().filter((p) => POOL_MAP[p.poolId]);
   const allTransactions = useDexStore((s) => s.transactions);
   const transactions = allTransactions.filter((t) => t.address === address);
 
@@ -60,7 +58,7 @@ export default function PortfolioPage() {
         </span>
         <h1 className="mt-5 text-xl font-bold">Connect your wallet</h1>
         <p className="mt-2 text-sm text-[var(--muted)]">
-          Connect to view your balances, positions, and activity.
+          Connect to view your balances and activity.
         </p>
         <button
           onClick={() => openWalletModal()}
@@ -84,8 +82,7 @@ export default function PortfolioPage() {
     .sort((a, b) => b.value - a.value);
 
   const tokenValue = tokenRows.reduce((s, r) => s + r.value, 0);
-  const lpValue = positions.reduce((s, p) => s + p.amountUsd, 0);
-  const totalValue = tokenValue + lpValue;
+  const totalValue = tokenValue;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
@@ -106,7 +103,6 @@ export default function PortfolioPage() {
           </div>
           <div className="flex gap-6">
             <SummaryStat label="Tokens" value={formatUsd(tokenValue)} />
-            <SummaryStat label="Liquidity" value={formatUsd(lpValue)} />
           </div>
         </div>
       </div>
@@ -165,48 +161,6 @@ export default function PortfolioPage() {
             </table>
           </div>
 
-          {/* LP positions */}
-          <h2 className="mb-3 mt-6 text-sm font-semibold">Liquidity positions</h2>
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-4">
-            {positions.length === 0 ? (
-              <div className="flex flex-col items-center py-8 text-center">
-                <Droplets className="h-6 w-6 text-[var(--muted-2)]" />
-                <p className="mt-2 text-sm text-[var(--muted)]">
-                  No active positions
-                </p>
-                <a
-                  href="https://pumpkinswap.app/pool"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 text-sm font-medium text-[var(--accent)]"
-                >
-                  Add liquidity on PumpkinSwap →
-                </a>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {positions.map((p) => {
-                  const pool = POOL_MAP[p.poolId];
-                  return (
-                    <div
-                      key={p.poolId}
-                      className="flex items-center justify-between rounded-2xl bg-[var(--surface)] px-4 py-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <TokenPair token0={pool.token0} token1={pool.token1} />
-                        <span className="text-sm font-semibold">
-                          {pool.token0} / {pool.token1}
-                        </span>
-                      </div>
-                      <span className="text-sm font-semibold">
-                        {formatUsd(p.amountUsd)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Activity */}
