@@ -496,6 +496,22 @@ export const useDexStore = create<DexState>()(
             );
           }
         }
+        // Malformed/partial persisted lms state (manual edits, old bugs) would
+        // crash round finalization — drop it and reseed instead.
+        {
+          const lms = p.lms as
+            | { round?: unknown; history?: unknown; pendingClaims?: unknown }
+            | undefined;
+          if (
+            lms &&
+            (typeof lms.round !== "object" ||
+              lms.round === null ||
+              !Array.isArray(lms.history) ||
+              !Array.isArray(lms.pendingClaims))
+          ) {
+            delete p.lms;
+          }
+        }
         // v12 → v13: BSC → Xphere. Pools, admin tokens, campaigns and tx
         // history all point at BSC-era contracts — reset to fresh seeds.
         if (version < 13) {

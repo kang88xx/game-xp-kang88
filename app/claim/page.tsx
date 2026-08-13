@@ -34,8 +34,12 @@ export default function AirdropPage() {
   const localCampaigns = useDexStore((s) => s.campaigns);
 
   // On-chain campaigns are the claimable source of truth — every visitor reads
-  // them straight from the contract, no admin-local data needed.
-  const liveOnchain = onchain.filter((c) => c.active);
+  // them straight from the contract, no admin-local data needed. Time-expired
+  // campaigns are hidden even while their on-chain `active` flag is still set
+  // (the owner may not have swept them yet).
+  const liveOnchain = onchain.filter(
+    (c) => c.active && (c.endsAtMs === 0 || !isPast(c.endsAtMs)),
+  );
   // Launched = exists on-chain at all (paused included) — otherwise a paused
   // campaign's local record would wrongly reappear as a "preview" draft.
   const launchedIds = new Set(onchain.map((c) => c.onchainId));

@@ -50,7 +50,10 @@ function ToastRow({ item }: { item: ToastItem }) {
   }, [item.id, remove]);
 
   return (
-    <div className="animate-fade-in flex items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 shadow-lg shadow-black/5 w-[320px]">
+    <div
+      role={item.variant === "error" ? "alert" : "status"}
+      className="animate-fade-in flex w-full items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 shadow-lg shadow-black/5 sm:w-[320px]"
+    >
       <div className="mt-0.5">{ICONS[item.variant]}</div>
       <p className="text-sm text-[var(--foreground)] leading-snug">
         {item.message}
@@ -62,7 +65,8 @@ function ToastRow({ item }: { item: ToastItem }) {
 export function Toaster() {
   const toasts = useToastStore((s) => s.toasts);
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2">
+    // Full-width above the home indicator on phones; bottom-right on desktop.
+    <div className="fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+1rem)] z-[100] flex flex-col items-stretch gap-2 sm:inset-x-auto sm:bottom-6 sm:right-6 sm:items-end">
       {toasts.map((t) => (
         <ToastRow key={t.id} item={t} />
       ))}

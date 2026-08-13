@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Copy, LogOut, Check } from "lucide-react";
 import { useDisconnect } from "wagmi";
 import { useMetaMask } from "@/lib/use-metamask";
@@ -19,6 +19,16 @@ export function WalletButton() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Close the account menu on Escape (mobile browsers included).
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
   if (!hydrated) {
     return (
       <div className="h-9 w-32 rounded-full bg-[var(--surface-2)] animate-pulse-soft" />
@@ -29,7 +39,7 @@ export function WalletButton() {
     return (
       <button
         onClick={() => open()}
-        className="wallet-connect group inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold"
+        className="wallet-connect group inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold"
       >
         <span className="wc-dot" />
         Connect
@@ -63,7 +73,9 @@ export function WalletButton() {
     <div className="relative">
       <button
         onClick={() => setMenuOpen((v) => !v)}
-        className="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--card)] px-3 py-2 text-sm font-medium transition-colors hover:bg-[var(--surface)]"
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
+        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--card)] px-3 py-2 text-sm font-medium transition-colors hover:bg-[var(--surface)]"
       >
         <span className="h-2 w-2 rounded-full bg-[var(--up)]" />
         <span className="font-mono">{shortAddress(address)}</span>
@@ -83,7 +95,7 @@ export function WalletButton() {
             <div className="h-px bg-[var(--border)] my-1" />
             <button
               onClick={copy}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-[var(--surface)]"
+              className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-sm transition-colors hover:bg-[var(--surface)]"
             >
               {copied ? (
                 <Check className="h-4 w-4 text-[var(--up)]" />
@@ -99,7 +111,7 @@ export function WalletButton() {
                 setMenuOpen(false);
                 toast.info("Wallet disconnected");
               }}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-[var(--down)] transition-colors hover:bg-[var(--down-soft)]"
+              className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-sm text-[var(--down)] transition-colors hover:bg-[var(--down-soft)]"
             >
               <LogOut className="h-4 w-4" />
               Disconnect

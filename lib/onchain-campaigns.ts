@@ -13,6 +13,14 @@ import { AIRDROP_ABI, AIRDROP_CONTRACT, airdropLive, CHAIN_ID } from "./airdrop"
 import { useTokenRegistry } from "./token-registry";
 import type { Token } from "./types";
 
+// First block the current MerkleAirdrop deployment exists at (verified via
+// on-chain getCode binary search). Bounds event scans so RPC log-range limits
+// can't silently empty the campaign list; override per-deploy via env.
+const AIRDROP_FROM_BLOCK: bigint = process.env
+  .NEXT_PUBLIC_AIRDROP_DEPLOY_BLOCK
+  ? BigInt(process.env.NEXT_PUBLIC_AIRDROP_DEPLOY_BLOCK)
+  : 45816553n;
+
 const ZERO_ROOT =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -113,7 +121,7 @@ export function useOnchainCampaigns(): {
           address: contract,
           abi: AIRDROP_ABI,
           eventName: "CampaignCreated",
-          fromBlock: "earliest",
+          fromBlock: AIRDROP_FROM_BLOCK,
           toBlock: "latest",
         });
         const out: Record<number, { name?: string; fundedWei?: string }> = {};
@@ -211,7 +219,7 @@ export function usePublishedWhitelist(
           abi: AIRDROP_ABI,
           eventName: "WhitelistPublished",
           args: { id: BigInt(onchainId) },
-          fromBlock: "earliest",
+          fromBlock: AIRDROP_FROM_BLOCK,
           toBlock: "latest",
         });
         if (logs.length === 0) return [];

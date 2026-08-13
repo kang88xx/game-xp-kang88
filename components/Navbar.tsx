@@ -71,9 +71,11 @@ export function Navbar() {
           </Link>
           <WalletButton />
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] md:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] md:hidden"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Menu"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-nav"
           >
             {mobileOpen ? (
               <X className="h-4 w-4" />
@@ -85,13 +87,13 @@ export function Navbar() {
       </div>
 
       {mobileOpen && (
-        <nav className="border-t border-[var(--border)] px-4 py-2 md:hidden">
+        <nav id="mobile-nav" className="border-t border-[var(--border)] px-4 py-2 md:hidden">
           {[...LINKS, { href: "/admin", label: "Admin" }].map((l) => (
             <Link
               key={l.href}
               href={l.href}
               onClick={() => setMobileOpen(false)}
-              className={`block rounded-xl px-3 py-2.5 text-sm font-medium ${
+              className={`block rounded-xl px-3 py-3 text-sm font-medium ${
                 isActive(l.href)
                   ? "bg-[var(--surface-2)] text-[var(--accent-bright)]"
                   : "text-[var(--muted)]"

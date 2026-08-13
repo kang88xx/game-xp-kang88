@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import Script from "next/script";
 import "./globals.css";
@@ -17,10 +17,24 @@ const THEME_INIT = `(function(){try{var t=localStorage.getItem('ioi-theme');if(t
 // via CDN @import in globals.css (next/font has no Pretendard); data and
 // chrome use the system mono stack — no webfonts to load.
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// Canonical production URL — OG/share links break if this ever falls back to
+// localhost, so the deployed domain is the default and env only overrides it.
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://game-xp-kang88.vercel.app";
 const TITLE = "Xphere Mainnet Mini Game";
 const DESCRIPTION =
   "Play onchain mini games on the Xphere mainnet and claim token rewards with MetaMask.";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  colorScheme: "dark light",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#faf7f2" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

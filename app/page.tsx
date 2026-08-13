@@ -115,6 +115,21 @@ function LmsIntroModal({ onClose }: { onClose: () => void }) {
     }
     onClose();
   };
+
+  // Dialog behavior: Escape closes, body scroll locks while open.
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
   return (
     <div className="fixed inset-0 z-[90] flex items-start justify-center bg-black/50 p-4 pt-16 sm:pt-24">
       <div className="absolute inset-0" onClick={close} aria-hidden />
@@ -122,7 +137,7 @@ function LmsIntroModal({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-modal="true"
         aria-label="Last Man Standing"
-        className="animate-fade-in relative w-full max-w-md overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-2xl"
+        className="animate-fade-in relative max-h-[calc(100dvh-5rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-2xl"
       >
         <div className="px-6 pt-6 pb-5 text-center">
           <h2 className="text-2xl font-bold tracking-tight">
@@ -734,11 +749,12 @@ const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
 // Event queries scan from the contract's deploy block when configured —
 // Xphere mints ~1 block/second (40M+ blocks), so an "earliest" scan is a
 // full-chain getLogs on every poll. Set NEXT_PUBLIC_LMS_DEPLOY_BLOCK at
-// deploy time (deploy-lms.mjs prints it).
-const LMS_FROM_BLOCK: bigint | "earliest" = process.env
-  .NEXT_PUBLIC_LMS_DEPLOY_BLOCK
+// deploy time (deploy-lms.mjs prints it); the fallback is the current
+// mainnet KangLMS deploy block so a missing env var degrades gracefully
+// instead of hitting RPC log-range limits and rendering an empty game.
+const LMS_FROM_BLOCK: bigint = process.env.NEXT_PUBLIC_LMS_DEPLOY_BLOCK
   ? BigInt(process.env.NEXT_PUBLIC_LMS_DEPLOY_BLOCK)
-  : "earliest";
+  : 32238780n;
 
 /**
  * The real game — round state, bets, prizes all live on the KangLMS contract.
@@ -1074,8 +1090,14 @@ function OnchainGame() {
 
 
   // Betting on an expired round is fine — bet() settles it and opens the next.
+  // minBetWei/isPaused must have actually loaded — while they're undefined the
+  // guards would otherwise pass with minBet=0 and submit a 0 KDG bet.
   const canBet =
-    round != null && !isPaused && !overBalance && betAmt >= minBet;
+    round != null &&
+    minBetWei != null &&
+    isPaused === false &&
+    !overBalance &&
+    betAmt >= minBet;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">

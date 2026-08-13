@@ -8,7 +8,7 @@ import {
   useReadContracts,
 } from "wagmi";
 import { useTokenRegistry } from "./token-registry";
-import { NATIVE_SYMBOL } from "./chain";
+import { CHAIN_ID, NATIVE_SYMBOL } from "./chain";
 import type { Token } from "./types";
 
 const REFETCH_MS = 30_000;
@@ -32,8 +32,11 @@ export function useBalances(): Record<string, number> {
     [registryTokens],
   );
 
+  // chainId pinned to Xphere: without it these reads follow the wallet's
+  // currently selected chain, silently showing balances from other networks.
   const native = useNativeBalance({
     address,
+    chainId: CHAIN_ID,
     query: { enabled: !!address, refetchInterval: REFETCH_MS },
   });
 
@@ -43,6 +46,7 @@ export function useBalances(): Record<string, number> {
       abi: erc20Abi,
       functionName: "balanceOf" as const,
       args: [address as `0x${string}`],
+      chainId: CHAIN_ID,
     })),
     query: { enabled: !!address, refetchInterval: REFETCH_MS },
   });

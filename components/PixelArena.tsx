@@ -214,12 +214,40 @@ export function PixelArena({
       }
       ctx.globalAlpha = 1;
 
-      raf = requestAnimationFrame(draw);
+      if (running) raf = requestAnimationFrame(draw);
     };
-    raf = requestAnimationFrame(draw);
+
+    // Pause the loop when the canvas can't be seen (offscreen / hidden tab)
+    // or the user prefers reduced motion — saves battery on mobile. A single
+    // frame is always drawn so the paused canvas isn't blank.
+    let running = false;
+    let visible = true;
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const setRunning = () => {
+      const next = visible && !document.hidden && !reducedMotion;
+      if (next === running) return;
+      running = next;
+      cancelAnimationFrame(raf);
+      if (running) raf = requestAnimationFrame(draw);
+    };
+    const io = new IntersectionObserver(([entry]) => {
+      visible = entry?.isIntersecting ?? true;
+      setRunning();
+    });
+    io.observe(canvas);
+    const onVisibility = () => setRunning();
+    document.addEventListener("visibilitychange", onVisibility);
+
+    draw(performance.now()); // static first frame (reduced-motion keeps it)
+    setRunning();
     return () => {
+      running = false;
       cancelAnimationFrame(raf);
       ro.disconnect();
+      io.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
 
