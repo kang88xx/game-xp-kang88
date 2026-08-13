@@ -17,6 +17,7 @@ import { formatNumber, shortAddress, timeAgoPure } from "@/lib/format";
 import { ArrowChip } from "@/components/ui";
 import { AddToWalletButton } from "@/components/AddToWalletButton";
 import { PixelArena, ARENA_STAGE_NAMES } from "@/components/PixelArena";
+import { TierTable } from "@/components/TierTable";
 import { PerspectiveGrid } from "@/components/PerspectiveGrid";
 import { toast } from "@/components/toast";
 import { TOKEN_MAP } from "@/lib/tokens";
@@ -32,21 +33,6 @@ const EXPLORER = EXPLORER_URL;
 
 // Meme-coin bet sizes (KDG trades for fractions of a cent).
 const QUICK_CHIPS = [100, 500, 1000, 5000];
-
-// LMS timer tiers — bet floor doubles & round timer halves every 10 bets
-// (mirrors KangLMS.betFloorForTier / durationForTier; row index === tier).
-const TIER_ROWS = [
-  { bets: "0–9", bet: "1,000", timer: "24h" },
-  { bets: "10–19", bet: "2,000", timer: "12h" },
-  { bets: "20–29", bet: "4,000", timer: "6h" },
-  { bets: "30–39", bet: "8,000", timer: "3h" },
-  { bets: "40–49", bet: "16,000", timer: "1.5h" },
-  { bets: "50–59", bet: "32,000", timer: "45m" },
-  { bets: "60–69", bet: "64,000", timer: "22.5m" },
-  { bets: "70–79", bet: "128,000", timer: "11.25m" },
-  { bets: "80–89", bet: "256,000", timer: "5.6m" },
-  { bets: "90+", bet: "512,000+", timer: "min 30s" },
-];
 
 function mmss(ms: number): string {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
@@ -1367,33 +1353,7 @@ function OnchainGame() {
               </div>
             </div>
           {/* Timer Tiers — standalone reference card, full width */}
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-6">
-            <div className="mb-3 text-sm font-semibold">
-              Timer Tiers
-              <span className="ml-1 font-normal text-[var(--muted-2)]">
-                · every 10 bets: bet ×2, timer ÷2
-              </span>
-            </div>
-            <div className="flex justify-between pb-1 text-xs text-[var(--muted-2)]">
-              <span className="w-1/3">Bets</span>
-              <span className="w-1/3 text-right">Min Bet</span>
-              <span className="w-1/3 text-right">Resets to</span>
-            </div>
-            {TIER_ROWS.map((r, t) => (
-              <div
-                key={r.bets}
-                className={`flex justify-between py-0.5 text-xs tabular-nums ${
-                  t === tier
-                    ? "font-semibold text-[var(--accent)]"
-                    : "text-[var(--muted)]"
-                }`}
-              >
-                <span className="w-1/3">{r.bets}</span>
-                <span className="w-1/3 text-right">{r.bet} KDG</span>
-                <span className="w-1/3 text-right">{r.timer}</span>
-              </div>
-            ))}
-          </div>
+          <TierTable tier={tier} />
         </div>
 
         {/* Right column: pixel arena + recent bets + round history */}
