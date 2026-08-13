@@ -16,6 +16,27 @@ const RAY_TARGETS: [number, number][] = [
   [-80, -60], [240, -60], [520, -60], [760, -60], [1000, -60], [1320, -60],
 ];
 
+// Ember sparks (stake.x-phere.com motif) — position %, delay s, duration s,
+// size px, color token, launch height px. Staggered delays + varied launch
+// heights keep several sparks mid-flight (visible) at any moment.
+const EMBERS: [number, number, number, number, string, number][] = [
+  [4, 0.8, 7.5, 4, "var(--dot-yellow)", 90],
+  [12, 0, 7, 5, "var(--accent-bright)", 0],
+  [19, 3.2, 6, 3, "var(--accent)", 150],
+  [26, 1.8, 8.5, 4, "var(--dot-yellow)", 40],
+  [33, 4.4, 7, 5, "var(--accent-bright)", 110],
+  [41, 0.4, 6.5, 3, "var(--accent)", 0],
+  [47, 2.6, 7.5, 5, "var(--accent-bright)", 130],
+  [54, 5.1, 9, 4, "var(--dot-yellow)", 60],
+  [60, 1.3, 6, 4, "var(--accent)", 100],
+  [67, 3.9, 8, 5, "var(--accent-bright)", 20],
+  [73, 0.9, 7, 3, "var(--dot-yellow)", 140],
+  [79, 2.2, 6.5, 4, "var(--accent)", 70],
+  [85, 4.7, 8.5, 5, "var(--accent-bright)", 0],
+  [91, 1.6, 7.5, 3, "var(--dot-yellow)", 120],
+  [96, 3.4, 6.5, 4, "var(--accent)", 50],
+];
+
 export function PerspectiveGrid({ className = "" }: { className?: string }) {
   return (
     <div
@@ -28,6 +49,21 @@ export function PerspectiveGrid({ className = "" }: { className?: string }) {
           "linear-gradient(to bottom, black 55%, transparent 100%)",
       }}
     >
+      {EMBERS.map(([left, delay, dur, size, color, rise], i) => (
+        <span
+          key={i}
+          className="ember"
+          style={{
+            left: `${left}%`,
+            bottom: rise,
+            width: size,
+            height: size,
+            background: color,
+            animationDelay: `${delay}s`,
+            animationDuration: `${dur}s`,
+          }}
+        />
+      ))}
       <svg
         className="pgrid h-full w-full"
         viewBox="0 0 1200 520"

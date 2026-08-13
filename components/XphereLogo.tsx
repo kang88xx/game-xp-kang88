@@ -39,13 +39,14 @@ export function XphereMark({ size = 28 }: { size?: number }) {
   );
 }
 
-/** Full lockup — bird glyph + XPHERE wordmark (wordmark inherits text color). */
+/** Full lockup — bird glyph + XPHERE wordmark (wordmark inherits text color).
+ *  The wordmark group is shifted +14 units for breathing room after the bird. */
 export function XphereLockup({ size = 24 }: { size?: number }) {
   return (
     <svg
-      width={size * (332.88 / 71.43)}
+      width={size * (346.88 / 71.43)}
       height={size}
-      viewBox="0 0 332.88 71.43"
+      viewBox="0 0 346.88 71.43"
       role="img"
       aria-label="Xphere"
       className="shrink-0"
@@ -54,7 +55,7 @@ export function XphereLockup({ size = 24 }: { size?: number }) {
         <BirdGradient id="xphere-lockup-grad" />
       </defs>
       <path fill="url(#xphere-lockup-grad)" d={BIRD_PATH} />
-      <g fill="currentColor">
+      <g fill="currentColor" transform="translate(14 0)">
         <polygon points="129.53 12.43 121.55 12.43 107.55 35.15 90.85 59.77 98.76 59.77 111.48 41.46 122.9 59.77 130.81 59.77 115.12 35.15 129.53 12.43" />
         <polygon points="100.11 12.43 92.2 12.43 107.55 35.15 111.01 29.54 100.11 12.43" />
         <path d="M154.28,12.43h-17.72v6.42h17.72c5.75,0,8.79,4.26,8.79,8.86s-3.11,8.79-8.79,8.79h-17.72v23.26h6.42v-16.84h11.29c9.54,0,15.49-6.83,15.49-15.22s-5.82-15.28-15.49-15.28Z" />

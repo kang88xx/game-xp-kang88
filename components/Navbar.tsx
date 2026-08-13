@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Menu, X, ShieldCheck } from "lucide-react";
 import { WalletButton } from "./WalletButton";
 import { ThemeToggle } from "./ThemeToggle";
-import { XphereLockup } from "./XphereLogo";
+import { XphereMark } from "./XphereLogo";
 
 const LINKS = [
   { href: "/", label: "Games" },
@@ -24,18 +24,29 @@ export function Navbar() {
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center">
-            <XphereLockup size={26} />
+          {/* stake.x-phere.com lockup form: glyph + `XP UNION / VAULT` → ours */}
+          <Link href="/" className="flex items-center gap-2.5">
+            <XphereMark size={22} />
+            <span className="font-mono text-[15px] font-bold uppercase tracking-[0.18em] text-[var(--foreground)]">
+              XP
+            </span>
+            <span className="-mx-0.5 font-mono text-[15px] font-bold text-[var(--muted-2)]">
+              /
+            </span>
+            <span className="font-mono text-[15px] font-bold uppercase tracking-[0.18em] text-[var(--muted-2)]">
+              GAME
+            </span>
           </Link>
 
+          {/* stake tabs — active reads ember, no underline */}
           <nav className="hidden items-center gap-1 md:flex">
             {LINKS.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
-                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                className={`px-3.5 py-1.5 text-sm font-semibold transition-colors ${
                   isActive(l.href)
-                    ? "bg-[var(--surface-2)] text-[var(--foreground)]"
+                    ? "text-[var(--accent-bright)]"
                     : "text-[var(--muted)] hover:text-[var(--foreground)]"
                 }`}
               >
@@ -82,7 +93,7 @@ export function Navbar() {
               onClick={() => setMobileOpen(false)}
               className={`block rounded-xl px-3 py-2.5 text-sm font-medium ${
                 isActive(l.href)
-                  ? "bg-[var(--surface-2)]"
+                  ? "bg-[var(--surface-2)] text-[var(--accent-bright)]"
                   : "text-[var(--muted)]"
               }`}
             >

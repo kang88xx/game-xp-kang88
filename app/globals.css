@@ -2,41 +2,41 @@
 @import "tailwindcss";
 
 /* ------------------------------------------------------------------ */
-/*  XPHERE — Pharos Design System v2                                    */
-/*  Electric Pharos Blue on black↔paper contrast · accent-dot palette.  */
-/*  Inter Tight (display + body, Pretendard KR fallback)                */
-/*  + IBM Plex Mono (data/chrome).                                      */
+/*  XPHERE — x-phere.com brand skin v3                                  */
+/*  Pure-black ground · crimson/ember accent ramp lifted from           */
+/*  x-phere.com (#ffeed4 → #ff9738 → #e7453a → #cf1512 → #a90120).      */
+/*  Pretendard (display + body) + system mono (data/chrome).            */
 /* ------------------------------------------------------------------ */
 
 :root {
-  /* surfaces — Pharos paper (light sections) */
-  --background: #f0f0f2; /* paper */
+  /* surfaces — warm paper (light fallback theme) */
+  --background: #f4f1ee;
   --card: #ffffff;
-  --surface: #f7f7f9; /* paper-2 */
-  --surface-2: #e6e6ea; /* paper-3 */
-  --border: #e2e2e6; /* rule-light */
-  --border-strong: #d2d2d8; /* rule-light-2 */
+  --surface: #faf8f6;
+  --surface-2: #ebe7e3;
+  --border: #e6e1dc;
+  --border-strong: #d6d0ca;
 
   /* ink */
-  --foreground: #0a0a0a; /* ink */
-  --muted: #6b6b6b; /* ink-4 */
-  --muted-2: #9a9a9a; /* ink-5 */
+  --foreground: #0a0a0a;
+  --muted: #6b6b6b;
+  --muted-2: #9a9a9a;
 
-  /* Pharos Blue — the signature accent */
-  --accent: #1a1aee; /* blue-500 — primary */
-  --accent-hover: #0f0fcc; /* blue-600 */
-  --accent-press: #0a0a99; /* blue-700 */
-  --accent-soft: #e8e8ff; /* blue-50 */
-  --blue-300: #5a5aff; /* bright highlight slot */
-  --on-accent: #ffffff; /* white text on blue fills */
+  /* XPHERE crimson — the signature accent */
+  --accent: #cf1512; /* deep brand red — legible on paper */
+  --accent-hover: #a90120;
+  --accent-press: #8a0119;
+  --accent-soft: #fdece9;
+  --accent-bright: #ff9738; /* ember highlight slot */
+  --on-accent: #ffffff; /* white text on red fills */
 
-  /* accent dots — the X-glyph palette */
-  --dot-red: #bb0022; /* brand X red */
-  --dot-yellow: #ffe920; /* the "sun" */
-  --dot-orange: #ff5722;
-  --dot-cyan: #3dbeff;
-  --dot-purple: #5b3fff;
-  --dot-blue: #1a1aee;
+  /* accent dots — the x-phere gradient ramp */
+  --dot-red: #cf1512;
+  --dot-yellow: #f5a623; /* ramp: ember */
+  --dot-orange: #ff9738;
+  --dot-cyan: #e7453a; /* ramp: coral */
+  --dot-purple: #a90120; /* ramp: wine */
+  --dot-blue: #cf1512; /* default dot = brand red */
 
   /* market semantics */
   --up: #16a34a; /* positive */
@@ -44,7 +44,21 @@
   --down: #dc2626; /* negative */
   --down-soft: #fee2e2;
 
+  /* fee split — x-phere mono ramp: prize ember → treasury coral → burn wine */
+  --treasury: #e7453a;
+  --burn: #a90120;
+
   --radius: 16px;
+
+  /* x-phere signature gradients */
+  --grad-brand: linear-gradient(
+    90deg,
+    #ffeed4 0%,
+    #ff9738 9%,
+    #e7453a 47%,
+    #cf1512 100%
+  );
+  --grad-btn: linear-gradient(100deg, #ff9738, #e7453a 55%, #cf1512);
 
   /* background ornaments */
   --grid-line: rgba(10, 10, 10, 0.08);
@@ -54,36 +68,40 @@
 }
 
 .dark {
-  /* Pharos black — dark sections ground */
-  --background: #000000; /* black */
-  --card: #0a0a0a; /* ink */
-  --surface: #1a1a1a; /* ink-2 */
-  --surface-2: #2e2e2e;
-  --border: rgba(255, 255, 255, 0.1); /* on-dark-rule */
-  --border-strong: rgba(255, 255, 255, 0.16); /* on-dark-5 */
+  /* x-phere black — pure-black ground, near-black cards */
+  --background: #000000;
+  --card: #0b0b0b;
+  --surface: #121212;
+  --surface-2: #1c1c1c;
+  --border: rgba(255, 255, 255, 0.09); /* x-phere card rule */
+  --border-strong: rgba(255, 255, 255, 0.16);
 
-  --foreground: #ffffff; /* on-dark-1 */
-  --muted: rgba(255, 255, 255, 0.56); /* on-dark-3 */
-  --muted-2: rgba(255, 255, 255, 0.36); /* on-dark-4 */
+  --foreground: #ffffff;
+  --muted: rgba(255, 255, 255, 0.62); /* x-phere secondary text */
+  --muted-2: rgba(255, 255, 255, 0.4);
 
-  --accent: #5a5aff; /* blue-300 — legible electric on black */
-  --accent-hover: #7c7cff;
-  --accent-press: #1a1aee; /* blue-500 */
-  --accent-soft: rgba(90, 90, 255, 0.16);
-  --blue-300: #c9c9ff; /* blue-100 */
+  --accent: #e7453a; /* x-phere coral red — lifted for black ground */
+  --accent-hover: #cf1512;
+  --accent-press: #a90120;
+  --accent-soft: rgba(231, 69, 58, 0.16);
+  --accent-bright: #ff9738;
   --on-accent: #ffffff;
 
-  --dot-red: #ef4444; /* brand red, lifted for black ground */
-  --dot-yellow: #ffe920;
-  --dot-orange: #ff5722;
-  --dot-cyan: #3dbeff;
-  --dot-purple: #5b3fff;
-  --dot-blue: #5a5aff;
+  --dot-red: #e7453a;
+  --dot-yellow: #ffeed4; /* ramp: cream */
+  --dot-orange: #ff9738;
+  --dot-cyan: #cf1512; /* ramp: crimson */
+  --dot-purple: #a90120; /* ramp: wine */
+  --dot-blue: #e7453a; /* default dot = brand red */
 
   --up: #22c55e;
   --up-soft: rgba(22, 163, 74, 0.14);
   --down: #ef4444;
   --down-soft: rgba(220, 38, 38, 0.14);
+
+  /* fee split — same mono ramp on black */
+  --treasury: #e7453a;
+  --burn: #a90120;
 
   /* background ornaments */
   --grid-line: rgba(255, 255, 255, 0.09);
@@ -115,14 +133,15 @@
   --color-down: var(--down);
   --color-down-soft: var(--down-soft);
 
-  --font-sans: var(--font-inter-tight), var(--font-inter),
-    "Pretendard Variable", ui-sans-serif, system-ui;
-  --font-mono: var(--font-plex-mono);
+  --font-sans: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    monospace;
 }
 
-* {
-  border-color: var(--border);
-}
+/* NOTE: no global `* { border-color }` default — the build flattens author
+   @layer blocks, so an unlayered star rule would override every Tailwind
+   border-color utility (border-transparent, border-[var(--up)]/40, …).
+   Every border in the codebase names its color explicitly instead. */
 
 html,
 body {
@@ -130,11 +149,22 @@ body {
   color: var(--foreground);
 }
 
+/* stake.x-phere.com hero ambience — a faint crimson glow bleeding down from
+   the top of the black ground. Dark theme only; cards paint over it. */
+.dark body {
+  background-image: radial-gradient(
+    52% 34% at 50% 0%,
+    rgba(207, 21, 18, 0.1),
+    transparent 70%
+  );
+  background-repeat: no-repeat;
+}
+
 body {
-  font-family: var(--font-inter-tight), var(--font-inter),
-    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
-    system-ui, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
-  letter-spacing: -0.015em; /* Pharos --track-tight */
+  font-family: "Pretendard Variable", Pretendard, -apple-system,
+    BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR",
+    sans-serif;
+  letter-spacing: -0.01em; /* Pretendard reads best near-neutral */
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   transition: background-color 0.2s ease, color 0.2s ease;
@@ -145,38 +175,232 @@ body {
   color: var(--on-accent);
 }
 
-/* Pharos type: Inter Tight display headlines, tight negative tracking */
+/* x-phere type: Pretendard display headlines, tight negative tracking */
 h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-inter-tight), "Pretendard Variable", ui-sans-serif,
-    system-ui, sans-serif;
+  font-family: "Pretendard Variable", Pretendard, ui-sans-serif, system-ui,
+    sans-serif;
 }
 h1 {
-  letter-spacing: -0.035em; /* --track-display */
+  letter-spacing: -0.03em;
 }
 h2 {
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
 }
 h3,
 h4 {
-  letter-spacing: -0.015em; /* --track-tight */
+  letter-spacing: -0.01em;
 }
 
-/* Red fills carry white text.
-   Matches every `bg-[var(--accent)]` utility without touching markup. */
+/* x-phere headline treatment — cream→ember→crimson gradient text with the
+   stake.x-phere.com slow shimmer (background pans across the wide ramp) */
+.grad-text {
+  background: var(--grad-brand);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 8s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0%,
+  100% {
+    background-position: 0% 0;
+  }
+  50% {
+    background-position: 100% 0;
+  }
+}
+
+/* Primary fills: stake.x-phere.com ember→crimson pill — red glow shadow,
+   hover brightens + lifts 1px, press settles back. Matches every
+   `bg-[var(--accent)]` utility without touching markup. */
 [class*="bg-[var(--accent)]"] {
   color: var(--on-accent);
+}
+[class*="bg-[var(--accent)]"]:not(:disabled) {
+  background-image: var(--grad-btn);
+  box-shadow: 0 6px 24px -8px rgba(207, 21, 18, 0.45);
+  transition: filter 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease,
+    background-color 0.22s ease;
+}
+[class*="bg-[var(--accent)]"]:not(:disabled):hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px -8px rgba(207, 21, 18, 0.55);
+}
+[class*="bg-[var(--accent)]"]:not(:disabled):active {
+  transform: translateY(0) scale(0.985);
+  filter: brightness(0.98);
+  box-shadow: 0 4px 16px -8px rgba(207, 21, 18, 0.4);
+}
+
+/* stake connect pill — ghost by default (thin rule, status dot, plain
+   label), fills with the ember gradient + glow only on hover */
+.wallet-connect {
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--foreground);
+  transition: border-color 0.22s ease, background-color 0.22s ease,
+    color 0.22s ease, box-shadow 0.22s ease, transform 0.22s ease,
+    filter 0.22s ease;
+}
+.wallet-connect .wc-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--muted-2);
+  transition: background 0.3s ease;
+}
+.wallet-connect:hover {
+  border-color: transparent;
+  background-image: var(--grad-btn);
+  color: var(--on-accent);
+  box-shadow: 0 6px 24px -8px rgba(207, 21, 18, 0.45);
+  transform: translateY(-1px);
+}
+.wallet-connect:hover .wc-dot {
+  background: #fff;
+}
+.wallet-connect:active {
+  transform: translateY(0) scale(0.985);
+  filter: brightness(0.98);
+}
+
+/* stake ghost buttons — outlined/surface chips warm to ember on hover
+   (`.btn:hover { border-color: ember; color: ember-2 }`) */
+:is(button, a)[class*="border-[var(--border)"]:not(:disabled):hover {
+  border-color: rgba(255, 151, 56, 0.55);
+  color: var(--accent-bright);
+}
+:is(button, a)[class*="bg-[var(--card)"]:not(:disabled):hover {
+  color: var(--accent-bright);
+}
+
+/* stake bb-cta — underlined links warm to ember on hover */
+a[class*="underline"]:hover {
+  color: var(--accent-bright);
+  text-decoration-color: rgba(255, 151, 56, 0.5);
+}
+
+/* stake stat-card motion — lift, ember border, crimson glow, and a skewed
+   sheen band sweeping across (`.stat:hover::after { left: 130% }`) */
+.lift-card {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.35s, border-color 0.35s, box-shadow 0.35s;
+}
+.lift-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 151, 56, 0.32);
+  box-shadow: 0 24px 50px -24px rgba(207, 21, 18, 0.35);
+}
+.lift-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent,
+    rgba(255, 238, 212, 0.07),
+    transparent
+  );
+  transform: skewX(-18deg);
+  transition: left 0.7s;
+  pointer-events: none;
+}
+.lift-card:hover::after {
+  left: 130%;
+}
+
+/* stake burnband — ember-rimmed card with a breathing crimson glow and
+   sparks drifting inside (`.burnband` + `burnflicker` on stake.x-phere.com) */
+.burnband {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(231, 69, 58, 0.55);
+  background: linear-gradient(180deg, rgba(231, 69, 58, 0.07), var(--card));
+  animation: burnflicker 3.6s ease-in-out infinite;
+  transition: border-color 0.2s ease;
+}
+.burnband:hover {
+  border-color: var(--accent-bright);
+}
+.burnband > * {
+  position: relative;
+  z-index: 1;
+}
+.burnband > .ember {
+  z-index: 0;
+}
+@keyframes burnflicker {
+  0%,
+  100% {
+    box-shadow: rgba(207, 21, 18, 0.16) 0 0 26px inset,
+      rgba(207, 21, 18, 0.14) 0 0 18px;
+  }
+  40% {
+    box-shadow: rgba(207, 21, 18, 0.3) 0 0 46px inset,
+      rgba(207, 21, 18, 0.26) 0 0 34px;
+  }
+  60% {
+    box-shadow: rgba(207, 21, 18, 0.22) 0 0 34px inset,
+      rgba(207, 21, 18, 0.18) 0 0 24px;
+  }
+}
+
+/* stake bb-counter — big numerals carry the brand gradient, endlessly
+   sliding across. The tile is palindromic (cream→red→cream) so repeating
+   tiles join seamlessly: one continuous flow, no visible restart seam. */
+.burn-digits {
+  background: linear-gradient(
+    90deg,
+    #ffeed4 0%,
+    #ff9738 16%,
+    #e7453a 36%,
+    #cf1512 50%,
+    #e7453a 64%,
+    #ff9738 84%,
+    #ffeed4 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: burnshift 4s linear infinite;
+}
+@keyframes burnshift {
+  100% {
+    background-position: -220% 0;
+  }
+}
+
+/* stake flamebob — the burn flame icon bobs and swells */
+@keyframes flamebob {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-2px) scale(1.15);
+  }
+}
+.flamebob {
+  animation: flamebob 1.6s ease-in-out infinite;
 }
 
 .tabular {
   font-variant-numeric: tabular-nums;
 }
 
-/* Eyebrow: Pharos chrome — mono small caps with a colored square dot */
+/* Eyebrow: chrome — mono small caps with a colored square dot */
 .eyebrow {
-  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
   text-transform: uppercase;
@@ -268,7 +492,7 @@ input[type="number"] {
   -webkit-mask-image: linear-gradient(to bottom, black, transparent 72%);
 }
 
-/* Icon tile — pictogram plate with Illustrator-style corner vertex dots */
+/* Icon tile — plain pictogram plate */
 .icontile {
   position: relative;
   display: inline-flex;
@@ -279,32 +503,32 @@ input[type="number"] {
   border-radius: 10px;
   background: var(--surface);
 }
-.icontile::before,
-.icontile::after {
-  content: "";
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  background: var(--dot-blue);
-  opacity: 0.65;
-  transition: opacity 140ms ease, transform 140ms ease;
-}
-.icontile::before {
-  top: -2px;
-  left: -2px;
-}
-.icontile::after {
-  bottom: -2px;
-  right: -2px;
-}
-.group:hover .icontile::before,
-.group:hover .icontile::after {
-  opacity: 1;
-  transform: scale(1.5);
-}
 
 /* Pharos motion vocabulary — purposeful only: pulse = alive, X-rotate = load,
    dot stagger = sequence. No bounce, no parallax. */
+/* Live indicator — solid dot with an expanding ping ring (radar style) */
+.dot-live {
+  position: relative;
+}
+.dot-live::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: inherit;
+  animation: live-ping 1.6s ease-out infinite;
+}
+@keyframes live-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+
 @keyframes dot-pulse {
   0%,
   100% {
@@ -372,23 +596,70 @@ input[type="number"] {
 @media (prefers-reduced-motion: reduce) {
   .dot-alive,
   .x-spin,
-  .dot-stagger span {
+  .dot-stagger span,
+  .grad-text,
+  .ember,
+  .flamebob,
+  .burnband,
+  .burn-digits,
+  .dot-live::after {
     animation: none;
+  }
+  .burnband {
+    box-shadow: rgba(207, 21, 18, 0.16) 0 0 26px inset,
+      rgba(207, 21, 18, 0.14) 0 0 18px;
+  }
+  .dot-live::after {
+    display: none;
+  }
+  .grad-text {
+    background-position: 50% 0;
   }
 }
 
+/* stake.x-phere.com modal pop — springy overshoot ease */
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(16px) scale(0.97);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 .animate-fade-in {
-  animation: fade-in 0.25s ease-out both;
+  animation: fade-in 0.45s cubic-bezier(0.2, 0.9, 0.25, 1.2) both;
+}
+
+/* stake.x-phere.com embers — tiny sparks drifting up from the hero floor.
+   Purely decorative; parent must be positioned + overflow-hidden. */
+@keyframes rise-ember {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-420px) scale(0.3);
+    opacity: 0;
+  }
+}
+.ember {
+  position: absolute;
+  bottom: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent-bright);
+  box-shadow: 0 0 10px 2px rgba(255, 151, 56, 0.5);
+  opacity: 0;
+  animation: rise-ember 7s linear infinite;
 }
 
 @keyframes pulse-soft {

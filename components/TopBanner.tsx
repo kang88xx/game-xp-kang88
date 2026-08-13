@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight } from "lucide-react";
 
 /**
  * Slim announcement strip below the navbar: live-on-mainnet badge and a
@@ -17,17 +16,15 @@ export function TopBanner() {
 
   return (
     <div
-      className={`border-b border-[var(--border)] bg-[var(--background)] ${
-        onGames ? "sticky top-16 z-20" : ""
-      }`}
+      className={`border-b border-black/20 ${onGames ? "sticky top-16 z-20" : ""}`}
+      style={{ backgroundImage: "var(--grad-brand)" }}
     >
-      <div className="mx-auto flex h-12 max-w-6xl items-center justify-between gap-3 px-4 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--muted)] sm:px-6">
+      <div className="mx-auto flex h-12 max-w-6xl items-center justify-between gap-3 px-4 font-mono text-[11px] uppercase tracking-[0.18em] text-[#190501] sm:px-6">
         {/* Left: live badge */}
-        <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[var(--border-strong)] px-3 py-1.5">
-          <span className="dot-alive h-1.5 w-1.5 bg-[var(--dot-red)]" />
+        <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-black/25 px-3 py-1.5">
+          <span className="dot-live h-1.5 w-1.5 rounded-full bg-[#cf1512]" />
           <span className="whitespace-nowrap">
-            Live on{" "}
-            <span className="text-[var(--foreground)]">Xphere Mainnet</span>
+            Live on <span className="font-bold">Xphere Mainnet</span>
           </span>
         </span>
 
@@ -35,10 +32,9 @@ export function TopBanner() {
         {!onClaim && (
           <Link
             href="/claim"
-            className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-[var(--accent)] px-3.5 py-1.5 font-sans text-xs font-semibold normal-case tracking-normal text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985]"
+            className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-black px-3.5 py-1.5 font-sans text-xs font-semibold normal-case tracking-normal text-white transition-all hover:-translate-y-px hover:bg-[#ffeed4] hover:text-[#190501] hover:shadow-[0_6px_20px_rgba(25,5,1,0.28)] active:translate-y-0 active:scale-[0.985]"
           >
             Claim airdrop
-            <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
         )}
       </div>

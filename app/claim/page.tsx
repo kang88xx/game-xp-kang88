@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMetaMask } from "@/lib/use-metamask";
-import { Gift, Check, Lock, Globe, ShieldCheck, Loader2 } from "lucide-react";
+import { Check, Lock, Globe, ShieldCheck, Loader2 } from "lucide-react";
 import { formatUnits, parseUnits } from "viem";
 import {
   useAccount,
@@ -50,12 +50,11 @@ export default function AirdropPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-      <div className="flex items-center gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)]">
-          <Gift className="h-6 w-6 text-[var(--accent)]" />
-        </span>
+      <div>
         <div>
-          <h1 className="text-3xl font-medium tracking-tight">Claim</h1>
+          <h1 className="grad-text text-3xl font-medium tracking-tight">
+            Claim
+          </h1>
           <p className="text-sm text-[var(--muted)]">
             Claim token rewards from active campaigns.
           </p>
@@ -260,7 +259,7 @@ function OnchainCampaignCard({
       // Refresh hasClaimed + on-chain campaign state.
       queryClient.invalidateQueries();
     } catch {
-      toast.error("Claim failed — already claimed or rejected in wallet");
+      toast.error("Claim failed: already claimed or rejected in wallet");
     } finally {
       setClaiming(false);
     }
@@ -274,28 +273,35 @@ function OnchainCampaignCard({
     (c.isPublic || remainingAllocWei > 0n);
 
   return (
-    <div className="flex flex-col rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 transition-all duration-200 hover:-translate-y-1 hover:border-[var(--border-strong)] hover:shadow-xl">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <TokenLogo symbol={c.tokenSymbol} size={44} />
-          <div>
-            <h3 className="font-semibold">{c.name}</h3>
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]">
-              {c.isPublic ? (
-                <Globe className="h-3.5 w-3.5" />
-              ) : (
-                <Lock className="h-3.5 w-3.5" />
-              )}
-              {c.isPublic ? "Public" : "Whitelist"}
-            </span>
-          </div>
+    <div className="flex flex-col rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 transition-all duration-200 hover:-translate-y-1 hover:border-[var(--border-strong)] hover:shadow-xl">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <TokenLogo symbol={c.tokenSymbol} size={40} />
+          <h3 className="truncate font-semibold">{c.name}</h3>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]">
+            {c.isPublic ? (
+              <Globe className="h-3.5 w-3.5" />
+            ) : (
+              <Lock className="h-3.5 w-3.5" />
+            )}
+            {c.isPublic ? "Public" : "Whitelist"}
+          </span>
         </div>
-        <span className="text-xs text-[var(--muted)]">
-          {ended ? "Ended" : c.endsAtMs === 0 ? "No expiry" : daysUntil(c.endsAtMs)}
+        <span
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${
+            ended
+              ? "bg-[var(--surface-2)] text-[var(--muted)]"
+              : "bg-[var(--accent-soft)] text-[var(--accent-bright)]"
+          }`}
+        >
+          {!ended && (
+            <span className="dot-live h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+          )}
+          {ended ? "Ended" : c.endsAtMs === 0 ? "Live" : daysUntil(c.endsAtMs)}
         </span>
       </div>
 
-      <div className="mt-5 flex items-end justify-between rounded-2xl bg-[var(--surface)] px-4 py-3">
+      <div className="mt-4 flex items-end justify-between rounded-2xl bg-[var(--surface)] px-4 py-2.5">
         <div>
           <p className="text-xs text-[var(--muted)]">
             {!c.isPublic && myAlloc ? "Your allocation" : "Reward per wallet"}
@@ -314,7 +320,7 @@ function OnchainCampaignCard({
       </div>
 
       {/* Progress (claimed / funded, read from chain) */}
-      <div className="mt-4">
+      <div className="mt-3.5">
         <div className="flex justify-between text-xs text-[var(--muted)]">
           <span>{progress.toFixed(1)}% claimed</span>
           <span>
@@ -330,24 +336,17 @@ function OnchainCampaignCard({
         </div>
       </div>
 
-      {connected && !eligible && !alreadyClaimed && (
-        <div className="mt-4 flex items-center gap-2 rounded-xl bg-[var(--down-soft)] px-3 py-2 text-xs text-[var(--down)]">
-          <ShieldCheck className="h-3.5 w-3.5" />
-          {reason}
-        </div>
-      )}
-
       {/* Allocation grew after a claim — the difference is claimable (v5). */}
       {!c.isPublic && walletClaimedWei > 0n && remainingAllocWei > 0n && (
         <div className="mt-4 flex items-center gap-2 rounded-xl bg-[var(--up-soft)] px-3 py-2 text-xs text-[var(--up)]">
           <Check className="h-3.5 w-3.5" />
           Already claimed {Number(formatUnits(walletClaimedWei, dec)).toLocaleString()}{" "}
-          {c.tokenSymbol} — {claimableNow.toLocaleString()}{" "}
+          {c.tokenSymbol} · {claimableNow.toLocaleString()}{" "}
           {c.tokenSymbol} additional claimable
         </div>
       )}
 
-      <div className="mt-auto pt-5">
+      <div className="mt-auto pt-4">
         {!connected ? (
           <button
             onClick={() => openWalletModal()}
@@ -373,14 +372,21 @@ function OnchainCampaignCard({
             {claiming
               ? "Claiming…"
               : `Claim ${claimableNow.toLocaleString()} ${c.tokenSymbol}`}
-            {!claiming && <ArrowChip variant="onAccent" />}
+            {!claiming && <ArrowChip />}
           </button>
         ) : (
           <button
             disabled
-            className="h-12 w-full rounded-full bg-[var(--accent)] font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985] disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:text-[var(--muted-2)]"
+            className={`flex h-12 w-full cursor-not-allowed items-center justify-center gap-2 rounded-full font-semibold ${
+              !ended && !soldOut && !eligible
+                ? "bg-[var(--down-soft)] text-[var(--down)]"
+                : "bg-[var(--surface-2)] text-[var(--muted-2)]"
+            }`}
           >
-            {ended ? "Ended" : soldOut ? "Fully claimed" : "Not eligible"}
+            {!ended && !soldOut && !eligible && (
+              <ShieldCheck className="h-4 w-4" />
+            )}
+            {ended ? "Ended" : soldOut ? "Fully claimed" : reason}
           </button>
         )}
       </div>
@@ -397,23 +403,30 @@ function DraftCampaignCard({ campaign: c }: { campaign: AirdropCampaign }) {
   const ended = isPast(c.endsAt);
 
   return (
-    <div className="flex flex-col rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 transition-all duration-200 hover:-translate-y-1 hover:border-[var(--border-strong)] hover:shadow-xl">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <TokenLogo symbol={c.tokenSymbol} size={44} />
-          <div>
-            <h3 className="font-semibold">{c.name}</h3>
-            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]">
-              {isWl ? (
-                <Lock className="h-3.5 w-3.5" />
-              ) : (
-                <Globe className="h-3.5 w-3.5" />
-              )}
-              {isWl ? "Whitelist" : "Public"}
-            </span>
-          </div>
+    <div className="flex flex-col rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 transition-all duration-200 hover:-translate-y-1 hover:border-[var(--border-strong)] hover:shadow-xl">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <TokenLogo symbol={c.tokenSymbol} size={40} />
+          <h3 className="truncate font-semibold">{c.name}</h3>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]">
+            {isWl ? (
+              <Lock className="h-3.5 w-3.5" />
+            ) : (
+              <Globe className="h-3.5 w-3.5" />
+            )}
+            {isWl ? "Whitelist" : "Public"}
+          </span>
         </div>
-        <span className="text-xs text-[var(--muted)]">
+        <span
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${
+            ended
+              ? "bg-[var(--surface-2)] text-[var(--muted)]"
+              : "bg-[var(--accent-soft)] text-[var(--accent-bright)]"
+          }`}
+        >
+          {!ended && (
+            <span className="dot-live h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+          )}
           {ended ? "Ended" : daysUntil(c.endsAt)}
         </span>
       </div>
@@ -422,7 +435,7 @@ function DraftCampaignCard({ campaign: c }: { campaign: AirdropCampaign }) {
         {c.description}
       </p>
 
-      <div className="mt-5 flex items-end justify-between rounded-2xl bg-[var(--surface)] px-4 py-3">
+      <div className="mt-4 flex items-end justify-between rounded-2xl bg-[var(--surface)] px-4 py-2.5">
         <div>
           <p className="text-xs text-[var(--muted)]">Reward per wallet</p>
           <p className="text-xl font-bold">
@@ -434,7 +447,7 @@ function DraftCampaignCard({ campaign: c }: { campaign: AirdropCampaign }) {
         </p>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-3.5">
         <div className="flex justify-between text-xs text-[var(--muted)]">
           <span>{progress.toFixed(1)}% claimed</span>
           <span>
@@ -450,7 +463,7 @@ function DraftCampaignCard({ campaign: c }: { campaign: AirdropCampaign }) {
         </div>
       </div>
 
-      <div className="mt-auto pt-5">
+      <div className="mt-auto pt-4">
         <button
           disabled
           className="h-12 w-full rounded-full bg-[var(--surface-2)] font-semibold text-[var(--muted-2)]"

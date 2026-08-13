@@ -100,7 +100,7 @@ export function AddNetworkButton({
       type="button"
       onClick={add}
       disabled={busy}
-      title={`Registers ${CHAIN_LABEL} (chain ${CHAIN_ID}) in MetaMask — RPC, currency and explorer are filled in automatically.`}
+      title={`Registers ${CHAIN_LABEL} (chain ${CHAIN_ID}) in MetaMask · RPC, currency and explorer are filled in automatically.`}
       className={`inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] px-3.5 py-2 text-xs font-medium text-[var(--muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--foreground)] disabled:opacity-60 ${className}`}
     >
       {busy ? (

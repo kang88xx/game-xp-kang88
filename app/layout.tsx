@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Inter, Inter_Tight } from "next/font/google";
 import { headers } from "next/headers";
 import Script from "next/script";
 import "./globals.css";
@@ -10,33 +9,18 @@ import { XphereLockup } from "@/components/XphereLogo";
 import { AddNetworkButton } from "@/components/AddNetworkButton";
 import { TopBanner } from "@/components/TopBanner";
 
-// Runs before hydration to apply the saved (or system) theme and avoid a flash.
-const THEME_INIT = `(function(){try{var t=localStorage.getItem('ioi-theme');if(t==='dark'||(!t&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}}catch(e){}})();`;
+// Runs before hydration to apply the saved theme and avoid a flash.
+// Dark is the default (the x-phere.com brand ground); light is opt-in.
+const THEME_INIT = `(function(){try{var t=localStorage.getItem('ioi-theme');if(t!=='light'){document.documentElement.classList.add('dark');}}catch(e){document.documentElement.classList.add('dark');}})();`;
 
-// Pharos type stack: Inter Tight (display + body), Inter (fallback),
-// IBM Plex Mono (data/chrome). Korean glyphs fall back to Pretendard
-// Variable, loaded via CDN @import in globals.css (next/font has no
-// Pretendard).
-const interTight = Inter_Tight({
-  variable: "--font-inter-tight",
-  subsets: ["latin"],
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const plexMono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
-  weight: ["400", "500"],
-  subsets: ["latin"],
-});
+// x-phere type stack: Pretendard Variable (display + body + KR), loaded
+// via CDN @import in globals.css (next/font has no Pretendard); data and
+// chrome use the system mono stack — no webfonts to load.
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-const TITLE = "Xpulse — Ignite the Xphere Mainnet";
+const TITLE = "Xphere Mainnet Mini Game";
 const DESCRIPTION =
-  "Xpulse is a mini dApp for Xphere mainnet activation: play onchain games and claim rewards with MetaMask, live on Xphere.";
+  "Play onchain mini games on the Xphere mainnet and claim token rewards with MetaMask.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -44,7 +28,7 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   openGraph: {
     type: "website",
-    siteName: "Xpulse",
+    siteName: "Xphere Mainnet Mini Game",
     title: TITLE,
     description: DESCRIPTION,
     url: SITE_URL,
@@ -53,7 +37,7 @@ export const metadata: Metadata = {
         url: "/og.png",
         width: 1610,
         height: 977,
-        alt: "Xpulse — Ignite the Xphere Mainnet",
+        alt: "Xphere Mainnet Mini Game",
       },
     ],
   },
@@ -74,11 +58,7 @@ export default async function RootLayout({
   const cookies = (await headers()).get("cookie");
 
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${interTight.variable} ${inter.variable} ${plexMono.variable} h-full antialiased`}
-    >
+    <html lang="en" suppressHydrationWarning className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-[var(--background)]">
         <Script id="theme-init" strategy="beforeInteractive">
           {THEME_INIT}
@@ -90,14 +70,14 @@ export default async function RootLayout({
         <footer className="border-t border-[var(--border)] py-7">
           <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 sm:px-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2.5">
-              <XphereLockup size={20} />
+              <XphereLockup size={16} />
               <span className="text-xs text-[var(--muted-2)]">
                 Xphere Mainnet Activation
               </span>
             </div>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--muted)]">
-              <span className="inline-flex items-center gap-2">
-                <span className="dot-alive h-1.5 w-1.5 bg-[var(--dot-red)]" />
+              <span className="inline-flex items-center gap-2 font-mono text-[#6fce9f]">
+                <span className="dot-live h-1.5 w-1.5 rounded-full bg-[#6fce9f]" />
                 Beta · live games
               </span>
               <AddNetworkButton />

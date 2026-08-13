@@ -7,7 +7,6 @@ import { useMetaMask } from "@/lib/use-metamask";
 import { useDexStore, useHydrated } from "@/lib/store";
 import { shortAddress } from "@/lib/format";
 import { toast } from "./toast";
-import { ArrowChip } from "./ui";
 import { AddNetworkButton } from "./AddNetworkButton";
 
 export function WalletButton() {
@@ -30,11 +29,25 @@ export function WalletButton() {
     return (
       <button
         onClick={() => open()}
-        className="group inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-[var(--accent)] py-1.5 pl-4 pr-1.5 text-sm font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985]"
+        className="wallet-connect group inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold"
       >
-        <span className="sm:hidden">Connect</span>
-        <span className="hidden sm:inline">Connect MetaMask</span>
-        <ArrowChip variant="onAccent" />
+        <span className="wc-dot" />
+        Connect
+        {/* bare diagonal arrow — no chip plate */}
+        <svg
+          className="transition-transform duration-150 ease-out group-hover:translate-x-[1.5px] group-hover:-translate-y-[1.5px]"
+          width="15"
+          height="15"
+          viewBox="0 0 16 16"
+          fill="none"
+        >
+          <path
+            d="M5 11 L11 5 M6 5 H11 V10"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="square"
+          />
+        </svg>
       </button>
     );
   }

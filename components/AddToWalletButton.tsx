@@ -5,6 +5,7 @@ import { Plus, Info } from "lucide-react";
 import { useAccount } from "wagmi";
 import { getToken } from "@/lib/tokens";
 import { CHAIN_LABEL } from "@/lib/chain";
+import { TokenLogo } from "./TokenLogo";
 import { toast } from "./toast";
 
 /** EIP-1193 provider surface we need from the active connector. */
@@ -63,7 +64,7 @@ export function AddToWalletButton({
       const msg = err instanceof Error ? err.message : "";
       // User rejection is not an error worth shouting about.
       if (/reject|denied|cancel/i.test(msg)) toast.info("Cancelled");
-      else toast.error(`Couldn't add token — make sure you're on ${CHAIN_LABEL}`);
+      else toast.error(`Couldn't add token: make sure you're on ${CHAIN_LABEL}`);
     } finally {
       setBusy(false);
     }
@@ -71,14 +72,21 @@ export function AddToWalletButton({
 
   return (
     <span className={`inline-flex items-center gap-1.5 ${className}`}>
+      {/* token chip + add action in one pill — tap to watch the asset */}
       <button
         type="button"
         onClick={add}
         disabled={busy}
-        className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] px-3.5 py-2 text-xs font-medium text-[var(--muted)] transition-colors hover:border-[var(--border-strong)] hover:text-[var(--foreground)] disabled:opacity-60"
+        title={`Add ${token.symbol} to your wallet`}
+        className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-medium transition-colors hover:border-[var(--border-strong)] disabled:opacity-60"
       >
-        <Plus className="h-3.5 w-3.5" />
-        Add {token.symbol} to wallet
+        <TokenLogo symbol={token.symbol} size={18} />
+        <span className="font-semibold text-[var(--foreground)]">
+          {token.symbol}
+        </span>
+        <span className="text-[var(--muted)]">·</span>
+        <span className="font-mono text-[var(--muted)]">XPHERE</span>
+        <Plus className="h-3.5 w-3.5 text-[var(--muted)]" />
       </button>
       {/* ⓘ — hover/focus tooltip explaining what the button does */}
       <span className="group relative inline-flex" tabIndex={0}>
@@ -91,7 +99,7 @@ export function AddToWalletButton({
           className="pointer-events-none invisible absolute bottom-full right-0 z-30 mb-2 w-60 rounded-xl border border-[var(--border)] bg-[var(--card)] p-3 text-left text-xs font-normal leading-relaxed text-[var(--muted)] opacity-0 shadow-xl transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
         >
           Registers {token.symbol} in your wallet&apos;s token list (MetaMask
-          etc.) so your balance shows up. Free — nothing is sent on-chain;
+          etc.) so your balance shows up. Free · nothing is sent on-chain;
           your wallet only asks you to confirm adding the token.
         </span>
       </span>

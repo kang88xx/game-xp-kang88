@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Coins, Trophy, Clock, Flame, Users, TrendingUp, Loader2, Dices } from "lucide-react";
+import { Trophy, Clock, Flame, Users, TrendingUp, Loader2, Dices } from "lucide-react";
 import { useMetaMask } from "@/lib/use-metamask";
 import { erc20Abi, formatUnits, parseUnits } from "viem";
 import {
@@ -15,17 +15,13 @@ import { useDexStore, useHydrated, LMS_CONFIG } from "@/lib/store";
 import { useBalance } from "@/lib/balances";
 import { formatNumber, shortAddress, timeAgoPure } from "@/lib/format";
 import { ArrowChip } from "@/components/ui";
-import { TokenLogo } from "@/components/TokenLogo";
 import { AddToWalletButton } from "@/components/AddToWalletButton";
 import { PixelArena, ARENA_STAGE_NAMES } from "@/components/PixelArena";
 import { PerspectiveGrid } from "@/components/PerspectiveGrid";
 import { toast } from "@/components/toast";
 import { TOKEN_MAP } from "@/lib/tokens";
-import { CHAIN_ID, CHAIN_LABEL, EXPLORER_URL } from "@/lib/chain";
+import { CHAIN_ID, EXPLORER_URL } from "@/lib/chain";
 import { LMS_ABI, LMS_CONTRACT, lmsLive } from "@/lib/lms";
-
-// KDG (KDOGE) contract on Xphere — the bet token — the token used for game bets.
-const KDG_ADDRESS = TOKEN_MAP.KDG?.address ?? "not deployed on this network";
 
 // Game fee destinations (display only until on-chain payouts ship).
 const FEE_WALLETS = {
@@ -89,6 +85,16 @@ export default function GamesPage() {
     <>
       {showIntro && <LmsIntroModal onClose={() => setDismissed(true)} />}
       <div className="relative isolate">
+        {/* fire gradient for the burn flame icon (stroke="url(#flame-grad)") */}
+        <svg aria-hidden width="0" height="0" className="absolute">
+          <defs>
+            <linearGradient id="flame-grad" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0" stopColor="#cf1512" />
+              <stop offset="0.55" stopColor="#ff9738" />
+              <stop offset="1" stopColor="#ffeed4" />
+            </linearGradient>
+          </defs>
+        </svg>
         <PerspectiveGrid />
         {lmsLive ? <OnchainGame /> : <DemoGame />}
       </div>
@@ -119,13 +125,10 @@ function LmsIntroModal({ onClose }: { onClose: () => void }) {
         className="animate-fade-in relative w-full max-w-md overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-2xl"
       >
         <div className="px-6 pt-6 pb-5 text-center">
-          <div className="text-xs font-semibold text-[var(--muted-2)]">
-            LMS
-          </div>
-          <h2 className="mt-2 text-2xl font-bold tracking-tight">
+          <h2 className="text-2xl font-bold tracking-tight">
             Last Man Standing
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+          <p className="mt-2 text-[13px] font-light leading-relaxed text-[var(--muted)]">
             A KDG betting round where the final eligible bettor before expiry
             receives the credited prize.
           </p>
@@ -159,10 +162,10 @@ function LmsIntroModal({ onClose }: { onClose: () => void }) {
         <div className="px-6 pb-6 pt-4">
           <button
             onClick={close}
-            className="group flex w-full items-center justify-center gap-2.5 rounded-full bg-[var(--accent)] py-2.5 pl-4 pr-2 text-sm font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985]"
+            className="group flex w-full items-center justify-center gap-2.5 rounded-full bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985]"
           >
             Enter Game
-            <ArrowChip variant="onAccent" />
+            <ArrowChip />
           </button>
           <label className="mt-3 flex cursor-pointer select-none items-center justify-center gap-2 text-xs text-[var(--muted)]">
             <input
@@ -196,7 +199,7 @@ function LmsStep({
       <span className="icontile shrink-0 text-[var(--accent)]">{icon}</span>
       <div>
         <div className="text-sm font-semibold">{title}</div>
-        <div className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
+        <div className="mt-1 text-[13px] font-light leading-relaxed text-[var(--muted)]">
           {body}
         </div>
       </div>
@@ -322,12 +325,9 @@ function DemoGame() {
       {/* Title row */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)]">
-            <Coins className="h-6 w-6 text-[var(--accent)]" />
-          </span>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight">
+              <h1 className="grad-text text-2xl font-bold tracking-tight">
                 Last Man Standing
               </h1>
               <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] px-2.5 py-0.5 text-xs text-[var(--muted)]">
@@ -340,28 +340,46 @@ function DemoGame() {
           </div>
         </div>
 
-        <div
-          title={`${CHAIN_LABEL} KDG · ${KDG_ADDRESS}`}
-          className="hidden items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs sm:flex"
-        >
-          <TokenLogo symbol="KDG" size={18} />
-          <span className="font-semibold">KDG</span>
-          <span className="text-[var(--muted)]">·</span>
-          <span className="font-mono text-[var(--muted)]">XPHERE</span>
-        </div>
       </div>
 
       {/* Hero countdown card */}
-      <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 sm:p-7 shadow-2xl mb-5 flex flex-col items-center text-center">
+      <div className="burnband rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 sm:p-7 shadow-2xl mb-5 flex flex-col items-center text-center">
+            <span aria-hidden className="ember" style={{ left: "2.0%", bottom: 0, width: 3, height: 3, background: "var(--dot-yellow)", animationDelay: "0.0s", animationDuration: "1.2s" }} />
+            <span aria-hidden className="ember" style={{ left: "5.7%", bottom: 5, animationDelay: "0.37s", animationDuration: "1.31s" }} />
+            <span aria-hidden className="ember" style={{ left: "9.4%", bottom: 10, width: 3, height: 3, background: "var(--accent)", animationDelay: "0.74s", animationDuration: "1.42s" }} />
+            <span aria-hidden className="ember" style={{ left: "13.1%", bottom: 0, background: "var(--dot-yellow)", animationDelay: "1.11s", animationDuration: "1.53s" }} />
+            <span aria-hidden className="ember" style={{ left: "16.8%", bottom: 5, width: 3, height: 3, animationDelay: "1.48s", animationDuration: "1.64s" }} />
+            <span aria-hidden className="ember" style={{ left: "20.5%", bottom: 10, background: "var(--accent)", animationDelay: "1.85s", animationDuration: "1.75s" }} />
+            <span aria-hidden className="ember" style={{ left: "24.2%", bottom: 0, width: 3, height: 3, background: "var(--dot-yellow)", animationDelay: "2.22s", animationDuration: "1.2s" }} />
+            <span aria-hidden className="ember" style={{ left: "27.8%", bottom: 5, animationDelay: "0.19s", animationDuration: "1.31s" }} />
+            <span aria-hidden className="ember" style={{ left: "31.5%", bottom: 10, width: 3, height: 3, background: "var(--accent)", animationDelay: "0.56s", animationDuration: "1.42s" }} />
+            <span aria-hidden className="ember" style={{ left: "35.2%", bottom: 0, background: "var(--dot-yellow)", animationDelay: "0.93s", animationDuration: "1.53s" }} />
+            <span aria-hidden className="ember" style={{ left: "38.9%", bottom: 5, width: 3, height: 3, animationDelay: "1.3s", animationDuration: "1.64s" }} />
+            <span aria-hidden className="ember" style={{ left: "42.6%", bottom: 10, background: "var(--accent)", animationDelay: "1.67s", animationDuration: "1.75s" }} />
+            <span aria-hidden className="ember" style={{ left: "46.3%", bottom: 0, width: 3, height: 3, background: "var(--dot-yellow)", animationDelay: "2.04s", animationDuration: "1.2s" }} />
+            <span aria-hidden className="ember" style={{ left: "50.0%", bottom: 5, animationDelay: "0.01s", animationDuration: "1.31s" }} />
+            <span aria-hidden className="ember" style={{ left: "53.7%", bottom: 10, width: 3, height: 3, background: "var(--accent)", animationDelay: "0.38s", animationDuration: "1.42s" }} />
+            <span aria-hidden className="ember" style={{ left: "57.4%", bottom: 0, background: "var(--dot-yellow)", animationDelay: "0.75s", animationDuration: "1.53s" }} />
+            <span aria-hidden className="ember" style={{ left: "61.1%", bottom: 5, width: 3, height: 3, animationDelay: "1.12s", animationDuration: "1.64s" }} />
+            <span aria-hidden className="ember" style={{ left: "64.8%", bottom: 10, background: "var(--accent)", animationDelay: "1.49s", animationDuration: "1.75s" }} />
+            <span aria-hidden className="ember" style={{ left: "68.5%", bottom: 0, width: 3, height: 3, background: "var(--dot-yellow)", animationDelay: "1.86s", animationDuration: "1.2s" }} />
+            <span aria-hidden className="ember" style={{ left: "72.2%", bottom: 5, animationDelay: "2.23s", animationDuration: "1.31s" }} />
+            <span aria-hidden className="ember" style={{ left: "75.8%", bottom: 10, width: 3, height: 3, background: "var(--accent)", animationDelay: "0.2s", animationDuration: "1.42s" }} />
+            <span aria-hidden className="ember" style={{ left: "79.5%", bottom: 0, background: "var(--dot-yellow)", animationDelay: "0.57s", animationDuration: "1.53s" }} />
+            <span aria-hidden className="ember" style={{ left: "83.2%", bottom: 5, width: 3, height: 3, animationDelay: "0.94s", animationDuration: "1.64s" }} />
+            <span aria-hidden className="ember" style={{ left: "86.9%", bottom: 10, background: "var(--accent)", animationDelay: "1.31s", animationDuration: "1.75s" }} />
+            <span aria-hidden className="ember" style={{ left: "90.6%", bottom: 0, width: 3, height: 3, background: "var(--dot-yellow)", animationDelay: "1.68s", animationDuration: "1.2s" }} />
+            <span aria-hidden className="ember" style={{ left: "94.3%", bottom: 5, animationDelay: "2.05s", animationDuration: "1.31s" }} />
+            <span aria-hidden className="ember" style={{ left: "98.0%", bottom: 10, width: 3, height: 3, background: "var(--accent)", animationDelay: "0.02s", animationDuration: "1.42s" }} />
         <span className="text-xs font-medium text-[var(--muted)] mb-3">
           Time Remaining
         </span>
 
         <div
-          className="font-mono text-7xl sm:text-8xl font-bold tabular-nums leading-none mb-4 transition-transform"
-          style={{
-            color: remainingMs < 10_000 ? "var(--down)" : "var(--foreground)",
-          }}
+          className={`font-mono text-7xl sm:text-8xl font-bold tabular-nums leading-none mb-4 transition-transform ${
+            remainingMs < 10_000 ? "" : "burn-digits"
+          }`}
+          style={remainingMs < 10_000 ? { color: "var(--down)" } : undefined}
         >
           {mmss(remainingMs)}
         </div>
@@ -376,7 +394,7 @@ function DemoGame() {
           {round.lastBettor ? (
             <>
               Last bettor:{" "}
-              <span className="font-mono font-semibold text-[var(--foreground)]">
+              <span className="font-mono font-medium text-[var(--foreground)]">
                 {shortAddress(round.lastBettor)}
                 {round.lastBettor === address && (
                   <span className="ml-1.5 inline-flex items-center rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-xs font-bold text-[var(--accent)]">
@@ -394,29 +412,28 @@ function DemoGame() {
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <StatCard
-          icon={<TrendingUp className="h-4 w-4" />}
+          icon={<TrendingUp className="h-5 w-5" />}
           label="Prize Pool"
           value={`${formatNumber(round.prizePool, 2)} KDG`}
-          detail="80% of bets"
           accent
         />
         <StatCard
-          icon={<Users className="h-4 w-4" />}
+          icon={<Users className="h-5 w-5" />}
           label="Players"
           value={String(uniquePlayers)}
           detail="this round"
         />
         <StatCard
-          icon={<Clock className="h-4 w-4" />}
+          icon={<Clock className="h-5 w-5" />}
           label="Total Bets"
           value={String(round.bets.length)}
           detail="this round"
         />
         <StatCard
-          icon={<Flame className="h-4 w-4" />}
+          icon={<Flame className="flamebob h-5 w-5" stroke="url(#flame-grad)" fill="url(#flame-grad)" />}
           label="Burned"
           value={`${formatNumber(round.burnedPool, 2)} KDG`}
-          detail="5% of bets"
+          valueColor="var(--accent-bright)"
         />
       </div>
 
@@ -451,7 +468,7 @@ function DemoGame() {
                       <button
                         disabled
                         title="On-chain payouts coming soon"
-                        aria-label={`Claim ${claim.amount.toFixed(2)} KDG from round ${claim.roundId.slice(-4)} — on-chain payouts coming soon`}
+                        aria-label={`Claim ${claim.amount.toFixed(2)} KDG from round ${claim.roundId.slice(-4)} · on-chain payouts coming soon`}
                         className="cursor-not-allowed rounded-xl bg-[var(--surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--muted-2)]"
                       >
                         Claim
@@ -474,16 +491,18 @@ function DemoGame() {
             <div className="rounded-2xl bg-[var(--surface)] p-4">
               <div className="flex items-center justify-between text-xs text-[var(--muted)]">
                 <label htmlFor="lms-bet-amount">Bet amount</label>
-                <span>
-                  Balance:{" "}
-                  <span
-                    className={
-                      overBalance ? "font-semibold text-[var(--down)]" : ""
-                    }
-                  >
-                    {hydrated && connected ? formatNumber(kang, 2) : "—"} KDG
+                {hydrated && connected && (
+                  <span>
+                    Balance:{" "}
+                    <span
+                      className={
+                        overBalance ? "font-semibold text-[var(--down)]" : ""
+                      }
+                    >
+                      {formatNumber(kang, 2)} KDG
+                    </span>
                   </span>
-                </span>
+                )}
               </div>
               <div className="mt-1 flex items-center">
                 <input
@@ -521,21 +540,17 @@ function DemoGame() {
             </div>
 
             {/* Payout preview */}
-            <div className="mt-3 rounded-2xl border border-[var(--border)] px-4 py-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-[var(--muted)]">
-                  Payout if you hold the last bet
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] px-4 py-3 text-sm">
+              <span className="text-[var(--muted)]">
+                Payout if you hold the last bet
+                <span className="hidden text-xs text-[var(--muted-2)] lg:inline">
+                  {" "}
+                  · 80% of every bet feeds the pool
                 </span>
-                <span className="font-semibold">
-                  {betAmt > 0
-                    ? `${formatNumber(previewPrize, 2)} KDG`
-                    : "—"}
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-[var(--muted-2)]">
-                80% of every bet feeds the pool — the payout grows with each
-                new bet.
-              </p>
+              </span>
+              <span className="whitespace-nowrap font-medium">
+                {betAmt > 0 ? `${formatNumber(previewPrize, 2)} KDG` : "0 KDG"}
+              </span>
             </div>
 
             {/* Action button */}
@@ -577,30 +592,35 @@ function DemoGame() {
             <div className="flex h-3 w-full overflow-hidden rounded-full">
               <div
                 className="h-full"
-                style={{ width: "80%", backgroundColor: "var(--accent)" }}
+                style={{ width: "80%", backgroundColor: "var(--accent-bright)" }}
                 title="80% Prize Pool"
               />
               <div
                 className="h-full"
-                style={{ width: "15%", backgroundColor: "var(--up)" }}
+                style={{ width: "15%", backgroundColor: "var(--treasury)" }}
                 title="15% Treasury"
               />
               <div
                 className="h-full"
-                style={{ width: "5%", backgroundColor: "var(--down)" }}
+                style={{ width: "5%", backgroundColor: "var(--burn)" }}
                 title="5% Burn"
               />
             </div>
-            <div className="mt-3 flex flex-col gap-2 text-xs text-[var(--muted)]">
-              <LegendRow color="var(--accent)" label="Prize" pct="80%" />
+            <div className="mt-3 grid gap-3 text-xs text-[var(--muted)] sm:grid-cols-3">
               <LegendRow
-                color="var(--up)"
+                color="var(--accent-bright)"
+                label="Prize"
+                pct="80%"
+                address={LMS_CONTRACT}
+              />
+              <LegendRow
+                color="var(--treasury)"
                 label="Treasury"
                 pct="15%"
                 address={FEE_WALLETS.treasury}
               />
               <LegendRow
-                color="var(--down)"
+                color="var(--burn)"
                 label="Burn"
                 pct="5%"
                 address={FEE_WALLETS.burn}
@@ -615,13 +635,11 @@ function DemoGame() {
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold">Recent Bets</h3>
-              <span className="text-xs text-[var(--muted-2)]">
-                {Math.min(round.bets.length, 12)} shown
-              </span>
+              <span className="text-xs text-[var(--muted-2)]">Latest 12</span>
             </div>
             {round.bets.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-[var(--border)] px-3 py-6 text-center text-xs text-[var(--muted-2)]">
-                No bets yet — be the first.
+                No bets yet · be the first.
               </p>
             ) : (
               <div className="space-y-1.5">
@@ -648,7 +666,7 @@ function DemoGame() {
                         </span>
                       )}
                     </span>
-                    <span className="font-semibold text-right">
+                    <span className="font-medium text-right">
                       {formatNumber(bet.amount, 2)}
                     </span>
                     <span className="text-[var(--muted-2)] text-right font-mono text-xs">
@@ -684,14 +702,14 @@ function DemoGame() {
                       #{h.roundId.slice(-4)}
                     </span>
                     <span className="font-mono truncate flex items-center gap-1">
-                      {h.winner ? shortAddress(h.winner) : "—"}
+                      {h.winner ? shortAddress(h.winner) : "Refund"}
                       {h.isBot && (
                         <span className="inline-flex items-center rounded-full bg-[var(--surface-2)] px-1.5 py-px text-[9px] font-bold text-[var(--muted)]">
                           BOT
                         </span>
                       )}
                     </span>
-                    <span className="font-semibold text-right">
+                    <span className="font-medium text-right">
                       {formatNumber(h.prize, 2)}
                     </span>
                     <span className="text-[var(--muted)] text-right">
@@ -880,7 +898,6 @@ function OnchainGame() {
   const displayRoundNo = round ? round.id + 1 + (expired ? 1 : 0) : null;
   const displayPrizePool = expired ? 0 : prizePool;
   const displayBurned = expired ? 0 : burned;
-  const displayPlayers = round && !expired ? round.uniquePlayers : expired ? 0 : null;
   const displayBetCount = round && !expired ? round.betCount : expired ? 0 : null;
   const displayLastBettor = expired ? null : lastBettor;
 
@@ -997,11 +1014,11 @@ function OnchainGame() {
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") return toast.error("Bet failed");
       toast.success(
-        `Bet ${betAmt.toLocaleString()} KDG placed — timer extended`,
+        `Bet ${betAmt.toLocaleString()} KDG placed · timer extended`,
       );
       refreshAll();
     } catch {
-      toast.error("Bet failed — round expired, insufficient balance, or rejected in wallet");
+      toast.error("Bet failed: round expired, insufficient balance, or rejected in wallet");
     } finally {
       setBusy(null);
     }
@@ -1025,7 +1042,7 @@ function OnchainGame() {
       toast.success(`Round #${roundId} · Claimed ${amount.toLocaleString()} KDG!`);
       refreshAll();
     } catch {
-      toast.error("Claim failed — rejected in wallet or nothing to claim");
+      toast.error("Claim failed: rejected in wallet or nothing to claim");
     } finally {
       setBusy(null);
     }
@@ -1048,7 +1065,7 @@ function OnchainGame() {
       toast.success(`Claimed all ${claimable.toLocaleString()} KDG!`);
       refreshAll();
     } catch {
-      toast.error("Claim failed — rejected in wallet or nothing to claim");
+      toast.error("Claim failed: rejected in wallet or nothing to claim");
     } finally {
       setBusy(null);
     }
@@ -1064,12 +1081,9 @@ function OnchainGame() {
       {/* Title row */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)]">
-            <Coins className="h-6 w-6 text-[var(--accent)]" />
-          </span>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight">
+              <h1 className="grad-text text-2xl font-bold tracking-tight">
                 Last Man Standing
               </h1>
               <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-[var(--up)]/40 bg-[var(--up-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--up)]">
@@ -1082,33 +1096,52 @@ function OnchainGame() {
           </div>
         </div>
 
-        <div
-          title={`${CHAIN_LABEL} KDG · ${KDG_ADDRESS}`}
-          className="hidden items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs sm:flex"
-        >
-          <TokenLogo symbol="KDG" size={18} />
-          <span className="font-semibold">KDG</span>
-          <span className="text-[var(--muted)]">·</span>
-          <span className="font-mono text-[var(--muted)]">XPHERE</span>
-        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-[1fr_340px]">
-        {/* Left column: countdown + stats + claims card + bet card + fee bar */}
+        {/* Main column: timer / stats / bet / fee / tiers */}
         <div className="flex flex-col gap-4 max-md:contents">
-          {/* Countdown card */}
-          <div className="flex flex-col items-center rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 text-center shadow-2xl sm:p-6">
+          {/* Countdown card — full width */}
+          <div className="burnband flex flex-col items-center justify-center rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 text-center shadow-2xl">
+            <span aria-hidden className="ember" style={{ left: "2.0%", bottom: 0, width: 3, height: 3, background: "var(--dot-yellow)", animationDelay: "0.0s", animationDuration: "1.2s" }} />
+            <span aria-hidden className="ember" style={{ left: "5.7%", bottom: 5, animationDelay: "0.37s", animationDuration: "1.31s" }} />
+            <span aria-hidden className="ember" style={{ left: "9.4%", bottom: 10, width: 3, height: 3, background: "var(--accent)", animationDelay: "0.74s", animationDuration: "1.42s" }} />
+            <span aria-hidden className="ember" style={{ left: "13.1%", bottom: 0, background: "var(--dot-yellow)", animationDelay: "1.11s", animationDuration: "1.53s" }} />
+            <span aria-hidden className="ember" style={{ left: "16.8%", bottom: 5, width: 3, height: 3, animationDelay: "1.48s", animationDuration: "1.64s" }} />
+            <span aria-hidden className="ember" style={{ left: "20.5%", bottom: 10, background: "var(--accent)", animationDelay: "1.85s", animationDuration: "1.75s" }} />
+            <span aria-hidden className="ember" style={{ left: "24.2%", bottom: 0, width: 3, height: 3, background: "var(--dot-yellow)", animationDelay: "2.22s", animationDuration: "1.2s" }} />
+            <span aria-hidden className="ember" style={{ left: "27.8%", bottom: 5, animationDelay: "0.19s", animationDuration: "1.31s" }} />
+            <span aria-hidden className="ember" style={{ left: "31.5%", bottom: 10, width: 3, height: 3, background: "var(--accent)", animationDelay: "0.56s", animationDuration: "1.42s" }} />
+            <span aria-hidden className="ember" style={{ left: "35.2%", bottom: 0, background: "var(--dot-yellow)", animationDelay: "0.93s", animationDuration: "1.53s" }} />
+            <span aria-hidden className="ember" style={{ left: "38.9%", bottom: 5, width: 3, height: 3, animationDelay: "1.3s", animationDuration: "1.64s" }} />
+            <span aria-hidden className="ember" style={{ left: "42.6%", bottom: 10, background: "var(--accent)", animationDelay: "1.67s", animationDuration: "1.75s" }} />
+            <span aria-hidden className="ember" style={{ left: "46.3%", bottom: 0, width: 3, height: 3, background: "var(--dot-yellow)", animationDelay: "2.04s", animationDuration: "1.2s" }} />
+            <span aria-hidden className="ember" style={{ left: "50.0%", bottom: 5, animationDelay: "0.01s", animationDuration: "1.31s" }} />
+            <span aria-hidden className="ember" style={{ left: "53.7%", bottom: 10, width: 3, height: 3, background: "var(--accent)", animationDelay: "0.38s", animationDuration: "1.42s" }} />
+            <span aria-hidden className="ember" style={{ left: "57.4%", bottom: 0, background: "var(--dot-yellow)", animationDelay: "0.75s", animationDuration: "1.53s" }} />
+            <span aria-hidden className="ember" style={{ left: "61.1%", bottom: 5, width: 3, height: 3, animationDelay: "1.12s", animationDuration: "1.64s" }} />
+            <span aria-hidden className="ember" style={{ left: "64.8%", bottom: 10, background: "var(--accent)", animationDelay: "1.49s", animationDuration: "1.75s" }} />
+            <span aria-hidden className="ember" style={{ left: "68.5%", bottom: 0, width: 3, height: 3, background: "var(--dot-yellow)", animationDelay: "1.86s", animationDuration: "1.2s" }} />
+            <span aria-hidden className="ember" style={{ left: "72.2%", bottom: 5, animationDelay: "2.23s", animationDuration: "1.31s" }} />
+            <span aria-hidden className="ember" style={{ left: "75.8%", bottom: 10, width: 3, height: 3, background: "var(--accent)", animationDelay: "0.2s", animationDuration: "1.42s" }} />
+            <span aria-hidden className="ember" style={{ left: "79.5%", bottom: 0, background: "var(--dot-yellow)", animationDelay: "0.57s", animationDuration: "1.53s" }} />
+            <span aria-hidden className="ember" style={{ left: "83.2%", bottom: 5, width: 3, height: 3, animationDelay: "0.94s", animationDuration: "1.64s" }} />
+            <span aria-hidden className="ember" style={{ left: "86.9%", bottom: 10, background: "var(--accent)", animationDelay: "1.31s", animationDuration: "1.75s" }} />
+            <span aria-hidden className="ember" style={{ left: "90.6%", bottom: 0, width: 3, height: 3, background: "var(--dot-yellow)", animationDelay: "1.68s", animationDuration: "1.2s" }} />
+            <span aria-hidden className="ember" style={{ left: "94.3%", bottom: 5, animationDelay: "2.05s", animationDuration: "1.31s" }} />
+            <span aria-hidden className="ember" style={{ left: "98.0%", bottom: 10, width: 3, height: 3, background: "var(--accent)", animationDelay: "0.02s", animationDuration: "1.42s" }} />
             <span className="mb-3 text-xs font-medium text-[var(--muted)]">
               {heroWaiting ? "Round timer" : "Time Remaining"}
             </span>
             <div
-              className="font-mono text-5xl font-bold tabular-nums leading-none sm:text-6xl"
-              style={{
-                color:
-                  !heroWaiting && remainingMs < 10_000
-                    ? "var(--down)"
-                    : "var(--foreground)",
-              }}
+              className={`font-mono text-5xl font-bold tabular-nums leading-none sm:text-6xl ${
+                !heroWaiting && remainingMs < 10_000 ? "" : "burn-digits"
+              }`}
+              style={
+                !heroWaiting && remainingMs < 10_000
+                  ? { color: "var(--down)" }
+                  : undefined
+              }
             >
               {heroWaiting
                 ? hhmmss(
@@ -1126,14 +1159,14 @@ function OnchainGame() {
             {expired && (
               <p className="mt-3 text-xs text-[var(--muted)]">
                 Previous round ended · First bet starts a new round
-                {unsettledWin > 0 && " — Your prize is ready to claim below"}
+                {unsettledWin > 0 && " · Your prize is ready to claim below"}
               </p>
             )}
-            <div className="mt-4 text-sm text-[var(--muted)]">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-sm text-[var(--muted)]">
               {displayLastBettor ? (
-                <>
+                <span>
                   Last bettor:{" "}
-                  <span className="font-mono font-semibold text-[var(--foreground)]">
+                  <span className="font-mono font-medium text-[var(--foreground)]">
                     {shortAddress(displayLastBettor)}
                     {wallet &&
                       displayLastBettor.toLowerCase() ===
@@ -1143,99 +1176,37 @@ function OnchainGame() {
                         </span>
                       )}
                   </span>
-                </>
+                </span>
               ) : (
                 <span>No bets yet</span>
               )}
+              <span className="text-[var(--muted-2)]">·</span>
+              <span>
+                Total bets{" "}
+                <span className="font-mono font-medium text-[var(--foreground)]">
+                  {displayBetCount ?? 0}
+                </span>{" "}
+                this round
+              </span>
             </div>
           </div>
 
-          {/* Stats row */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/* Stats row: burned (1) + prize pool (2) */}
+          <div className="grid gap-4 sm:grid-cols-3">
             <StatCard
-              icon={<TrendingUp className="h-4 w-4" />}
-              label="Prize Pool"
-              value={`${formatNumber(displayPrizePool, 2)} KDG`}
-              detail="80% of bets"
-              accent
-            />
-            <StatCard
-              icon={<Users className="h-4 w-4" />}
-              label="Players"
-              value={displayPlayers != null ? String(displayPlayers) : "—"}
-              detail="this round"
-            />
-            <StatCard
-              icon={<Clock className="h-4 w-4" />}
-              label="Total Bets"
-              value={displayBetCount != null ? String(displayBetCount) : "—"}
-              detail="this round"
-            />
-            <StatCard
-              icon={<Flame className="h-4 w-4" />}
+              icon={<Flame className="flamebob h-5 w-5" stroke="url(#flame-grad)" fill="url(#flame-grad)" />}
               label="Burned"
               value={`${formatNumber(displayBurned, 2)} KDG`}
-              detail="5% of bets"
+              valueColor="var(--accent-bright)"
+            />
+            <StatCard
+              icon={<TrendingUp className="h-5 w-5" />}
+              label="Prize Pool"
+              value={`${formatNumber(displayPrizePool, 2)} KDG`}
+              accent
+              className="sm:col-span-2"
             />
           </div>
-          {/* Pull-payment prizes — one row per winning round, each claimable
-              on its own (claimRound). A just-won pot settles when claimed. */}
-          {hydrated && connected && prizeRows.length > 0 && (
-            <div className="rounded-3xl border border-[var(--up)]/40 bg-[var(--card)] p-5 sm:p-7 shadow-2xl">
-              <div className="mb-4 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-[var(--up)]" />
-                  <h2 className="text-base font-semibold">
-                    Your Prizes
-                    <span className="ml-2 text-sm font-normal text-[var(--muted)]">
-                      {formatNumber(claimable, 2)} KDG · {prizeRows.length}
-                      {prizeRows.length > 1 ? " rounds" : " round"}
-                    </span>
-                  </h2>
-                </div>
-                {prizeRows.length > 1 && (
-                  <button
-                    onClick={doClaimAll}
-                    disabled={busy !== null}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--up)]/40 px-3 py-1.5 text-xs font-semibold text-[var(--up)] transition-colors hover:bg-[var(--up-soft)] disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {busy === "claim-all" && (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    )}
-                    {busy === "claim-all" ? "Claiming…" : "Claim all"}
-                  </button>
-                )}
-              </div>
-              <div className="space-y-2">
-                {prizeRows.map((row) => (
-                  <div
-                    key={row.roundId}
-                    className="flex items-center justify-between rounded-2xl bg-[var(--surface)] px-4 py-3"
-                  >
-                    <div>
-                      <span className="text-lg font-bold">
-                        {formatNumber(row.amount, 2)} KDG
-                      </span>
-                      <span className="ml-2 text-xs text-[var(--muted)]">
-                        Round #{row.roundId}
-                        {row.isRefund ? " · Refund" : ""}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => doClaimRound(row.roundId, row.amount)}
-                      disabled={busy !== null}
-                      className="inline-flex items-center gap-2 rounded-xl bg-[var(--up)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {busy === `claim:${row.roundId}` && (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      )}
-                      {busy === `claim:${row.roundId}` ? "Claiming…" : "Claim"}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Place Your Bet card */}
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7 shadow-2xl">
@@ -1244,153 +1215,158 @@ function OnchainGame() {
               <AddToWalletButton symbol="KDG" />
             </div>
 
-            <div className="rounded-2xl bg-[var(--surface)] p-4">
-              <div className="flex items-center justify-between text-xs text-[var(--muted)]">
-                <span>Bet · Tier {tier}</span>
-                <span>
-                  Balance:{" "}
-                  <span
-                    className={
-                      overBalance ? "font-semibold text-[var(--down)]" : ""
-                    }
-                  >
-                    {hydrated && connected ? formatNumber(kang, 2) : "—"} KDG
+            <div className="rounded-2xl bg-[var(--surface)] p-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
+              <div>
+                <div className="flex flex-wrap items-baseline gap-x-3">
+                  <span className="text-[13px] text-[var(--muted)]">
+                    Bet · Tier {tier}
                   </span>
-                </span>
-              </div>
-              <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-2xl font-semibold">
-                  {hydrated ? formatNumber(minBet, 0) : "—"}
-                </span>
-                <span className="text-sm font-semibold text-[var(--muted)]">
-                  KDG
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-[var(--muted-2)]">
-                Fixed to the active tier minimum — doubles every 10 bets while
-                the timer halves.
-              </p>
-            </div>
-
-            {/* Payout preview */}
-            <div className="mt-3 rounded-2xl border border-[var(--border)] px-4 py-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-[var(--muted)]">
-                  Payout if you hold the last bet
-                </span>
-                <span className="font-semibold">
-                  {betAmt > 0 ? `${formatNumber(previewPrize, 2)} KDG` : "—"}
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-[var(--muted-2)]">
-                80% of every bet feeds the pool — the payout grows with each
-                new bet.
-              </p>
-            </div>
-
-            {/* Action button */}
-            <div className="mt-5">
-              {!hydrated ? (
-                <div className="h-12 w-full rounded-2xl bg-[var(--surface-2)] animate-pulse-soft" />
-              ) : !connected ? (
-                <button
-                  onClick={() => openWalletModal()}
-                  className="h-12 w-full rounded-full bg-[var(--accent)] font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985]"
-                >
-                  Connect Wallet
-                </button>
-              ) : (
-                <button
-                  onClick={doBet}
-                  disabled={!canBet || busy !== null}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985] disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:text-[var(--muted-2)]"
-                >
-                  {busy === "bet" && <Loader2 className="h-5 w-5 animate-spin" />}
-                  {busy === "bet"
-                    ? "Betting…"
-                    : !round
-                      ? "Loading round…"
-                      : isPaused
-                        ? "Game paused"
-                        : overBalance
-                          ? "Insufficient KDG"
-                          : betAmt < minBet
-                            ? `Minimum ${minBet.toLocaleString()} KDG`
-                            : expired
-                              ? `Bet ${betAmt.toLocaleString()} KDG — starts new round`
-                              : `Bet ${betAmt.toLocaleString()} KDG`}
-                </button>
-              )}
-            </div>
-
-            <p className="mt-3 text-center text-xs text-[var(--muted-2)]">
-              No randomness · last bettor wins the pool · prizes aren&apos;t
-              sent automatically — claim yours from the claims card above
-            </p>
-            <div className="mt-4 rounded-2xl border border-[var(--border)] p-3">
-              <div className="mb-2 text-xs font-semibold">
-                Timer Tiers
-                <span className="ml-1 font-normal text-[var(--muted-2)]">
-                  · every 10 bets: bet ×2, timer ÷2
-                </span>
-              </div>
-              <div className="flex justify-between text-xs text-[var(--muted-2)]">
-                <span className="w-1/3">Bets</span>
-                <span className="w-1/3 text-right">Min Bet</span>
-                <span className="w-1/3 text-right">Resets to</span>
-              </div>
-              {TIER_ROWS.map((r, t) => (
-                <div
-                  key={r.bets}
-                  className={`flex justify-between text-xs tabular-nums ${
-                    t === tier
-                      ? "font-semibold text-[var(--accent)]"
-                      : "text-[var(--muted)]"
-                  }`}
-                >
-                  <span className="w-1/3">{r.bets}</span>
-                  <span className="w-1/3 text-right">{r.bet} KDG</span>
-                  <span className="w-1/3 text-right">{r.timer}</span>
+                  <span className="flex items-baseline gap-1.5">
+                    <span className="text-2xl font-semibold">
+                      {hydrated ? formatNumber(minBet, 0) : "…"}
+                    </span>
+                    <span className="text-sm font-semibold text-[var(--muted)]">
+                      KDG
+                    </span>
+                  </span>
                 </div>
-              ))}
+                <p className="mt-1 text-xs text-[var(--muted-2)]">
+                  Fixed to the active tier minimum · doubles every 10 bets
+                  while the timer halves.
+                </p>
+              </div>
+
+              {/* Action column — balance over the bet button */}
+              <div className="mt-4 flex shrink-0 flex-col gap-2 sm:mt-0 sm:items-end">
+                {hydrated && connected && (
+                  <span className="text-xs text-[var(--muted)]">
+                    Balance:{" "}
+                    <span
+                      className={
+                        overBalance ? "font-semibold text-[var(--down)]" : ""
+                      }
+                    >
+                      {formatNumber(kang, 2)} KDG
+                    </span>
+                  </span>
+                )}
+                {!hydrated ? (
+                  <div className="h-11 w-44 rounded-full bg-[var(--surface-2)] animate-pulse-soft" />
+                ) : !connected ? (
+                  <button
+                    onClick={() => openWalletModal()}
+                    className="h-11 min-w-[210px] rounded-full bg-[var(--accent)] px-8 text-sm font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985]"
+                  >
+                    Connect Wallet
+                  </button>
+                ) : (
+                  <button
+                    onClick={doBet}
+                    disabled={!canBet || busy !== null}
+                    className="flex h-11 min-w-[210px] items-center justify-center gap-2 whitespace-nowrap rounded-full bg-[var(--accent)] px-8 text-sm font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985] disabled:cursor-not-allowed disabled:bg-[var(--surface-2)] disabled:text-[var(--muted-2)]"
+                  >
+                    {busy === "bet" && <Loader2 className="h-5 w-5 animate-spin" />}
+                    {busy === "bet"
+                      ? "Betting…"
+                      : !round
+                        ? "Loading round…"
+                        : isPaused
+                          ? "Game paused"
+                          : overBalance
+                            ? "Insufficient KDG"
+                            : betAmt < minBet
+                              ? `Minimum ${minBet.toLocaleString()} KDG`
+                              : expired
+                                ? `Bet ${betAmt.toLocaleString()} KDG · starts new round`
+                                : `Bet ${betAmt.toLocaleString()} KDG`}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Payout preview — one line under the action button */}
+            <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[var(--border)] px-4 py-3 text-sm">
+              <span className="text-[var(--muted)]">
+                Payout if you hold the last bet
+                <span className="hidden text-xs text-[var(--muted-2)] lg:inline">
+                  {" "}
+                  · 80% of every bet feeds the pool
+                </span>
+              </span>
+              <span className="whitespace-nowrap font-medium">
+                {betAmt > 0 ? `${formatNumber(previewPrize, 2)} KDG` : "0 KDG"}
+              </span>
             </div>
           </div>
 
-          {/* Fee distribution bar — reference info, stacks last on mobile */}
-          <div className="max-md:order-last rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5">
-            <h3 className="text-sm font-semibold mb-3">Fee Distribution</h3>
-            <div className="flex h-3 w-full overflow-hidden rounded-full">
-              <div
-                className="h-full"
-                style={{ width: "80%", backgroundColor: "var(--accent)" }}
-                title="80% Prize Pool"
-              />
-              <div
-                className="h-full"
-                style={{ width: "15%", backgroundColor: "var(--up)" }}
-                title="15% Treasury"
-              />
-              <div
-                className="h-full"
-                style={{ width: "5%", backgroundColor: "var(--down)" }}
-                title="5% Burn"
-              />
+            {/* Fee distribution bar — reference info */}
+            <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5">
+              <h3 className="text-sm font-semibold mb-3">Fee Distribution</h3>
+              <div className="flex h-3 w-full overflow-hidden rounded-full">
+                <div
+                  className="h-full"
+                  style={{ width: "80%", backgroundColor: "var(--accent-bright)" }}
+                  title="80% Prize Pool"
+                />
+                <div
+                  className="h-full"
+                  style={{ width: "15%", backgroundColor: "var(--treasury)" }}
+                  title="15% Treasury"
+                />
+                <div
+                  className="h-full"
+                  style={{ width: "5%", backgroundColor: "var(--burn)" }}
+                  title="5% Burn"
+                />
+              </div>
+              <div className="mt-3 grid gap-3 text-xs text-[var(--muted)] sm:grid-cols-3">
+                <LegendRow
+                  color="var(--accent-bright)"
+                  label="Prize"
+                  pct="80%"
+                  address={LMS_CONTRACT}
+                />
+                <LegendRow
+                  color="var(--treasury)"
+                  label="Treasury"
+                  pct="15%"
+                  address={FEE_WALLETS.treasury}
+                />
+                <LegendRow
+                  color="var(--burn)"
+                  label="Burn"
+                  pct="5%"
+                  address={FEE_WALLETS.burn}
+                />
+              </div>
             </div>
-            <div className="mt-3 flex flex-col gap-2 text-xs text-[var(--muted)]">
-              <LegendRow color="var(--accent)" label="Prize" pct="80%" />
-              <LegendRow
-                color="var(--up)"
-                label="Treasury"
-                pct="15%"
-                address={FEE_WALLETS.treasury}
-              />
-              <LegendRow
-                color="var(--down)"
-                label="Burn"
-                pct="5%"
-                address={FEE_WALLETS.burn}
-              />
+          {/* Timer Tiers — standalone reference card, full width */}
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-6">
+            <div className="mb-3 text-sm font-semibold">
+              Timer Tiers
+              <span className="ml-1 font-normal text-[var(--muted-2)]">
+                · every 10 bets: bet ×2, timer ÷2
+              </span>
             </div>
+            <div className="flex justify-between pb-1 text-xs text-[var(--muted-2)]">
+              <span className="w-1/3">Bets</span>
+              <span className="w-1/3 text-right">Min Bet</span>
+              <span className="w-1/3 text-right">Resets to</span>
+            </div>
+            {TIER_ROWS.map((r, t) => (
+              <div
+                key={r.bets}
+                className={`flex justify-between py-0.5 text-xs tabular-nums ${
+                  t === tier
+                    ? "font-semibold text-[var(--accent)]"
+                    : "text-[var(--muted)]"
+                }`}
+              >
+                <span className="w-1/3">{r.bets}</span>
+                <span className="w-1/3 text-right">{r.bet} KDG</span>
+                <span className="w-1/3 text-right">{r.timer}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1412,23 +1388,81 @@ function OnchainGame() {
                 active={!heroWaiting}
               />
               {/* Stage · tier badge — top right, over the sky */}
-              <span className="absolute right-3 top-3 rounded-full border border-[#E8A33C]/50 bg-black/55 px-2.5 py-1 font-mono text-xs font-semibold text-[#FFE066]">
+              <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-[rgba(255,151,56,0.6)] bg-black/55 px-2.5 py-1 font-mono text-xs font-semibold text-[var(--accent-bright)]">
+                <span className="dot-live h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
                 {ARENA_STAGE_NAMES[Math.min(5, tier)]} · TIER {tier}
               </span>
             </div>
           </div>
 
+          {/* Your Prizes — compact pull-payment claims, one row per winning
+              round (claimRound). A just-won pot settles when claimed. */}
+          {hydrated && connected && prizeRows.length > 0 && (
+            <div className="rounded-3xl border border-[var(--accent)]/40 bg-[var(--card)] p-4">
+              <div className="mb-2.5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <Trophy className="h-3.5 w-3.5 text-[var(--accent-bright)]" />
+                  <h3 className="text-sm font-semibold">Your Prizes</h3>
+                </div>
+                {prizeRows.length > 1 ? (
+                  <button
+                    onClick={doClaimAll}
+                    disabled={busy !== null}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--accent)]/40 px-2.5 py-1 text-xs font-semibold text-[var(--accent-bright)] transition-colors hover:bg-[var(--accent-soft)] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {busy === "claim-all" && (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    )}
+                    {busy === "claim-all"
+                      ? "Claiming…"
+                      : `Claim all · ${formatNumber(claimable, 2)}`}
+                  </button>
+                ) : (
+                  <span className="text-xs text-[var(--muted)]">
+                    {formatNumber(claimable, 2)} KDG
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                {prizeRows.map((row) => (
+                  <div
+                    key={row.roundId}
+                    className="flex items-center justify-between gap-2 rounded-xl bg-[var(--surface)] px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-bold">
+                        {formatNumber(row.amount, 2)} KDG
+                      </div>
+                      <div className="text-xs text-[var(--muted-2)]">
+                        Round #{row.roundId}
+                        {row.isRefund ? " · Refund" : ""}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => doClaimRound(row.roundId, row.amount)}
+                      disabled={busy !== null}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {busy === `claim:${row.roundId}` && (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      )}
+                      {busy === `claim:${row.roundId}` ? "Claiming…" : "Claim"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Recent Bets */}
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold">Recent Bets</h3>
-              <span className="text-xs text-[var(--muted-2)]">
-                {shownBets.length} shown
-              </span>
+              <span className="text-xs text-[var(--muted-2)]">Latest 12</span>
             </div>
             {shownBets.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-[var(--border)] px-3 py-6 text-center text-xs text-[var(--muted-2)]">
-                No bets yet — be the first.
+                No bets yet · be the first.
               </p>
             ) : (
               <div className="space-y-1.5">
@@ -1451,7 +1485,7 @@ function OnchainGame() {
                           </span>
                         )}
                     </span>
-                    <span className="font-semibold text-right">
+                    <span className="font-medium text-right">
                       {formatNumber(bet.amount, 2)}
                     </span>
                     <span className="text-[var(--muted-2)] text-right font-mono text-xs">
@@ -1488,7 +1522,7 @@ function OnchainGame() {
                     <span className="font-mono truncate">
                       {h.winner !== ZERO_ADDR ? shortAddress(h.winner) : "Refund"}
                     </span>
-                    <span className="font-semibold text-right">
+                    <span className="font-medium text-right">
                       {formatNumber(h.prize, 2)}
                     </span>
                   </div>
@@ -1516,7 +1550,7 @@ function LegendRow({
   address?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
       <span className="flex items-center gap-1.5">
         <span
           className="inline-block h-2.5 w-2.5 rounded-full"
@@ -1530,7 +1564,7 @@ function LegendRow({
           target="_blank"
           rel="noopener noreferrer"
           title={address}
-          className="-my-1.5 py-1.5 font-mono text-[var(--muted-2)] underline decoration-[var(--border-strong)] underline-offset-4 transition-colors hover:text-[var(--foreground)]"
+          className="font-mono text-[var(--muted-2)] underline decoration-[var(--border-strong)] underline-offset-4 transition-colors hover:text-[var(--foreground)]"
         >
           {shortAddress(address)}
         </a>
@@ -1545,31 +1579,45 @@ function StatCard({
   value,
   detail,
   accent,
+  valueColor,
+  className = "",
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
-  detail: string;
+  detail?: string;
   accent?: boolean;
+  valueColor?: string;
+  className?: string;
 }) {
   return (
-    <div className="dotgrid group rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--border-strong)] hover:shadow-lg">
-      <div className="mb-2 flex items-center gap-2.5 text-xs text-[var(--muted)]">
-        <span
-          className="icontile"
-          style={{ color: accent ? "var(--accent)" : "var(--muted)" }}
-        >
-          {icon}
-        </span>
-        {label}
+    <div
+      className={`dotgrid lift-card group rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 ${className}`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 text-sm text-[var(--muted)]">
+          <span
+            className="icontile"
+            style={{ color: accent ? "var(--accent)" : "var(--muted)" }}
+          >
+            {icon}
+          </span>
+          {label}
+        </div>
+        <div className="text-right">
+          <div
+            className="font-mono text-sm tabular-nums"
+            style={{
+              color: valueColor ?? (accent ? "var(--accent)" : "var(--foreground)"),
+            }}
+          >
+            {value}
+          </div>
+          {detail && (
+            <div className="mt-0.5 text-xs text-[var(--muted-2)]">{detail}</div>
+          )}
+        </div>
       </div>
-      <div
-        className="text-xl font-bold font-mono tabular-nums"
-        style={{ color: accent ? "var(--accent)" : "var(--foreground)" }}
-      >
-        {value}
-      </div>
-      <div className="text-xs text-[var(--muted-2)] mt-0.5">{detail}</div>
     </div>
   );
 }
