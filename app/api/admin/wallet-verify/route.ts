@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { verifyMessage } from "viem";
+import { serverRpc } from "@/lib/server-rpc";
 import {
   ADMIN_COOKIE,
   SESSION_TTL_S,
@@ -10,6 +10,7 @@ import {
 } from "@/lib/admin-auth";
 import {
   consumeWalletNonce,
+  nonceBinding,
   walletRole,
   walletVerifyMessage,
 } from "@/lib/admin-wallets";
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   const token = (await cookies()).get(ADMIN_COOKIE)?.value;
-  if (!verifySessionToken(token)) {
+  if (!token || !verifySessionToken(token)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -40,19 +41,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }
 
-  // One-time nonce: a replayed signature fails here before any crypto runs.
-  if (!(await consumeWalletNonce(nonce))) {
+  // One-time nonce bound to this exact session + address: replays, other
+  // sessions, and address swaps all fail here before any crypto runs.
+  if (!(await consumeWalletNonce(nonce, nonceBinding(address, token)))) {
     return NextResponse.json(
       { error: "Nonce expired — try again" },
       { status: 400 },
     );
   }
 
-  const valid = await verifyMessage({
-    address: address as `0x${string}`,
-    message: walletVerifyMessage(nonce),
-    signature: signature as `0x${string}`,
-  }).catch(() => false);
+  // Public-client verifyMessage also validates ERC-1271/6492 smart-wallet
+  // signatures (plain EOA signatures verify locally without an RPC call).
+  const valid = await serverRpc()
+    .verifyMessage({
+      address: address as `0x${string}`,
+      message: walletVerifyMessage(nonce),
+      signature: signature as `0x${string}`,
+    })
+    .catch(() => false);
   if (!valid) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }

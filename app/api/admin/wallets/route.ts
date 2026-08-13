@@ -3,9 +3,9 @@ import { NextResponse } from "next/server";
 import { ADMIN_COOKIE, sameOrigin, verifySessionToken } from "@/lib/admin-auth";
 import {
   addAdminWallet,
-  effectiveRole,
   listAdminWallets,
   removeAdminWallet,
+  sessionRole,
   superAdmins,
 } from "@/lib/admin-wallets";
 
@@ -25,7 +25,8 @@ export async function GET() {
   return NextResponse.json({
     supers: superAdmins(),
     admins: await listAdminWallets(),
-    role: effectiveRole(s),
+    // Role re-derived from the current allow-list, not the 24h cookie.
+    role: await sessionRole(s),
     address: s.address ?? null,
   });
 }
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
   if (!s) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  if (effectiveRole(s) !== "super") {
+  if ((await sessionRole(s)) !== "super") {
     return NextResponse.json(
       { error: "Only super admins can add admin wallets" },
       { status: 403 },
@@ -67,7 +68,7 @@ export async function DELETE(req: Request) {
   if (!s) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  if (effectiveRole(s) !== "super") {
+  if ((await sessionRole(s)) !== "super") {
     return NextResponse.json(
       { error: "Only super admins can remove admin wallets" },
       { status: 403 },

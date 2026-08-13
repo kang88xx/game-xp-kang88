@@ -6,7 +6,7 @@
 //   admin — wallets added by a super admin, stored in Redis (in-memory
 //           fallback in local dev without Redis).
 import "server-only";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { redis } from "./redis";
@@ -102,52 +102,83 @@ export async function walletRole(
 }
 
 /**
- * The session's effective role for authorization checks. In local dev
- * (no wallet needed on localhost) a password-only session acts as super so
- * the panel stays usable before any wallet is configured; production
- * requires a verified wallet.
+ * The session's effective role for authorization checks. In local dev a
+ * password-only session can act as super so the panel stays usable before
+ * any wallet is configured — but only when explicitly opted in via
+ * ADMIN_DEV_BYPASS=1 (never implicit, never in production builds).
  */
 export function effectiveRole(session: AdminSession): AdminRole {
   if (
     session.role === "password" &&
-    process.env.NODE_ENV === "development"
+    process.env.NODE_ENV === "development" &&
+    process.env.ADMIN_DEV_BYPASS === "1"
   ) {
     return "super";
   }
   return session.role;
 }
 
+/**
+ * Authorization role derived from the CURRENT allow-list — never trust the
+ * role frozen into the 24h cookie. A wallet removed or downgraded after the
+ * cookie was issued falls back to "password" (blocked from the dashboard
+ * until it re-verifies).
+ */
+export async function sessionRole(session: AdminSession): Promise<AdminRole> {
+  if (session.address) {
+    return (await walletRole(session.address)) ?? "password";
+  }
+  return effectiveRole(session);
+}
+
 // ─── One-time nonces for wallet-signature verification ──────────────────────
 
 const NONCE_TTL_S = 300;
 const nonceKey = (n: string) => `admin:nonce:${n}`;
-const memNonces = new Map<string, number>(); // nonce → expiresAt ms
+// nonce → { expiresAt ms, binding } — binding ties the nonce to the exact
+// session + wallet address it was issued for, so a nonce can't be consumed
+// from another session or signed by a different address than requested.
+const memNonces = new Map<string, { exp: number; bind: string }>();
 
-export async function createWalletNonce(): Promise<string> {
+export async function createWalletNonce(binding: string): Promise<string> {
   const nonce = randomBytes(16).toString("hex");
   if (redis) {
-    await redis.set(nonceKey(nonce), 1, { ex: NONCE_TTL_S });
+    await redis.set(nonceKey(nonce), binding, { ex: NONCE_TTL_S });
   } else {
-    memNonces.set(nonce, Date.now() + NONCE_TTL_S * 1000);
+    memNonces.set(nonce, { exp: Date.now() + NONCE_TTL_S * 1000, bind: binding });
     // opportunistic sweep so the map can't grow unbounded
-    for (const [n, exp] of memNonces) if (exp < Date.now()) memNonces.delete(n);
+    for (const [n, v] of memNonces) if (v.exp < Date.now()) memNonces.delete(n);
   }
   return nonce;
 }
 
-/** Consume a nonce; true only the first time within its TTL. */
-export async function consumeWalletNonce(nonce: string): Promise<boolean> {
+/** Consume a nonce; true only the first time, within TTL, matching binding. */
+export async function consumeWalletNonce(
+  nonce: string,
+  binding: string,
+): Promise<boolean> {
   if (!/^[a-f0-9]{32}$/.test(nonce)) return false;
   if (redis) {
-    const n = await redis.del(nonceKey(nonce));
-    return n === 1;
+    const stored = await redis.getdel<string>(nonceKey(nonce));
+    return stored === binding;
   }
-  const exp = memNonces.get(nonce);
+  const entry = memNonces.get(nonce);
   memNonces.delete(nonce);
-  return exp !== undefined && exp >= Date.now();
+  return (
+    entry !== undefined && entry.exp >= Date.now() && entry.bind === binding
+  );
 }
 
 /** The exact message the admin wallet signs (nonce binds it to one attempt). */
 export function walletVerifyMessage(nonce: string): string {
   return `XP/GAME admin verification\nnonce: ${nonce}`;
+}
+
+/** Nonce binding tuple: requested wallet + hash of the issuing session cookie. */
+export function nonceBinding(address: string, sessionToken: string): string {
+  const tokenHash = createHash("sha256")
+    .update(sessionToken)
+    .digest("hex")
+    .slice(0, 16);
+  return `${address.trim().toLowerCase()}|${tokenHash}`;
 }

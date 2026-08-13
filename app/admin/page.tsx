@@ -35,6 +35,7 @@ import { merkleRoot } from "@/lib/merkle";
 import { AIRDROP_ABI, AIRDROP_CONTRACT, NATIVE_TOKEN, airdropLive } from "@/lib/airdrop";
 import {
   daysUntil,
+  isPast,
   shortAddress,
   formatAmountInput,
   parseAmountInput,
@@ -297,6 +298,8 @@ function WalletGate() {
     try {
       const nonceRes = await fetch("/api/admin/wallet-nonce", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address }),
       });
       if (!nonceRes.ok) throw new Error("nonce request failed");
       const { nonce, message } = (await nonceRes.json()) as {
@@ -542,6 +545,9 @@ function OnchainRecovery() {
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
   const [busyId, setBusyId] = useState<number | null>(null);
+  // Sweep goes through the password-gated confirm modal, like every other
+  // irreversible admin action.
+  const [sweepTarget, setSweepTarget] = useState<number | null>(null);
 
   const { data: count } = useReadContract({
     address: AIRDROP_CONTRACT as `0x${string}`,
@@ -596,7 +602,13 @@ function OnchainRecovery() {
         ...tokenBySymbolAddr(token),
       };
     })
-    .filter((c): c is NonNullable<typeof c> => c !== null && c.remaining > 0n);
+    // Recovery targets only: expired or deactivated campaigns with funds left.
+    // A live, unexpired campaign never shows here — force-ending one is an
+    // intentional action that belongs in a deliberate flow, not a sweep list.
+    .filter(
+      (c): c is NonNullable<typeof c> =>
+        c !== null && c.remaining > 0n && (!c.active || isPast(c.endsAt)),
+    );
 
   const sweep = async (id: number) => {
     if (!wallet || !publicClient) return toast.error("Connect your wallet");
@@ -662,9 +674,9 @@ function OnchainRecovery() {
               </span>
             </div>
             <button
-              onClick={() => sweep(c.id)}
+              onClick={() => setSweepTarget(c.id)}
               disabled={busyId !== null}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--down)] px-3.5 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-[var(--down)] px-3.5 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busyId === c.id && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {busyId === c.id ? "Sweeping…" : "End + Sweep"}
@@ -672,6 +684,19 @@ function OnchainRecovery() {
           </div>
         ))}
       </div>
+
+      <DeleteConfirmModal
+        open={sweepTarget !== null}
+        title={`Campaign #${sweepTarget ?? ""} End + Sweep`}
+        description="Permanently ends this campaign on-chain and sends the remaining unclaimed tokens to your connected wallet. This cannot be undone."
+        confirmLabel="End + Sweep"
+        onConfirm={() => {
+          const id = sweepTarget;
+          setSweepTarget(null);
+          if (id != null) void sweep(id);
+        }}
+        onClose={() => setSweepTarget(null)}
+      />
     </div>
   );
 }
@@ -684,6 +709,8 @@ function LegacySweepTool() {
   const [contractAddr, setContractAddr] = useState(LEGACY_AIRDROP_V4);
   const [campaignId, setCampaignId] = useState("");
   const [busy, setBusy] = useState(false);
+  // Irreversible on-chain action — gate behind the password confirm modal.
+  const [confirming, setConfirming] = useState(false);
 
   const sweep = async () => {
     if (!/^0x[0-9a-fA-F]{40}$/.test(contractAddr))
@@ -760,9 +787,9 @@ function LegacySweepTool() {
               className={`${INPUT} sm:w-28`}
             />
             <button
-              onClick={sweep}
+              onClick={() => setConfirming(true)}
               disabled={busy}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-[var(--down)] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--down)] px-4 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               {busy ? "Sweeping…" : "End + Sweep"}
@@ -770,6 +797,18 @@ function LegacySweepTool() {
           </div>
         </div>
       )}
+
+      <DeleteConfirmModal
+        open={confirming}
+        title={`Legacy campaign #${campaignId || "?"} End + Sweep`}
+        description="Permanently ends this campaign on the legacy contract and sends the remaining tokens to your connected wallet. This cannot be undone."
+        confirmLabel="End + Sweep"
+        onConfirm={() => {
+          setConfirming(false);
+          void sweep();
+        }}
+        onClose={() => setConfirming(false)}
+      />
     </div>
   );
 }
@@ -858,7 +897,7 @@ function AdminWalletsManager() {
       key={addr}
       className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
         <span
           className={`rounded-full px-2 py-0.5 text-xs font-medium ${
             tier === "super"
@@ -868,7 +907,7 @@ function AdminWalletsManager() {
         >
           {tier === "super" ? "Super" : "Admin"}
         </span>
-        <span className="font-mono text-sm">{addr}</span>
+        <span className="min-w-0 break-all font-mono text-sm">{addr}</span>
         {data?.address === addr && (
           <span className="rounded-full bg-[var(--up-soft)] px-2 py-0.5 text-xs font-medium text-[var(--up)]">
             You
