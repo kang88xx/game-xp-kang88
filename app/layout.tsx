@@ -17,10 +17,10 @@ const THEME_INIT = `(function(){try{var t=localStorage.getItem('ioi-theme');if(t
 // via CDN @import in globals.css (next/font has no Pretendard); data and
 // chrome use the system mono stack — no webfonts to load.
 
-// Canonical production URL — OG/share links break if this ever falls back to
-// localhost, so the deployed domain is the default and env only overrides it.
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://game-xp-kang88.vercel.app";
+// Canonical production URL. Hardcoded on purpose: xp.game.kang88.io is the
+// ONLY public domain, and a stale NEXT_PUBLIC_SITE_URL on the host (it once
+// pointed at the retired ioidex.kang88.io) must not break OG/share links.
+const SITE_URL = "https://xp.game.kang88.io";
 const TITLE = "Xphere Mainnet Mini Game";
 const DESCRIPTION =
   "Play onchain mini games on the Xphere mainnet and claim token rewards with MetaMask.";
