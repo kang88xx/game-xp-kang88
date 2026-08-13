@@ -21,10 +21,14 @@ const ZIGAP_INSTALL_URL = "https://zigap.io/welcome";
 
 // ─── Tiny external store for the modal (no context plumbing needed) ─────────
 
-type PickerState =
-  | { kind: "closed" }
-  | { kind: "pick"; connectors: Connector[] }
-  | { kind: "install" };
+/** One fixed row in the picker: the brand, and its connector when installed. */
+interface BrandEntry {
+  brand: "MetaMask" | "Zigap";
+  connector: Connector | null;
+  installUrl: string;
+}
+
+type PickerState = { kind: "closed" } | { kind: "pick"; entries: BrandEntry[] };
 
 let pickerState: PickerState = { kind: "closed" };
 const listeners = new Set<() => void>();
@@ -52,32 +56,45 @@ function usePickerState(): PickerState {
 
 // Only these two wallets are offered — every other announced extension
 // (Rabby, Phantom, Coinbase, …) is deliberately hidden from the picker.
-const ALLOWED_WALLETS = /metamask|zigap/i;
+/**
+ * The picker always offers exactly these two brands. An EIP-6963-announced
+ * connector fills a brand's slot when that wallet is installed; otherwise
+ * the row links to the install page. Every other announced extension
+ * (Rabby, Phantom, Coinbase, …) is deliberately hidden.
+ */
+function brandEntries(connectors: readonly Connector[]): BrandEntry[] {
+  const find = (re: RegExp) =>
+    connectors.find(
+      (c) => c.id !== "injected" && re.test(`${c.id} ${c.name}`),
+    ) ?? null;
+  return [
+    {
+      brand: "MetaMask",
+      connector: find(/metamask/i),
+      installUrl: METAMASK_INSTALL_URL,
+    },
+    { brand: "Zigap", connector: find(/zigap/i), installUrl: ZIGAP_INSTALL_URL },
+  ];
+}
 
 /**
- * Wallet candidates for the picker: EIP-6963-announced MetaMask/Zigap only
- * (announced connectors carry the wallet name + icon). The generic
- * `injected` fallback still applies when nothing allowed announced itself
- * but window.ethereum exists — that's the wallet in-app browser case
- * (Zigap mobile), where the provider never announces.
+ * Wallet in-app browsers (Zigap mobile, MetaMask mobile) expose
+ * window.ethereum without announcing via EIP-6963 — there the generic
+ * injected connector connects directly, no picker needed.
  */
-function candidatesOf(connectors: readonly Connector[]): Connector[] {
-  const announced = connectors.filter(
-    (c) => c.id !== "injected" && ALLOWED_WALLETS.test(`${c.id} ${c.name}`),
-  );
-  if (announced.length > 0) return announced;
-  return connectors.filter(
-    (c) =>
-      c.id === "injected" &&
-      typeof window !== "undefined" &&
-      typeof (window as { ethereum?: unknown }).ethereum !== "undefined",
-  );
+function inAppInjected(connectors: readonly Connector[]): Connector | null {
+  const anyAnnounced = connectors.some((c) => c.id !== "injected");
+  if (anyAnnounced || typeof window === "undefined") return null;
+  if (typeof (window as { ethereum?: unknown }).ethereum === "undefined") {
+    return null;
+  }
+  return connectors.find((c) => c.id === "injected") ?? null;
 }
 
 function friendlyError(err: unknown): void {
   const e = err as Error;
   if (e?.name === "ProviderNotFoundError") {
-    setPicker({ kind: "install" });
+    toast.error("Wallet not found — install MetaMask or Zigap");
   } else if (!/reject|denied|cancel/i.test(e?.message ?? "")) {
     toast.error("Failed to connect wallet");
   }
@@ -100,16 +117,14 @@ export function useWalletConnect() {
   );
 
   const open = useCallback(async () => {
-    const candidates = candidatesOf(connectors);
-    if (candidates.length === 0) {
-      setPicker({ kind: "install" });
+    // Inside a wallet's in-app browser there is exactly one wallet — connect
+    // straight to it. Everywhere else, always show the MetaMask/Zigap choice.
+    const inApp = inAppInjected(connectors);
+    if (inApp) {
+      await connectWith(inApp);
       return;
     }
-    if (candidates.length === 1) {
-      await connectWith(candidates[0]);
-      return;
-    }
-    setPicker({ kind: "pick", connectors: candidates });
+    setPicker({ kind: "pick", entries: brandEntries(connectors) });
   }, [connectors, connectWith]);
 
   return { open, isPending, connectWith };
@@ -158,58 +173,44 @@ export function WalletPickerHost() {
         onClick={(e) => e.stopPropagation()}
         className="animate-fade-in max-h-[calc(100dvh-4rem)] w-full max-w-sm overflow-y-auto rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-2xl"
       >
-        <h2 className="text-base font-semibold">
-          {state.kind === "pick" ? "Connect a wallet" : "No wallet found"}
-        </h2>
+        <h2 className="text-base font-semibold">Connect a wallet</h2>
 
-        {state.kind === "pick" ? (
-          <div className="mt-4 space-y-2">
-            {state.connectors.map((c) => (
+        <div className="mt-4 space-y-2">
+          {state.entries.map((entry) =>
+            entry.connector ? (
               <button
-                key={c.uid}
-                onClick={() => void connectWith(c)}
+                key={entry.brand}
+                onClick={() => void connectWith(entry.connector!)}
                 className="flex w-full items-center gap-3 rounded-2xl border border-[var(--border-strong)] px-4 py-3 text-sm font-semibold transition-colors hover:bg-[var(--surface)]"
               >
-                {c.icon ? (
+                {entry.connector.icon ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={c.icon} alt="" className="h-7 w-7 rounded-lg" />
+                  <img
+                    src={entry.connector.icon}
+                    alt=""
+                    className="h-7 w-7 rounded-lg"
+                  />
                 ) : (
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-2)] text-xs">
                     ◆
                   </span>
                 )}
-                {c.name === "Injected" ? "Browser wallet" : c.name}
+                {entry.brand}
               </button>
-            ))}
-          </div>
-        ) : (
-          <>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              Install a wallet, or open this site inside your wallet&apos;s
-              in-app browser, then try again.
-            </p>
-            <div className="mt-4 space-y-2">
+            ) : (
               <a
-                href={METAMASK_INSTALL_URL}
+                key={entry.brand}
+                href={entry.installUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-full items-center justify-between rounded-2xl border border-[var(--border-strong)] px-4 py-3 text-sm font-semibold transition-colors hover:bg-[var(--surface)]"
+                className="flex w-full items-center justify-between rounded-2xl border border-[var(--border-strong)] px-4 py-3 text-sm font-semibold text-[var(--muted)] transition-colors hover:bg-[var(--surface)]"
               >
-                MetaMask
-                <span className="text-xs text-[var(--muted)]">Install →</span>
+                {entry.brand}
+                <span className="text-xs">Not installed · Install →</span>
               </a>
-              <a
-                href={ZIGAP_INSTALL_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center justify-between rounded-2xl border border-[var(--border-strong)] px-4 py-3 text-sm font-semibold transition-colors hover:bg-[var(--surface)]"
-              >
-                Zigap
-                <span className="text-xs text-[var(--muted)]">Install →</span>
-              </a>
-            </div>
-          </>
-        )}
+            ),
+          )}
+        </div>
 
         <button
           onClick={() => setPicker(CLOSED)}
