@@ -12,6 +12,7 @@
 // existing call sites keep working unchanged.
 
 import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import { X } from "lucide-react";
 import { useConnect, type Connector } from "wagmi";
 import { CHAIN_ID } from "./chain";
 import { toast } from "@/components/toast";
@@ -173,7 +174,16 @@ export function WalletPickerHost() {
         onClick={(e) => e.stopPropagation()}
         className="animate-fade-in max-h-[calc(100dvh-4rem)] w-full max-w-sm overflow-y-auto rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-2xl"
       >
-        <h2 className="text-base font-semibold">Connect a wallet</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold">Connect a wallet</h2>
+          <button
+            onClick={() => setPicker(CLOSED)}
+            aria-label="Close"
+            className="-mr-1.5 -mt-1.5 flex h-9 w-9 items-center justify-center rounded-full text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
         <div className="mt-4 space-y-2">
           {state.entries.map((entry) =>
@@ -212,12 +222,6 @@ export function WalletPickerHost() {
           )}
         </div>
 
-        <button
-          onClick={() => setPicker(CLOSED)}
-          className="mt-4 w-full rounded-2xl py-2.5 text-sm font-medium text-[var(--muted)] transition-colors hover:bg-[var(--surface)]"
-        >
-          Cancel
-        </button>
       </div>
     </div>
   );

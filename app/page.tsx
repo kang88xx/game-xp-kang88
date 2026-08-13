@@ -1124,8 +1124,10 @@ function OnchainGame() {
       <div className="grid gap-4 md:grid-cols-[1fr_340px]">
         {/* Main column: timer / stats / bet / fee / tiers */}
         <div className="flex flex-col gap-4 max-md:contents">
-          {/* Countdown card — full width */}
-          <div className="burnband flex flex-col items-center justify-center rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 text-center shadow-2xl">
+          {/* Countdown card — full width. The max-md:-order-* classes on this
+              and the next three cards pin the mobile stack to: countdown →
+              stats → bet → pixel arena (both columns flatten via contents). */}
+          <div className="burnband max-md:-order-6 flex flex-col items-center justify-center rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 text-center shadow-2xl">
             <span aria-hidden className="ember" style={{ left: "2.0%", bottom: 0, width: 3, height: 3, background: "var(--dot-yellow)", animationDelay: "0.0s", animationDuration: "1.2s" }} />
             <span aria-hidden className="ember" style={{ left: "5.7%", bottom: 5, animationDelay: "0.37s", animationDuration: "1.31s" }} />
             <span aria-hidden className="ember" style={{ left: "9.4%", bottom: 10, width: 3, height: 3, background: "var(--accent)", animationDelay: "0.74s", animationDuration: "1.42s" }} />
@@ -1215,7 +1217,7 @@ function OnchainGame() {
           </div>
 
           {/* Stats row: burned (1) + prize pool (2) */}
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="max-md:-order-5 grid gap-4 sm:grid-cols-3">
             <StatCard
               icon={<Flame className="flamebob h-5 w-5" stroke="url(#flame-grad)" fill="url(#flame-grad)" />}
               label="Burned"
@@ -1233,7 +1235,7 @@ function OnchainGame() {
           </div>
 
           {/* Place Your Bet card */}
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7 shadow-2xl">
+          <div className="max-md:-order-4 rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7 shadow-2xl">
             <div className="mb-4 flex items-center justify-between gap-2">
               <h2 className="text-base font-semibold">Place Your Bet</h2>
               <AddToWalletButton symbol="KDG" />
@@ -1397,8 +1399,9 @@ function OnchainGame() {
         {/* Right column: pixel arena + recent bets + round history */}
         <div className="flex flex-col gap-4 max-md:contents">
           {/* Gold Babel pixel arena — portrait card that stretches as bets
-              stack up (300px empty round → 780px cap at 60 bets). */}
-          <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-2xl">
+              stack up (300px empty round → 780px cap at 60 bets). On mobile
+              it slots directly under the bet card (see -order notes above). */}
+          <div className="max-md:-order-3 rounded-3xl border border-[var(--border)] bg-[var(--card)] p-3 shadow-2xl">
             <div
               className="relative overflow-hidden rounded-2xl border border-[var(--border)] transition-[height] duration-700 ease-out"
               style={{
