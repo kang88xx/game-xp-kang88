@@ -50,13 +50,21 @@ function usePickerState(): PickerState {
 
 // ─── Connect logic ──────────────────────────────────────────────────────────
 
+// Only these two wallets are offered — every other announced extension
+// (Rabby, Phantom, Coinbase, …) is deliberately hidden from the picker.
+const ALLOWED_WALLETS = /metamask|zigap/i;
+
 /**
- * Wallet candidates for the picker. EIP-6963-announced connectors carry a
- * wallet name + icon; the generic `injected` fallback only matters when no
- * wallet announced itself but window.ethereum exists (in-app browsers).
+ * Wallet candidates for the picker: EIP-6963-announced MetaMask/Zigap only
+ * (announced connectors carry the wallet name + icon). The generic
+ * `injected` fallback still applies when nothing allowed announced itself
+ * but window.ethereum exists — that's the wallet in-app browser case
+ * (Zigap mobile), where the provider never announces.
  */
 function candidatesOf(connectors: readonly Connector[]): Connector[] {
-  const announced = connectors.filter((c) => c.id !== "injected");
+  const announced = connectors.filter(
+    (c) => c.id !== "injected" && ALLOWED_WALLETS.test(`${c.id} ${c.name}`),
+  );
   if (announced.length > 0) return announced;
   return connectors.filter(
     (c) =>
