@@ -23,7 +23,7 @@ const THEME_INIT = `(function(){try{var t=localStorage.getItem('ioi-theme');if(t
 const SITE_URL = "https://xp.game.kang88.io";
 const TITLE = "Xphere Mainnet Mini Game";
 const DESCRIPTION =
-  "Play onchain mini games on the Xphere mainnet and claim token rewards with MetaMask.";
+  "Play onchain mini games on the Xphere mainnet and claim token rewards with MetaMask or Zigap.";
 
 export const viewport: Viewport = {
   width: "device-width",
