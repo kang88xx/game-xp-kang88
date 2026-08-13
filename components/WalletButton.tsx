@@ -42,7 +42,7 @@ export function WalletButton() {
         className="wallet-connect group inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold"
       >
         <span className="wc-dot" />
-        Connect
+        Connect Wallet
         {/* bare diagonal arrow — no chip plate */}
         <svg
           className="transition-transform duration-150 ease-out group-hover:translate-x-[1.5px] group-hover:-translate-y-[1.5px]"

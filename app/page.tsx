@@ -131,7 +131,7 @@ function LmsIntroModal({ onClose }: { onClose: () => void }) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-start justify-center bg-black/50 p-4 pt-16 sm:pt-24">
+    <div className="fixed inset-0 z-[90] flex items-start justify-center bg-black/50 p-4 pt-28 sm:pt-36">
       <div className="absolute inset-0" onClick={close} aria-hidden />
       <div
         role="dialog"

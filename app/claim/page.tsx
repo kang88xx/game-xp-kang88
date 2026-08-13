@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useMetaMask } from "@/lib/use-metamask";
 import { Check, Lock, Globe, ShieldCheck, Loader2 } from "lucide-react";
 import { formatUnits, parseUnits } from "viem";
@@ -86,12 +85,6 @@ export default function AirdropPage() {
           <p className="text-sm text-[var(--muted)]">
             No active campaigns right now.
           </p>
-          <Link
-            href="/admin"
-            className="mt-2 inline-block text-sm font-medium text-[var(--accent)]"
-          >
-            Create one in the Admin panel →
-          </Link>
         </div>
       ) : (
         <div className="mt-8 grid gap-5 md:grid-cols-2">
