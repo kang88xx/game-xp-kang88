@@ -674,3 +674,27 @@ input[type="number"] {
 .animate-pulse-soft {
   animation: pulse-soft 1.8s ease-in-out infinite;
 }
+
+/* Active Timer Tier row — breathing red ring (static under reduced motion) */
+.tier-live {
+  box-shadow: 0 0 0 1px var(--accent);
+  animation: tier-live-pulse 1.6s ease-in-out infinite;
+}
+@keyframes tier-live-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px var(--accent),
+      0 0 12px 0 rgba(231, 69, 58, 0.4);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(231, 69, 58, 0.3),
+      0 0 2px 0 rgba(231, 69, 58, 0.05);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tier-live {
+    animation: none;
+  }
+}

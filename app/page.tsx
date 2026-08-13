@@ -51,6 +51,45 @@ function hhmmss(ms: number): string {
 
 const LMS_INTRO_KEY = "lms-intro-dismissed";
 
+/**
+ * Count-up animation for stat numbers: eases from the previous value (0 on
+ * first load) to `target` over ~1.8s. Honors prefers-reduced-motion by
+ * jumping straight to the target.
+ */
+function useCountUp(target: number, duration = 1800): number {
+  const [display, setDisplay] = useState(0);
+  const prevTarget = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (prevTarget.current === target) return;
+    const from = prevTarget.current ?? 0;
+    prevTarget.current = target;
+    let raf = 0;
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    if (reduced || from === target) {
+      raf = requestAnimationFrame(() => setDisplay(target));
+      return () => cancelAnimationFrame(raf);
+    }
+    const start = performance.now();
+    // Whole-number targets count in whole steps — fractional cents flickering
+    // through the animation read as noise, not motion.
+    const wholeSteps = Number.isInteger(from) && Number.isInteger(target);
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+      const value = from + (target - from) * eased;
+      setDisplay(p >= 1 ? target : wholeSteps ? Math.round(value) : value);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+
+  return display;
+}
+
 export default function GamesPage() {
   // lmsLive is a build-time env constant — same on server and client.
   const hydrated = useHydrated();
@@ -221,6 +260,9 @@ function DemoGame() {
   const lmsCheckExpiry = useDexStore((s) => s.lmsCheckExpiry);
   const lmsBotTick = useDexStore((s) => s.lmsBotTick);
   const kang = useBalance("KDG");
+  // Count-up on page load for the two headline stats.
+  const animPrizePool = useCountUp(round.prizePool);
+  const animBurned = useCountUp(round.burnedPool);
 
   const [amount, setAmount] = useState("100");
   // nowMs drives both the countdown display and timeAgoPure calls — pure render
@@ -415,7 +457,7 @@ function DemoGame() {
         <StatCard
           icon={<TrendingUp className="h-5 w-5" />}
           label="Prize Pool"
-          value={`${formatNumber(round.prizePool, 2)} KDG`}
+          value={`${formatNumber(animPrizePool, 2)} KDG`}
           accent
           valueColor="var(--accent-bright)"
         />
@@ -434,7 +476,7 @@ function DemoGame() {
         <StatCard
           icon={<Flame className="flamebob h-5 w-5" stroke="url(#flame-grad)" fill="url(#flame-grad)" />}
           label="Burned"
-          value={`${formatNumber(round.burnedPool, 2)} KDG`}
+          value={`${formatNumber(animBurned, 2)} KDG`}
           valueColor="var(--accent)"
         />
       </div>
@@ -901,6 +943,9 @@ function OnchainGame() {
   const displayRoundNo = round ? round.id + 1 + (expired ? 1 : 0) : null;
   const displayPrizePool = expired ? 0 : prizePool;
   const displayBurned = expired ? 0 : burned;
+  // Count-up on page load (and whenever the on-chain values move).
+  const animPrizePool = useCountUp(displayPrizePool);
+  const animBurned = useCountUp(displayBurned);
   const displayBetCount = round && !expired ? round.betCount : expired ? 0 : null;
   const displayLastBettor = expired ? null : lastBettor;
 
@@ -1207,13 +1252,13 @@ function OnchainGame() {
             <StatCard
               icon={<Flame className="flamebob h-5 w-5" stroke="url(#flame-grad)" fill="url(#flame-grad)" />}
               label="Burned"
-              value={`${formatNumber(displayBurned, 2)} KDG`}
+              value={`${formatNumber(animBurned, 2)} KDG`}
               valueColor="var(--accent)"
             />
             <StatCard
               icon={<TrendingUp className="h-5 w-5" />}
               label="Prize Pool"
-              value={`${formatNumber(displayPrizePool, 2)} KDG`}
+              value={`${formatNumber(animPrizePool, 2)} KDG`}
               accent
               valueColor="var(--accent-bright)"
               className="sm:col-span-2"
