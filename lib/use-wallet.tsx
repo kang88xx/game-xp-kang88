@@ -24,7 +24,8 @@ const ZIGAP_INSTALL_URL = "https://zigap.io/welcome";
 
 /** One fixed row in the picker: the brand, and its connector when installed. */
 interface BrandEntry {
-  brand: "MetaMask" | "Zigap";
+  brand: "MetaMask" | "ZIGAP";
+  logo: string; // bundled brand asset — same size for both rows
   connector: Connector | null;
   installUrl: string;
 }
@@ -71,10 +72,16 @@ function brandEntries(connectors: readonly Connector[]): BrandEntry[] {
   return [
     {
       brand: "MetaMask",
+      logo: "/wallets/metamask.svg",
       connector: find(/metamask/i),
       installUrl: METAMASK_INSTALL_URL,
     },
-    { brand: "Zigap", connector: find(/zigap/i), installUrl: ZIGAP_INSTALL_URL },
+    {
+      brand: "ZIGAP",
+      logo: "/wallets/zigap.png",
+      connector: find(/zigap/i),
+      installUrl: ZIGAP_INSTALL_URL,
+    },
   ];
 }
 
@@ -193,18 +200,12 @@ export function WalletPickerHost() {
                 onClick={() => void connectWith(entry.connector!)}
                 className="flex w-full items-center gap-3 rounded-2xl border border-[var(--border-strong)] px-4 py-3 text-sm font-semibold transition-colors hover:bg-[var(--surface)]"
               >
-                {entry.connector.icon ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={entry.connector.icon}
-                    alt=""
-                    className="h-7 w-7 rounded-lg"
-                  />
-                ) : (
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-2)] text-xs">
-                    ◆
-                  </span>
-                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={entry.logo}
+                  alt=""
+                  className="h-7 w-7 rounded-lg object-contain"
+                />
                 {entry.brand}
               </button>
             ) : (
@@ -213,9 +214,15 @@ export function WalletPickerHost() {
                 href={entry.installUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex w-full items-center justify-between rounded-2xl border border-[var(--border-strong)] px-4 py-3 text-sm font-semibold text-[var(--muted)] transition-colors hover:bg-[var(--surface)]"
+                className="flex w-full items-center gap-3 rounded-2xl border border-[var(--border-strong)] px-4 py-3 text-sm font-semibold text-[var(--muted)] transition-colors hover:bg-[var(--surface)]"
               >
-                {entry.brand}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={entry.logo}
+                  alt=""
+                  className="h-7 w-7 rounded-lg object-contain opacity-80"
+                />
+                <span className="flex-1 text-left">{entry.brand}</span>
                 <span className="text-xs">Not installed · Install →</span>
               </a>
             ),
