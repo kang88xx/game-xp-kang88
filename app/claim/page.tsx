@@ -309,7 +309,9 @@ function OnchainCampaignCard({
               : c.tokenSymbol}
           </p>
         </div>
-        {(c.isPublic || myAlloc) && (
+        {/* Tokens with no USDX pool have priceUsd 0 — "≈ $0" reads as
+            worthless, so hide the USD estimate until a price exists. */}
+        {(c.isPublic || myAlloc) && (token?.priceUsd ?? 0) > 0 && (
           <p className="text-sm text-[var(--muted)]">
             ≈ {formatUsd(claimAmount * (token?.priceUsd ?? 0))}
           </p>

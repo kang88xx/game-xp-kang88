@@ -20,6 +20,23 @@ import { toast } from "@/components/toast";
 const METAMASK_INSTALL_URL = "https://metamask.io/download";
 const ZIGAP_INSTALL_URL = "https://zigap.io/welcome";
 
+/**
+ * Mobile browsers can't run wallet extensions, so "installed" is
+ * undetectable there — the apps may well be on the phone. Instead of the
+ * install links we deep-link into the wallet's own in-app browser.
+ */
+function isMobileBrowser(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /iphone|ipad|ipod|android/i.test(navigator.userAgent);
+}
+
+/** Universal link that reopens the current page inside MetaMask mobile's
+    in-app browser (falls through to the app store when not installed). */
+function metamaskDeepLink(): string {
+  const { host, pathname, search } = window.location;
+  return `https://metamask.app.link/dapp/${host}${pathname}${search}`;
+}
+
 // ─── Tiny external store for the modal (no context plumbing needed) ─────────
 
 /** One fixed row in the picker: the brand, and its connector when installed. */
@@ -208,6 +225,47 @@ export function WalletPickerHost() {
                 />
                 {entry.brand}
               </button>
+            ) : isMobileBrowser() && entry.brand === "MetaMask" ? (
+              // Same-tab universal link — reopens this page inside the
+              // MetaMask app's browser where window.ethereum exists.
+              <a
+                key={entry.brand}
+                href={metamaskDeepLink()}
+                className="flex w-full items-center gap-3 rounded-2xl border border-[var(--border-strong)] px-4 py-3 text-sm font-semibold transition-colors hover:bg-[var(--surface)]"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={entry.logo}
+                  alt=""
+                  className="h-7 w-7 rounded-lg object-contain"
+                />
+                <span className="flex-1 text-left">{entry.brand}</span>
+                <span className="text-xs">Open in app →</span>
+              </a>
+            ) : isMobileBrowser() && entry.brand === "ZIGAP" ? (
+              // ZIGAP has no public dapp deeplink — copy the URL and point
+              // the user at its built-in browser instead.
+              <button
+                key={entry.brand}
+                onClick={() => {
+                  void navigator.clipboard
+                    ?.writeText(window.location.href)
+                    .catch(() => {});
+                  toast.success(
+                    "Link copied — open the ZIGAP app and paste it in its built-in browser",
+                  );
+                }}
+                className="flex w-full items-center gap-3 rounded-2xl border border-[var(--border-strong)] px-4 py-3 text-sm font-semibold transition-colors hover:bg-[var(--surface)]"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={entry.logo}
+                  alt=""
+                  className="h-7 w-7 rounded-lg object-contain"
+                />
+                <span className="flex-1 text-left">{entry.brand}</span>
+                <span className="text-xs">Open in app browser</span>
+              </button>
             ) : (
               <a
                 key={entry.brand}
@@ -228,6 +286,13 @@ export function WalletPickerHost() {
             ),
           )}
         </div>
+
+        {isMobileBrowser() && (
+          <p className="mt-3 text-xs leading-relaxed text-[var(--muted)]">
+            On mobile, connect from inside your wallet app&apos;s built-in
+            browser — extensions can&apos;t attach to this browser.
+          </p>
+        )}
 
       </div>
     </div>
