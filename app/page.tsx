@@ -1334,7 +1334,7 @@ function OnchainGame() {
                                 ? (
                                     <>
                                       Bet {betAmt.toLocaleString()}{" "}
-                                      <span className="text-xs font-light opacity-90">
+                                      <span className="text-xs font-normal opacity-90">
                                         KANGTEST1
                                       </span>{" "}
                                       · starts new round
@@ -1343,7 +1343,7 @@ function OnchainGame() {
                                 : (
                                     <>
                                       Bet {betAmt.toLocaleString()}{" "}
-                                      <span className="text-xs font-light opacity-90">
+                                      <span className="text-xs font-normal opacity-90">
                                         KANGTEST1
                                       </span>
                                     </>
