@@ -72,6 +72,7 @@ const esc = (s: string) =>
 function openClaimDetail(
   c: AirdropCampaign,
   receivedRows?: { address: string; allocated: number; received: number }[],
+  targetWin?: Window | null,
 ) {
   const isWl = c.eligibility === "whitelist";
   // 공개 캠페인도 온체인 Claimed 이벤트로 만든 rows 를 받으면 표를 그린다.
@@ -178,7 +179,13 @@ function openClaimDetail(
 
   const blob = new Blob([html], { type: "text/html" });
   const url = URL.createObjectURL(blob);
-  window.open(url, "_blank", "noopener,noreferrer");
+  if (targetWin && !targetWin.closed) {
+    // 비동기 조회 뒤 호출되는 경우: 클릭 시점에 미리 열어둔 창을 재사용해야
+    // 팝업 차단에 걸리지 않는다.
+    targetWin.location.href = url;
+  } else {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
@@ -1445,6 +1452,12 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
               if (isWl) return openClaimDetail(c, receivedRows);
               // 공개 캠페인: 온체인 Claimed 이벤트에서 지갑별 수령 내역을 만든다.
               if (launched && c.onchainId != null && publicClient) {
+                // 클릭 제스처가 살아있는 동안 창을 먼저 연다 — 비동기 조회 후
+                // window.open 은 팝업 차단에 걸린다.
+                const win = window.open("", "_blank");
+                win?.document.write(
+                  "<title>Claim History</title><body style='background:#0b0d12;color:#8a91a0;font:14px system-ui;display:grid;place-items:center;height:100vh;margin:0'>Loading on-chain claims…</body>",
+                );
                 try {
                   const logs = await publicClient.getContractEvents({
                     address: AIRDROP_CONTRACT as `0x${string}`,
@@ -1469,10 +1482,13 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
                       allocated: c.amountPerClaim,
                       received,
                     })),
+                    win,
                   );
                 } catch {
+                  win?.close();
                   toast.error("Failed to load on-chain claim events");
                 }
+                return;
               }
               openClaimDetail(c);
             }}

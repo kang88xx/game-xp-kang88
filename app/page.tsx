@@ -1331,8 +1331,23 @@ function OnchainGame() {
                             : betAmt < minBet
                               ? `Minimum ${minBet.toLocaleString()} KANGTEST1`
                               : expired
-                                ? `Bet ${betAmt.toLocaleString()} KANGTEST1 · starts new round`
-                                : `Bet ${betAmt.toLocaleString()} KANGTEST1`}
+                                ? (
+                                    <>
+                                      Bet {betAmt.toLocaleString()}{" "}
+                                      <span className="text-xs font-light opacity-90">
+                                        KANGTEST1
+                                      </span>{" "}
+                                      · starts new round
+                                    </>
+                                  )
+                                : (
+                                    <>
+                                      Bet {betAmt.toLocaleString()}{" "}
+                                      <span className="text-xs font-light opacity-90">
+                                        KANGTEST1
+                                      </span>
+                                    </>
+                                  )}
                   </button>
                 )}
               </div>
