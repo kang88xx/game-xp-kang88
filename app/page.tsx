@@ -26,12 +26,12 @@ import { LMS_ABI, LMS_CONTRACT, lmsLive } from "@/lib/lms";
 
 // Game fee destinations (display only until on-chain payouts ship).
 const FEE_WALLETS = {
-  treasury: "0x44414D1Ff9e4aFC08503CEDBb43Ab6ef201acb91",
-  burn: "0x2c151C3FD184045396D4339426a77E367A684Af1",
+  treasury: "0x8d75BD466f1c1998408F81fddC75B9C61Cb2Ab7A",
+  burn: "0x3cDab84c91C8974b6A4FdC9bb7CB8fF22f2a6B81",
 };
 const EXPLORER = EXPLORER_URL;
 
-// Meme-coin bet sizes (KDG trades for fractions of a cent).
+// Meme-coin bet sizes (KANGTEST1 trades for fractions of a cent).
 const QUICK_CHIPS = [100, 500, 1000, 5000];
 
 function mmss(ms: number): string {
@@ -169,7 +169,7 @@ function LmsIntroModal({ onClose }: { onClose: () => void }) {
             Last Man Standing
           </h2>
           <p className="mt-2 text-[13px] font-light leading-relaxed text-[var(--muted)]">
-            A KDG betting round where the final eligible bettor before expiry
+            A KANGTEST1 betting round where the final eligible bettor before expiry
             receives the credited prize.
           </p>
         </div>
@@ -259,7 +259,7 @@ function DemoGame() {
   const lmsEnsureRound = useDexStore((s) => s.lmsEnsureRound);
   const lmsCheckExpiry = useDexStore((s) => s.lmsCheckExpiry);
   const lmsBotTick = useDexStore((s) => s.lmsBotTick);
-  const kang = useBalance("KDG");
+  const kang = useBalance("KANGTEST1");
   // Count-up on page load for the two headline stats.
   const animPrizePool = useCountUp(round.prizePool);
   const animBurned = useCountUp(round.burnedPool);
@@ -457,7 +457,7 @@ function DemoGame() {
         <StatCard
           icon={<TrendingUp className="h-5 w-5" />}
           label="Prize Pool"
-          value={`${formatNumber(animPrizePool, 2)} KDG`}
+          value={`${formatNumber(animPrizePool, 2)} KANGTEST1`}
           accent
           valueColor="var(--accent-bright)"
         />
@@ -476,7 +476,7 @@ function DemoGame() {
         <StatCard
           icon={<Flame className="flamebob h-5 w-5" stroke="url(#flame-grad)" fill="url(#flame-grad)" />}
           label="Burned"
-          value={`${formatNumber(animBurned, 2)} KDG`}
+          value={`${formatNumber(animBurned, 2)} KANGTEST1`}
           valueColor="var(--accent)"
         />
       </div>
@@ -502,7 +502,7 @@ function DemoGame() {
                         Round #{claim.roundId.slice(-4)}
                       </span>
                       <span className="font-semibold">
-                        {claim.amount.toFixed(2)} KDG
+                        {claim.amount.toFixed(2)} KANGTEST1
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -512,7 +512,7 @@ function DemoGame() {
                       <button
                         disabled
                         title="On-chain payouts coming soon"
-                        aria-label={`Claim ${claim.amount.toFixed(2)} KDG from round ${claim.roundId.slice(-4)} · on-chain payouts coming soon`}
+                        aria-label={`Claim ${claim.amount.toFixed(2)} KANGTEST1 from round ${claim.roundId.slice(-4)} · on-chain payouts coming soon`}
                         className="cursor-not-allowed rounded-xl bg-[var(--surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--muted-2)]"
                       >
                         Claim
@@ -528,7 +528,7 @@ function DemoGame() {
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7 shadow-2xl">
             <div className="mb-4 flex items-center justify-between gap-2">
               <h2 className="text-base font-semibold">Place Your Bet</h2>
-              <AddToWalletButton symbol="KDG" />
+              <AddToWalletButton symbol="KANGTEST1" />
             </div>
 
             {/* Amount input */}
@@ -543,7 +543,7 @@ function DemoGame() {
                         overBalance ? "font-semibold text-[var(--down)]" : ""
                       }
                     >
-                      {formatNumber(kang, 2)} KDG
+                      {formatNumber(kang, 2)} KANGTEST1
                     </span>
                   </span>
                 )}
@@ -560,7 +560,7 @@ function DemoGame() {
                   className="w-full bg-transparent text-2xl font-semibold outline-none placeholder:text-[var(--muted-2)]"
                 />
                 <span className="text-sm font-semibold text-[var(--muted)]">
-                  KDG
+                  KANGTEST1
                 </span>
               </div>
               <div className="mt-2 flex gap-2 flex-wrap">
@@ -593,7 +593,7 @@ function DemoGame() {
                 </span>
               </span>
               <span className="whitespace-nowrap font-medium">
-                {betAmt > 0 ? `${formatNumber(previewPrize, 2)} KDG` : "0 KDG"}
+                {betAmt > 0 ? `${formatNumber(previewPrize, 2)} KANGTEST1` : "0 KANGTEST1"}
               </span>
             </div>
 
@@ -616,9 +616,9 @@ function DemoGame() {
                   {!isActive
                     ? "Round ended"
                     : overBalance
-                      ? "Insufficient KDG"
+                      ? "Insufficient KANGTEST1"
                       : betAmt < LMS_CONFIG.MIN_BET
-                        ? `Minimum ${LMS_CONFIG.MIN_BET} KDG`
+                        ? `Minimum ${LMS_CONFIG.MIN_BET} KANGTEST1`
                         : "On-chain game coming soon"}
                 </button>
               )}
@@ -796,15 +796,15 @@ function OnchainGame() {
   const { writeContractAsync } = useWriteContract();
   const publicClient = usePublicClient();
   const queryClient = useQueryClient();
-  const kang = useBalance("KDG");
+  const kang = useBalance("KANGTEST1");
 
   const [nowMs, setNowMs] = useState(() => Date.now());
   // "bet" | "claim-all" | `claim:${roundId}` | null
   const [busy, setBusy] = useState<string | null>(null);
 
   const contract = LMS_CONTRACT as `0x${string}`;
-  const dec = TOKEN_MAP.KDG?.decimals ?? 18;
-  const kangAddr = TOKEN_MAP.KDG?.address as `0x${string}` | undefined;
+  const dec = TOKEN_MAP.KANGTEST1?.decimals ?? 18;
+  const kangAddr = TOKEN_MAP.KANGTEST1?.address as `0x${string}` | undefined;
 
   // Live round (id, prizePool, totalBurned, deadline, lastBettor, betCount,
   // uniquePlayers, settled) — one read, 5s refresh.
@@ -1041,7 +1041,7 @@ function OnchainGame() {
         args: [wallet!, contract],
       });
       if (allowance < amountWei) {
-        toast.info("1/2 Approving KDG spend… confirm in your wallet");
+        toast.info("1/2 Approving KANGTEST1 spend… confirm in your wallet");
         const approveHash = await writeContractAsync({
           address: kangAddr,
           abi: erc20Abi,
@@ -1062,7 +1062,7 @@ function OnchainGame() {
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") return toast.error("Bet failed");
       toast.success(
-        `Bet ${betAmt.toLocaleString()} KDG placed · timer extended`,
+        `Bet ${betAmt.toLocaleString()} KANGTEST1 placed · timer extended`,
       );
       refreshAll();
     } catch {
@@ -1087,7 +1087,7 @@ function OnchainGame() {
       });
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") return toast.error("Claim failed");
-      toast.success(`Round #${roundId} · Claimed ${amount.toLocaleString()} KDG!`);
+      toast.success(`Round #${roundId} · Claimed ${amount.toLocaleString()} KANGTEST1!`);
       refreshAll();
     } catch {
       toast.error("Claim failed: rejected in wallet or nothing to claim");
@@ -1110,7 +1110,7 @@ function OnchainGame() {
       });
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") return toast.error("Claim failed");
-      toast.success(`Claimed all ${claimable.toLocaleString()} KDG!`);
+      toast.success(`Claimed all ${claimable.toLocaleString()} KANGTEST1!`);
       refreshAll();
     } catch {
       toast.error("Claim failed: rejected in wallet or nothing to claim");
@@ -1122,7 +1122,7 @@ function OnchainGame() {
 
   // Betting on an expired round is fine — bet() settles it and opens the next.
   // minBetWei/isPaused must have actually loaded — while they're undefined the
-  // guards would otherwise pass with minBet=0 and submit a 0 KDG bet.
+  // guards would otherwise pass with minBet=0 and submit a 0 KANGTEST1 bet.
   const canBet =
     round != null &&
     minBetWei != null &&
@@ -1252,13 +1252,13 @@ function OnchainGame() {
             <StatCard
               icon={<Flame className="flamebob h-5 w-5" stroke="url(#flame-grad)" fill="url(#flame-grad)" />}
               label="Burned"
-              value={`${formatNumber(animBurned, 2)} KDG`}
+              value={`${formatNumber(animBurned, 2)} KANGTEST1`}
               valueColor="var(--accent)"
             />
             <StatCard
               icon={<TrendingUp className="h-5 w-5" />}
               label="Prize Pool"
-              value={`${formatNumber(animPrizePool, 2)} KDG`}
+              value={`${formatNumber(animPrizePool, 2)} KANGTEST1`}
               accent
               valueColor="var(--accent-bright)"
               className="sm:col-span-2"
@@ -1269,7 +1269,7 @@ function OnchainGame() {
           <div className="max-md:-order-4 rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7 shadow-2xl">
             <div className="mb-4 flex items-center justify-between gap-2">
               <h2 className="text-base font-semibold">Place Your Bet</h2>
-              <AddToWalletButton symbol="KDG" />
+              <AddToWalletButton symbol="KANGTEST1" />
             </div>
 
             <div className="rounded-2xl bg-[var(--surface)] p-4 sm:flex sm:items-center sm:justify-between sm:gap-6">
@@ -1283,7 +1283,7 @@ function OnchainGame() {
                       {hydrated ? formatNumber(minBet, 0) : "…"}
                     </span>
                     <span className="text-sm font-semibold text-[var(--muted)]">
-                      KDG
+                      KANGTEST1
                     </span>
                   </span>
                 </div>
@@ -1303,7 +1303,7 @@ function OnchainGame() {
                         overBalance ? "font-semibold text-[var(--down)]" : ""
                       }
                     >
-                      {formatNumber(kang, 2)} KDG
+                      {formatNumber(kang, 2)} KANGTEST1
                     </span>
                   </span>
                 )}
@@ -1330,12 +1330,12 @@ function OnchainGame() {
                         : isPaused
                           ? "Game paused"
                           : overBalance
-                            ? "Insufficient KDG"
+                            ? "Insufficient KANGTEST1"
                             : betAmt < minBet
-                              ? `Minimum ${minBet.toLocaleString()} KDG`
+                              ? `Minimum ${minBet.toLocaleString()} KANGTEST1`
                               : expired
-                                ? `Bet ${betAmt.toLocaleString()} KDG · starts new round`
-                                : `Bet ${betAmt.toLocaleString()} KDG`}
+                                ? `Bet ${betAmt.toLocaleString()} KANGTEST1 · starts new round`
+                                : `Bet ${betAmt.toLocaleString()} KANGTEST1`}
                   </button>
                 )}
               </div>
@@ -1351,7 +1351,7 @@ function OnchainGame() {
                 </span>
               </span>
               <span className="whitespace-nowrap font-medium">
-                {betAmt > 0 ? `${formatNumber(previewPrize, 2)} KDG` : "0 KDG"}
+                {betAmt > 0 ? `${formatNumber(previewPrize, 2)} KANGTEST1` : "0 KANGTEST1"}
               </span>
             </div>
           </div>
@@ -1451,7 +1451,7 @@ function OnchainGame() {
                   </button>
                 ) : (
                   <span className="text-xs text-[var(--muted)]">
-                    {formatNumber(claimable, 2)} KDG
+                    {formatNumber(claimable, 2)} KANGTEST1
                   </span>
                 )}
               </div>
@@ -1463,7 +1463,7 @@ function OnchainGame() {
                   >
                     <div className="min-w-0">
                       <div className="truncate text-sm font-bold">
-                        {formatNumber(row.amount, 2)} KDG
+                        {formatNumber(row.amount, 2)} KANGTEST1
                       </div>
                       <div className="text-xs text-[var(--muted-2)]">
                         Round #{row.roundId}

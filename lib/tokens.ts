@@ -48,21 +48,21 @@ export const TOKENS: Token[] = [
     logoTransparent: true,
   },
   {
-    // KDOGE — meme coin from the legacy Xphere deployment. Tradable once a
-    // pool exists on the NEW factory (the old KDG/XP pool lives on the
-    // retired factory and is not visible here).
-    symbol: "KDG",
-    name: "KDOGE",
-    address: "0x4dE117D09842036e02F094E68086c5Dfd1132bDe",
+    // KANGTEST1 — LMS mini-game bet token. Minted from our TokenFactory
+    // (basic template), so it's a guaranteed standard ERC-20
+    // (no fee-on-transfer / rebase).
+    symbol: "KANGTEST1",
+    name: "kangtest1",
+    address: "0x221b309862ba2d7d01906A743BE1685253698aA8",
     decimals: 18,
     coingeckoId: null,
     priceUsd: 0,
     change24h: 0,
     volume24h: 0,
     marketCap: 0,
-    color: "#000000", // black circle behind the pumpkin mark
-    logoUrl: "/tokens/KDG.png",
-    logoScale: 0.72, // keep the pumpkin clear of the circle's edge
+    color: "#000000", // black circle behind the red Kang mark
+    logoUrl: "/tokens/KANGTEST1.svg",
+    logoScale: 0.8, // keep the mark clear of the circle's edge
   },
 ];
 

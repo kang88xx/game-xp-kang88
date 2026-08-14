@@ -1154,7 +1154,7 @@ function CampaignForm() {
           <div className="grid grid-cols-2 gap-2">
             {[
               { sym: "XP", disabled: false },
-              { sym: "KDG", disabled: false },
+              { sym: "KANGTEST1", disabled: false },
               { sym: "USDX", disabled: false },
               { sym: "IOI", disabled: true },
             ].map(({ sym, disabled }) => (
@@ -1670,7 +1670,7 @@ const ZERO_ROOT =
 
 /**
  * Resolve the on-chain token a campaign funds/pays out with. ERC-20 tokens
- * (KDG, USDX) use their contract; native XP (no contract) uses the NATIVE
+ * (KANGTEST1, USDX) use their contract; native XP (no contract) uses the NATIVE
  * sentinel — the contract funds it via msg.value and pays claimers native XP
  * directly (no wrapping). `native` drives the funding path. Returns null when
  * no usable on-chain token exists.

@@ -43,7 +43,7 @@ export function TierTable({ tier }: { tier: number }) {
             <div
               key={r.bets}
               className={`relative overflow-hidden rounded-lg px-3 py-1.5 text-xs tabular-nums ${
-                active ? "ring-1 ring-[var(--accent)]" : ""
+                active ? "tier-live" : ""
               }`}
             >
               {/* heat bar — width doubles the feeling of escalation */}
@@ -83,7 +83,7 @@ export function TierTable({ tier }: { tier: number }) {
                       : "text-[var(--muted)]"
                   }`}
                 >
-                  {r.bet} KDG
+                  {r.bet} KANGTEST1
                 </span>
                 <span
                   className={`w-[24%] text-right font-mono ${active ? "font-semibold" : ""}`}

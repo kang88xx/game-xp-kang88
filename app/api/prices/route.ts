@@ -190,7 +190,7 @@ export async function GET() {
     // network/rate-limit failure → serve seed values, client retries in 60s
   }
 
-  // Pool-derived prices (XP, KDG, …) quoted against the USDX anchor.
+  // Pool-derived prices (XP, KANGTEST1, …) quoted against the USDX anchor.
   // Never blocks the response.
   try {
     await applyPoolPrices(out);

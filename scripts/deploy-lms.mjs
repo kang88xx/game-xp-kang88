@@ -6,7 +6,7 @@
 //   4. Deploy:          npm run deploy:lms
 //
 // Constructor wiring (overridable via env in .env.deploy):
-//   LMS_TOKEN     — bet token        (default: KDG on Xphere)
+//   LMS_TOKEN     — bet token        (default: KANGTEST1 on Xphere)
 //   LMS_TREASURY  — treasury wallet  (default: the fee wallet shown on /games)
 //   LMS_BURN      — burn wallet      (default: the burn wallet shown on /games)
 //
@@ -49,10 +49,10 @@ const xphere = defineChain({
   rpcUrls: { default: { http: [RPC] } },
 });
 
-// KDG (Xphere) + the fee wallets already displayed on /games.
-const TOKEN = process.env.LMS_TOKEN ?? "0x4dE117D09842036e02F094E68086c5Dfd1132bDe";
-const TREASURY = process.env.LMS_TREASURY ?? "0x44414D1Ff9e4aFC08503CEDBb43Ab6ef201acb91";
-const BURN = process.env.LMS_BURN ?? "0x2c151C3FD184045396D4339426a77E367A684Af1";
+// KANGTEST1 (Xphere) + the fee wallets already displayed on /games.
+const TOKEN = process.env.LMS_TOKEN ?? "0x221b309862ba2d7d01906A743BE1685253698aA8";
+const TREASURY = process.env.LMS_TREASURY ?? "0x8d75BD466f1c1998408F81fddC75B9C61Cb2Ab7A";
+const BURN = process.env.LMS_BURN ?? "0x3cDab84c91C8974b6A4FdC9bb7CB8fF22f2a6B81";
 
 if (!PK || !/^0x[0-9a-fA-F]{64}$/.test(PK)) {
   console.error("✗ DEPLOYER_PRIVATE_KEY missing/invalid in .env.deploy.");
@@ -82,7 +82,7 @@ if (chainId !== 20250217) {
 
 console.log("Network    : Xphere Mainnet (chainId 20250217)");
 console.log("Deployer   :", account.address, "(becomes contract owner)");
-console.log("Bet token  :", TOKEN, "(KDG)");
+console.log("Bet token  :", TOKEN, "(KANGTEST1)");
 console.log("Treasury   :", TREASURY);
 console.log("Burn wallet:", BURN);
 
