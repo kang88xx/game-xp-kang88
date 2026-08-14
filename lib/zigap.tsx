@@ -41,6 +41,10 @@ const SendTransactionQR = dynamic(
 
 const DAPP_NAME = "XP GAME";
 const DAPP_URL = "https://xp.game.kang88.io";
+const DAPP_ICON = `${DAPP_URL}/icon.png`;
+// 페이로드가 200자+ 라 기본 128px 캔버스로는 모듈이 뭉개져 스캔이 잘 안 된다.
+// 물리 픽셀로 크게 그려 또렷하게 만든다.
+const QR_SIZE = 280;
 /** zigap-utils 네트워크 키 — v2xphere = Xphere 메인넷(XP, chainId 20250217) */
 const ZIGAP_NETWORK = "v2xphere" as const;
 
@@ -242,6 +246,8 @@ export function ZigapHost() {
               key={loginNonce}
               dapp={DAPP_NAME}
               url={DAPP_URL}
+              icon={DAPP_ICON}
+              size={QR_SIZE}
               availableNetworks={[ZIGAP_NETWORK]}
               sigMessage={`Sign in to ${DAPP_NAME} (Xphere Mainnet)`}
               validSeconds={600}
@@ -272,6 +278,8 @@ export function ZigapHost() {
             <SendTransactionQR
               dapp={DAPP_NAME}
               url={DAPP_URL}
+              icon={DAPP_ICON}
+              size={QR_SIZE}
               availableNetworks={ZIGAP_NETWORK}
               validSeconds={300}
               transaction={{
