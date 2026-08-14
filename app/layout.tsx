@@ -48,9 +48,11 @@ export const metadata: Metadata = {
     url: SITE_URL,
     images: [
       {
-        url: "/og.png",
-        width: 1610,
-        height: 977,
+        // 파일명에 버전을 담는다 — 카카오 등 메신저는 이미지 URL 기준으로
+        // 캐시하므로, 썸네일을 갈 때는 반드시 새 URL 로 배포해야 한다.
+        url: "/og-lms.png",
+        width: 1200,
+        height: 630,
         alt: "Xphere Mainnet Mini Game",
       },
     ],
@@ -59,7 +61,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
-    images: ["/og.png"],
+    images: ["/og-lms.png"],
   },
 };
 
