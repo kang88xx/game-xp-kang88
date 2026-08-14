@@ -42,7 +42,6 @@ import {
   parseAmountInput,
 } from "@/lib/format";
 import { TokenLogo } from "@/components/TokenLogo";
-import { CopyContractButton } from "@/components/CopyContractButton";
 import { toast } from "@/components/toast";
 import { Eyebrow } from "@/components/ui";
 import type { AirdropCampaign, Eligibility } from "@/lib/types";
@@ -1293,18 +1292,6 @@ function CampaignForm() {
               </button>
             ))}
           </div>
-          {/* Selected token's contract — copyable (native coins have none) */}
-          {TOKEN_MAP[tokenSymbol]?.address && (
-            <div className="mt-2 flex items-center justify-between gap-2 rounded-xl bg-[var(--surface)] px-3 py-2">
-              <span className="truncate font-mono text-xs text-[var(--muted)]">
-                {shortAddress(TOKEN_MAP[tokenSymbol].address)}
-              </span>
-              <CopyContractButton
-                address={TOKEN_MAP[tokenSymbol].address}
-                symbol={tokenSymbol}
-              />
-            </div>
-          )}
         </Field>
 
         <div className={eligibility === "whitelist" ? "" : "grid grid-cols-2 gap-3"}>

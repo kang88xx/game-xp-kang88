@@ -6,7 +6,6 @@ import { useAccount } from "wagmi";
 import { getToken } from "@/lib/tokens";
 import { CHAIN_LABEL } from "@/lib/chain";
 import { TokenLogo } from "./TokenLogo";
-import { CopyContractButton } from "./CopyContractButton";
 import { toast } from "./toast";
 
 /** EIP-1193 provider surface we need from the active connector. */
@@ -89,7 +88,6 @@ export function AddToWalletButton({
         <span className="font-mono text-[var(--muted)]">XPHERE</span>
         <Plus className="h-3.5 w-3.5 text-[var(--muted)]" />
       </button>
-      <CopyContractButton address={token.address} symbol={token.symbol} />
       {/* ⓘ — hover/focus tooltip explaining what the button does */}
       <span className="group relative inline-flex" tabIndex={0}>
         <Info
