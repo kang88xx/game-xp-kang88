@@ -212,7 +212,27 @@ export function WalletPickerHost() {
 
         <div className="mt-4 space-y-2">
           {state.entries.map((entry) =>
-            entry.connector ? (
+            entry.brand === "ZIGAP" ? (
+              // ZIGAP 앱의 QR/딥링크 스캔이 아직 불안정해 연동을 잠시 내림 —
+              // 로고·이름만 노출하고 "Coming soon" 비활성 버튼으로 표기한다.
+              // (zigap-utils 통합 코드는 lib/zigap.tsx 에 그대로 있어
+              //  앱 이슈가 풀리면 이 분기만 제거하면 된다.)
+              <button
+                key={entry.brand}
+                disabled
+                aria-disabled="true"
+                className="flex w-full cursor-not-allowed items-center gap-3 rounded-2xl border border-[var(--border)] px-4 py-3 text-sm font-semibold text-[var(--muted-2)] opacity-60"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={entry.logo}
+                  alt=""
+                  className="h-7 w-7 rounded-lg object-contain opacity-60 grayscale"
+                />
+                <span className="flex-1 text-left">{entry.brand}</span>
+                <span className="text-xs">Coming soon</span>
+              </button>
+            ) : entry.connector ? (
               <button
                 key={entry.brand}
                 onClick={() => void connectWith(entry.connector!)}
@@ -243,28 +263,6 @@ export function WalletPickerHost() {
                 <span className="flex-1 text-left">{entry.brand}</span>
                 <span className="text-xs">Open in app →</span>
               </a>
-            ) : entry.brand === "ZIGAP" ? (
-              // ZIGAP 정식 연동(zigap-utils) — 데스크톱은 QR, 모바일은 원탭
-              // 딥링크로 ZIGAP 앱이 열려 로그인된다.
-              <button
-                key={entry.brand}
-                onClick={() => {
-                  setPicker(CLOSED);
-                  openZigapLogin();
-                }}
-                className="flex w-full items-center gap-3 rounded-2xl border border-[var(--border-strong)] px-4 py-3 text-sm font-semibold transition-colors hover:bg-[var(--surface)]"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={entry.logo}
-                  alt=""
-                  className="h-7 w-7 rounded-lg object-contain"
-                />
-                <span className="flex-1 text-left">{entry.brand}</span>
-                <span className="text-xs">
-                  {isMobileBrowser() ? "One-tap connect →" : "QR connect →"}
-                </span>
-              </button>
             ) : (
               <a
                 key={entry.brand}

@@ -453,7 +453,8 @@ function DemoGame() {
         <StatCard
           icon={<TrendingUp className="h-5 w-5" />}
           label="Prize Pool"
-          value={`${formatNumber(animPrizePool, 2)} KANGTEST1`}
+          value={formatNumber(animPrizePool, 2)}
+          unit="KANGTEST1"
           accent
           valueColor="var(--accent-bright)"
         />
@@ -472,7 +473,8 @@ function DemoGame() {
         <StatCard
           icon={<Flame className="flamebob h-5 w-5" stroke="url(#flame-grad)" fill="url(#flame-grad)" />}
           label="Burned"
-          value={`${formatNumber(animBurned, 2)} KANGTEST1`}
+          value={formatNumber(animBurned, 2)}
+          unit="KANGTEST1"
           valueColor="var(--accent)"
         />
       </div>
@@ -1245,13 +1247,15 @@ function OnchainGame() {
             <StatCard
               icon={<Flame className="flamebob h-5 w-5" stroke="url(#flame-grad)" fill="url(#flame-grad)" />}
               label="Burned"
-              value={`${formatNumber(animBurned, 2)} KANGTEST1`}
+              value={formatNumber(animBurned, 2)}
+          unit="KANGTEST1"
               valueColor="var(--accent)"
             />
             <StatCard
               icon={<TrendingUp className="h-5 w-5" />}
               label="Prize Pool"
-              value={`${formatNumber(animPrizePool, 2)} KANGTEST1`}
+              value={formatNumber(animPrizePool, 2)}
+          unit="KANGTEST1"
               accent
               valueColor="var(--accent-bright)"
               className="sm:col-span-2"
@@ -1602,6 +1606,7 @@ function StatCard({
   icon,
   label,
   value,
+  unit,
   detail,
   accent,
   valueColor,
@@ -1610,6 +1615,8 @@ function StatCard({
   icon: React.ReactNode;
   label: string;
   value: string;
+  /** 토큰 티커 등 단위 — 숫자보다 2px 작고 한 단계 얇게 붙는다 */
+  unit?: string;
   detail?: string;
   accent?: boolean;
   valueColor?: string;
@@ -1648,6 +1655,9 @@ function StatCard({
             }}
           >
             {value}
+            {unit && (
+              <span className="ml-1 text-xs font-light opacity-85">{unit}</span>
+            )}
           </div>
           {detail && (
             <div className="mt-0.5 text-xs text-[var(--muted-2)]">{detail}</div>
