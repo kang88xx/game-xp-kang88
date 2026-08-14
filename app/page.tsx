@@ -4,12 +4,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Trophy, Clock, Flame, Users, TrendingUp, Loader2, Dices } from "lucide-react";
 import { useMetaMask } from "@/lib/use-metamask";
 import { erc20Abi, formatUnits, parseUnits } from "viem";
-import {
-  useAccount,
-  usePublicClient,
-  useReadContract,
-  useWriteContract,
-} from "wagmi";
+import { usePublicClient, useReadContract } from "wagmi";
+import { useActiveAccount, useSendContractTx } from "@/lib/active-account";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useDexStore, useHydrated, LMS_CONFIG } from "@/lib/store";
 import { useBalance } from "@/lib/balances";
@@ -792,8 +788,9 @@ function OnchainGame() {
   const hydrated = useHydrated();
   const connected = useDexStore((s) => s.connected);
   const { open: openWalletModal } = useMetaMask();
-  const { address: wallet, chainId } = useAccount();
-  const { writeContractAsync } = useWriteContract();
+  // wagmi 확장/인앱 + ZIGAP 딥링크 세션을 하나의 계정으로 취급한다.
+  const { address: wallet, onXphere } = useActiveAccount();
+  const sendTx = useSendContractTx();
   const publicClient = usePublicClient();
   const queryClient = useQueryClient();
   const kang = useBalance("KANGTEST1");
@@ -1010,7 +1007,7 @@ function OnchainGame() {
       toast.error("Connect your wallet");
       return false;
     }
-    if (chainId !== CHAIN_ID) {
+    if (!onXphere) {
       toast.error("Switch your wallet network to Xphere");
       return false;
     }
@@ -1042,22 +1039,20 @@ function OnchainGame() {
       });
       if (allowance < amountWei) {
         toast.info("1/2 Approving KANGTEST1 spend… confirm in your wallet");
-        const approveHash = await writeContractAsync({
+        const approveHash = await sendTx({
           address: kangAddr,
           abi: erc20Abi,
           functionName: "approve",
           args: [contract, amountWei],
-          chainId: CHAIN_ID,
         });
         await publicClient!.waitForTransactionReceipt({ hash: approveHash });
       }
       toast.info("Please approve the bet transaction in your wallet");
-      const hash = await writeContractAsync({
+      const hash = await sendTx({
         address: contract,
         abi: LMS_ABI,
         functionName: "bet",
         args: [amountWei],
-        chainId: CHAIN_ID,
       });
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") return toast.error("Bet failed");
@@ -1078,12 +1073,11 @@ function OnchainGame() {
     try {
       setBusy(`claim:${roundId}`);
       toast.info(`Approve claim for round #${roundId} prize in your wallet`);
-      const hash = await writeContractAsync({
+      const hash = await sendTx({
         address: contract,
         abi: LMS_ABI,
         functionName: "claimRound",
         args: [BigInt(roundId)],
-        chainId: CHAIN_ID,
       });
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") return toast.error("Claim failed");
@@ -1102,11 +1096,10 @@ function OnchainGame() {
     try {
       setBusy("claim-all");
       toast.info("Approve claim-all transaction in your wallet");
-      const hash = await writeContractAsync({
+      const hash = await sendTx({
         address: contract,
         abi: LMS_ABI,
         functionName: "claimAll",
-        chainId: CHAIN_ID,
       });
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") return toast.error("Claim failed");

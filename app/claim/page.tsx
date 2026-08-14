@@ -4,12 +4,8 @@ import { useState } from "react";
 import { useMetaMask } from "@/lib/use-metamask";
 import { Check, Lock, Globe, ShieldCheck, Loader2 } from "lucide-react";
 import { formatUnits, parseUnits } from "viem";
-import {
-  useAccount,
-  usePublicClient,
-  useReadContract,
-  useWriteContract,
-} from "wagmi";
+import { usePublicClient, useReadContract } from "wagmi";
+import { useActiveAccount, useSendContractTx } from "@/lib/active-account";
 import { useQueryClient } from "@tanstack/react-query";
 import { TOKEN_MAP } from "@/lib/mock-data";
 import { useDexStore, useHydrated } from "@/lib/store";
@@ -115,8 +111,9 @@ function OnchainCampaignCard({
   const connected = useDexStore((s) => s.connected);
   const recordClaim = useDexStore((s) => s.recordClaim);
   const { open: openWalletModal } = useMetaMask();
-  const { address: wallet, chainId } = useAccount();
-  const { writeContractAsync } = useWriteContract();
+  // wagmi 확장/인앱 + ZIGAP 딥링크 세션을 하나의 계정으로 취급한다.
+  const { address: wallet, onXphere } = useActiveAccount();
+  const sendTx = useSendContractTx();
   const publicClient = usePublicClient();
   const queryClient = useQueryClient();
   const [claiming, setClaiming] = useState(false);
@@ -220,31 +217,29 @@ function OnchainCampaignCard({
 
   const doClaim = async () => {
     if (!wallet || !publicClient) return;
-    if (chainId !== CHAIN_ID)
+    if (!onXphere)
       return toast.error("Switch your wallet network to Xphere");
     try {
       setClaiming(true);
       toast.info("Please approve the claim transaction in your wallet");
       let hash: `0x${string}`;
       if (c.isPublic) {
-        hash = await writeContractAsync({
+        hash = await sendTx({
           address: AIRDROP_CONTRACT as `0x${string}`,
           abi: AIRDROP_ABI,
           functionName: "claimPublic",
           args: [BigInt(c.onchainId)],
-          chainId: CHAIN_ID,
         });
       } else {
         if (wlAllocs.length === 0)
           return toast.error("Failed to load whitelist data");
         const pf = merkleProof(wlAllocs, wallet);
         if (!pf) return toast.error("This wallet is not on the whitelist");
-        hash = await writeContractAsync({
+        hash = await sendTx({
           address: AIRDROP_CONTRACT as `0x${string}`,
           abi: AIRDROP_ABI,
           functionName: "claim",
           args: [BigInt(c.onchainId), BigInt(pf.amountWei), pf.proof],
-          chainId: CHAIN_ID,
         });
       }
       const receipt = await publicClient.waitForTransactionReceipt({ hash });

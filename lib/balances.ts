@@ -3,10 +3,10 @@
 import { useMemo } from "react";
 import { erc20Abi, formatUnits } from "viem";
 import {
-  useAccount,
   useBalance as useNativeBalance,
   useReadContracts,
 } from "wagmi";
+import { useActiveAccount } from "./active-account";
 import { useTokenRegistry } from "./token-registry";
 import { CHAIN_ID, NATIVE_SYMBOL } from "./chain";
 import type { Token } from "./types";
@@ -20,7 +20,10 @@ const EMPTY: Record<string, number> = {};
  * Returns {} while disconnected.
  */
 export function useBalances(): Record<string, number> {
-  const { address, isConnected } = useAccount();
+  // wagmi 확장/인앱 + ZIGAP 딥링크 세션 어느 쪽이든 잔고를 읽는다 (읽기는
+  // 지갑 서명이 필요 없어 RPC 로 직접 조회).
+  const { address } = useActiveAccount();
+  const isConnected = !!address;
   const { enabled: registryTokens } = useTokenRegistry();
 
   // ERC-20 tokens with a real contract (static registry + admin-added)

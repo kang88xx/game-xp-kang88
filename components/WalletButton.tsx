@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Copy, LogOut, Check } from "lucide-react";
 import { useDisconnect } from "wagmi";
 import { useMetaMask } from "@/lib/use-metamask";
+import { useZigapAccount } from "@/lib/zigap";
 import { useDexStore, useHydrated } from "@/lib/store";
 import { shortAddress } from "@/lib/format";
 import { toast } from "./toast";
@@ -15,6 +16,7 @@ export function WalletButton() {
   const address = useDexStore((s) => s.address);
   const { open } = useMetaMask();
   const { disconnect } = useDisconnect();
+  const zigap = useZigapAccount();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -108,6 +110,8 @@ export function WalletButton() {
             <button
               onClick={() => {
                 disconnect();
+                // ZIGAP 딥링크 세션도 함께 끊는다 (있을 때만 의미 있음).
+                if (zigap.address) zigap.logout();
                 setMenuOpen(false);
                 toast.info("Wallet disconnected");
               }}

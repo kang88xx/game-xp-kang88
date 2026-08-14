@@ -15,6 +15,7 @@ import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import { X } from "lucide-react";
 import { useConnect, type Connector } from "wagmi";
 import { CHAIN_ID } from "./chain";
+import { openZigapLogin } from "./zigap";
 import { toast } from "@/components/toast";
 
 const METAMASK_INSTALL_URL = "https://metamask.io/download";
@@ -242,18 +243,14 @@ export function WalletPickerHost() {
                 <span className="flex-1 text-left">{entry.brand}</span>
                 <span className="text-xs">Open in app →</span>
               </a>
-            ) : isMobileBrowser() && entry.brand === "ZIGAP" ? (
-              // ZIGAP has no public dapp deeplink — copy the URL and point
-              // the user at its built-in browser instead.
+            ) : entry.brand === "ZIGAP" ? (
+              // ZIGAP 정식 연동(zigap-utils) — 데스크톱은 QR, 모바일은 원탭
+              // 딥링크로 ZIGAP 앱이 열려 로그인된다.
               <button
                 key={entry.brand}
                 onClick={() => {
-                  void navigator.clipboard
-                    ?.writeText(window.location.href)
-                    .catch(() => {});
-                  toast.success(
-                    "Link copied — open the ZIGAP app and paste it in its built-in browser",
-                  );
+                  setPicker(CLOSED);
+                  openZigapLogin();
                 }}
                 className="flex w-full items-center gap-3 rounded-2xl border border-[var(--border-strong)] px-4 py-3 text-sm font-semibold transition-colors hover:bg-[var(--surface)]"
               >
@@ -264,7 +261,9 @@ export function WalletPickerHost() {
                   className="h-7 w-7 rounded-lg object-contain"
                 />
                 <span className="flex-1 text-left">{entry.brand}</span>
-                <span className="text-xs">Open in app browser</span>
+                <span className="text-xs">
+                  {isMobileBrowser() ? "One-tap connect →" : "QR connect →"}
+                </span>
               </button>
             ) : (
               <a

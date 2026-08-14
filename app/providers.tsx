@@ -5,23 +5,27 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cookieToInitialState, useAccount, WagmiProvider } from "wagmi";
 import { wagmiConfig } from "@/lib/wagmi";
 import { WalletPickerHost } from "@/lib/use-wallet";
+import { ZigapHost, useZigapAccount } from "@/lib/zigap";
 import { useDexStore } from "@/lib/store";
 
 const queryClient = new QueryClient();
 
 /**
- * Mirrors the real wagmi wallet session into the Zustand store so the rest
- * of the app (balances, positions, games…) keys off the real address.
+ * Mirrors the real wallet session (wagmi extension OR ZIGAP deeplink login)
+ * into the Zustand store so the rest of the app (balances, positions,
+ * games…) keys off the real address. wagmi wins when both exist.
  * Ignores transient "connecting"/"reconnecting" states.
  */
 function WalletSync() {
   const { address, status } = useAccount();
+  const zigap = useZigapAccount();
   const setWalletSession = useDexStore((s) => s.setWalletSession);
 
   useEffect(() => {
     if (status === "connected" && address) setWalletSession(address);
+    else if (zigap.address) setWalletSession(zigap.address);
     else if (status === "disconnected") setWalletSession(null);
-  }, [address, status, setWalletSession]);
+  }, [address, status, zigap.address, setWalletSession]);
 
   return null;
 }
@@ -80,6 +84,7 @@ export function Providers({
         <WalletSync />
         <AnalyticsTracker />
         <WalletPickerHost />
+        <ZigapHost />
         {children}
       </QueryClientProvider>
     </WagmiProvider>
