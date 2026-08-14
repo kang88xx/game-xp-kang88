@@ -129,6 +129,24 @@ export const AIRDROP_ABI = [
     outputs: [{ name: "", type: "address" }],
   },
   {
+    // v6 contracts only — 캠페인 운영 권한(operator). owner 는 항상 통과.
+    type: "function",
+    name: "operators",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "address" }],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "setOperator",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "account", type: "address" },
+      { name: "allowed", type: "bool" },
+    ],
+    outputs: [],
+  },
+  {
     type: "function",
     name: "remaining",
     stateMutability: "view",

@@ -985,6 +985,112 @@ function AdminWalletsManager() {
           </div>
         )}
       </div>
+
+      <OperatorManager />
+    </div>
+  );
+}
+
+/**
+ * 온체인 operator 관리 — 캠페인 발행·화이트리스트 갱신·일시정지를 실행할 수
+ * 있는 지갑을 MerkleAirdrop(v6) 컨트랙트에 등록/해제한다. setOperator 는
+ * onlyOwner 라서 컨트랙트 owner 지갑으로 연결한 상태에서만 서명이 통과한다.
+ */
+function OperatorManager() {
+  const { address: wallet } = useAccount();
+  const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
+  const [addr, setAddr] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+
+  const valid = /^0x[a-fA-F0-9]{40}$/.test(addr.trim());
+
+  const check = async () => {
+    if (!valid || !publicClient) return;
+    setBusy("check");
+    try {
+      const isOp = (await publicClient.readContract({
+        address: AIRDROP_CONTRACT as `0x${string}`,
+        abi: AIRDROP_ABI,
+        functionName: "operators",
+        args: [addr.trim() as `0x${string}`],
+      })) as boolean;
+      setStatus(isOp ? "이미 operator 로 등록된 지갑입니다" : "미등록 지갑입니다");
+    } catch {
+      setStatus("조회 실패 — v6 이전 컨트랙트이거나 RPC 오류");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const setOp = async (allowed: boolean) => {
+    if (!valid) return toast.error("Invalid wallet address");
+    if (!wallet || !publicClient) return toast.error("Connect your wallet");
+    if (!(await ensureContractOwner(publicClient, wallet))) return;
+    setBusy(allowed ? "grant" : "revoke");
+    try {
+      toast.info("Confirm the setOperator transaction in your wallet");
+      const hash = await writeContractAsync({
+        address: AIRDROP_CONTRACT as `0x${string}`,
+        abi: AIRDROP_ABI,
+        functionName: "setOperator",
+        args: [addr.trim() as `0x${string}`, allowed],
+        chainId: CHAIN_ID,
+      });
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      if (receipt.status !== "success") return toast.error("Transaction failed");
+      toast.success(
+        allowed ? "Operator granted — 이 지갑으로 캠페인 발행이 가능합니다" : "Operator revoked",
+      );
+      setStatus(null);
+    } catch {
+      toast.error("Failed — 컨트랙트 owner 지갑으로 연결했는지 확인하세요");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="mt-6">
+      <h4 className="text-sm font-semibold">On-chain operators</h4>
+      <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
+        캠페인 발행·화이트리스트 갱신·일시정지를 실행할 지갑을 컨트랙트에
+        등록합니다. 등록/해제는 컨트랙트 owner 지갑 서명이 필요하고, 자금
+        회수(sweep)는 여전히 owner 전용입니다.
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <input
+          value={addr}
+          onChange={(e) => setAddr(e.target.value)}
+          placeholder="0x… operator wallet"
+          className="h-10 min-w-[300px] flex-1 rounded-xl border border-[var(--border-strong)] bg-[var(--surface)] px-3 font-mono text-sm outline-none focus:border-[var(--accent)]"
+        />
+        <button
+          onClick={check}
+          disabled={!valid || busy != null}
+          className="h-10 rounded-xl border border-[var(--border-strong)] px-3 text-sm font-medium text-[var(--muted)] transition-colors hover:bg-[var(--surface)] disabled:opacity-50"
+        >
+          {busy === "check" ? "…" : "상태 조회"}
+        </button>
+        <button
+          onClick={() => void setOp(true)}
+          disabled={!valid || busy != null}
+          className="h-10 rounded-xl bg-[var(--accent)] px-4 text-sm font-semibold text-white transition-colors hover:bg-[var(--accent-hover)] disabled:opacity-50"
+        >
+          {busy === "grant" ? "등록 중…" : "Operator 등록"}
+        </button>
+        <button
+          onClick={() => void setOp(false)}
+          disabled={!valid || busy != null}
+          className="h-10 rounded-xl border border-[var(--down)] px-4 text-sm font-semibold text-[var(--down)] transition-colors hover:bg-[var(--down-soft)] disabled:opacity-50"
+        >
+          {busy === "revoke" ? "해제 중…" : "해제"}
+        </button>
+      </div>
+      {status && (
+        <p className="mt-2 text-xs text-[var(--muted)]">{status}</p>
+      )}
     </div>
   );
 }
@@ -1327,7 +1433,7 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
         "This campaign was launched on a previous contract — it cannot be controlled from the current contract",
       );
     if (!requireWallet()) return;
-    if (!(await ensureContractOwner(publicClient!, wallet!))) return;
+    if (!(await ensureContractOperator(publicClient!, wallet!))) return;
     const next = !isActive;
     try {
       setTxBusy(true);
@@ -1371,6 +1477,7 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
       return;
     }
     if (!requireWallet()) return;
+    // 자금 회수는 operator 로는 불가 — 컨트랙트 owner 만.
     if (!(await ensureContractOwner(publicClient!, wallet!))) return;
     try {
       setTxBusy(true);
@@ -1628,6 +1735,45 @@ async function ensureContractOwner(
 }
 
 /**
+ * Operator pre-check: 캠페인 생성·루트 갱신·공개·일시정지는 owner 또는
+ * 등록된 operator 지갑이면 실행 가능 (v6 컨트랙트). operators() 읽기가
+ * 실패하는 구버전 컨트랙트에서는 owner 체크만 적용된다.
+ */
+async function ensureContractOperator(
+  publicClient: { readContract: (args: never) => Promise<unknown> },
+  wallet: string,
+): Promise<boolean> {
+  try {
+    const owner = (await publicClient.readContract({
+      address: AIRDROP_CONTRACT as `0x${string}`,
+      abi: AIRDROP_ABI,
+      functionName: "owner",
+    } as never)) as string;
+    if (owner.toLowerCase() === wallet.toLowerCase()) return true;
+    let isOp = false;
+    try {
+      isOp = (await publicClient.readContract({
+        address: AIRDROP_CONTRACT as `0x${string}`,
+        abi: AIRDROP_ABI,
+        functionName: "operators",
+        args: [wallet],
+      } as never)) as boolean;
+    } catch {
+      isOp = false; // v5 이하 컨트랙트 — operator 개념 없음
+    }
+    if (!isOp) {
+      toast.error(
+        `No operator rights — owner(${shortAddress(owner)})가 관리자 탭에서 이 지갑을 operator 로 등록해야 합니다`,
+      );
+      return false;
+    }
+  } catch {
+    // 읽기 실패 — tx 시도가 실제 오류를 보여주게 둔다
+  }
+  return true;
+}
+
+/**
  * Destructive-action gate: confirmation modal that re-verifies the admin
  * password server-side (/api/admin/verify) before running onConfirm.
  */
@@ -1786,7 +1932,7 @@ function PublicLaunchPanel({ campaign: c }: { campaign: AirdropCampaign }) {
       return toast.error("Amount per claim (amountPerClaim) must be greater than 0");
     if (c.amountPerClaim > c.totalAllocation)
       return toast.error("Amount per claim cannot exceed total allocation");
-    if (!(await ensureContractOwner(publicClient, wallet))) return;
+    if (!(await ensureContractOperator(publicClient, wallet))) return;
 
     try {
       setLaunching(true);
@@ -1988,7 +2134,7 @@ function WhitelistManager({
       );
     if (c.whitelist.length === 0)
       return toast.error("Whitelist is empty");
-    if (!(await ensureContractOwner(publicClient, wallet))) return;
+    if (!(await ensureContractOperator(publicClient, wallet))) return;
     // Block funding top-ups that v4 can never pay out: a claimed wallet's
     // grown allocation is unreachable behind the permanent hasClaimed flag,
     // so the delta would sit stranded in the contract until sweep.
@@ -2137,7 +2283,7 @@ function WhitelistManager({
       return toast.error(`No token contract configured for ${c.tokenSymbol} on-chain launch`);
     if (c.whitelist.length === 0)
       return toast.error("Whitelist is empty");
-    if (!(await ensureContractOwner(publicClient, wallet))) return;
+    if (!(await ensureContractOperator(publicClient, wallet))) return;
 
     try {
       setLaunching(true);
