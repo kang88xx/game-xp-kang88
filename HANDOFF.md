@@ -54,6 +54,16 @@ fee-on-transfer/리베이스 불가).
 - KangLMS `0x9552…2fe2` — 진행 중 라운드의 풀은 승자가 직접 claim 가능(권한 불필요).
   owner 기능(pause 등)은 영구 잠김.
 
+## ✅ 완료 (2026-08-14) — ZIGAP 정식 통합 + 모바일 지갑 UX
+
+- `zigap-utils`(Seoul Labs 공식) 통합: 데스크톱 QR·모바일 원탭 딥링크 로그인,
+  트랜잭션은 SendTransactionQR 딥링크 왕복. `lib/zigap.tsx` + `lib/active-account.ts`
+  (useActiveAccount / useSendContractTx — wagmi 와 ZIGAP 을 화면 코드가 구분 안 함).
+- 베팅(승인+bet)·클레임·잔고 조회 전부 통합 계정 경로. 관리자 패널은 wagmi 전용 유지.
+- 모바일 MetaMask 는 metamask.app.link 딥링크. 클레임 카드 "≈ $0"(가격 미확인)은 숨김.
+- 주의: useZigap 은 localStorage 를 마운트 시 1회만 읽음 → 로그인/로그아웃 후 reload 로 동기화.
+- 미검증: 실기기 ZIGAP 앱 왕복(로그인·서명)은 사용자 실기기 테스트 필요.
+
 ## ✅ 해결 (2026-08-14) — 에어드랍 재배포
 
 - 사용자 확인: 예전 owner(0x70b4…B39D) 키 백업 없음 → 재배포 경로 선택.
