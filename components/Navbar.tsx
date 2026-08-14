@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, ShieldCheck } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { WalletButton } from "./WalletButton";
 import { ThemeToggle } from "./ThemeToggle";
 import { XphereMark } from "./XphereLogo";
@@ -58,17 +58,7 @@ export function Navbar() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Link
-            href="/admin"
-            title="Admin panel"
-            className={`hidden h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] transition-colors hover:bg-[var(--surface)] sm:flex ${
-              pathname.startsWith("/admin")
-                ? "text-[var(--accent)]"
-                : "text-[var(--muted)]"
-            }`}
-          >
-            <ShieldCheck className="h-4 w-4" />
-          </Link>
+          {/* 관리자 진입점은 화면에 노출하지 않는다 — /admin 직접 접속으로만 사용 */}
           <WalletButton />
           <button
             className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] md:hidden"
@@ -88,7 +78,7 @@ export function Navbar() {
 
       {mobileOpen && (
         <nav id="mobile-nav" className="border-t border-[var(--border)] px-4 py-2 md:hidden">
-          {[...LINKS, { href: "/admin", label: "Admin" }].map((l) => (
+          {LINKS.map((l) => (
             <Link
               key={l.href}
               href={l.href}
