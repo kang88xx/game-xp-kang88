@@ -18,7 +18,16 @@ https://game-xp-kang88.vercel.app (탭 타이틀 "Xphere Mainnet Mini Game")
   유틸리티 전부를 무력화하던 문제 제거 (이 빌드는 author `@layer`를 평탄화함 — 주의).
 - 파비콘: 투명 배경 버드 글리프 (icon.svg/png + favicon.ico, ICO는 RGBA PNG 필수).
 
-## 진행 중 — LMS 컨트랙트 재배포 (토큰 대기)
+## ✅ 완료 (2026-08-14) — LMS 재배포 + 베팅 토큰 KANGTEST1 교체
+
+- 새 KangLMS: `0xafbcb897540da09f95c2b9d1dc4514a9a460fb07` (block 45878205, owner `0x980E…143f` 온체인 검증)
+- 베팅 토큰: KANGTEST1 `0x221b309862ba2d7d01906A743BE1685253698aA8` (우리 TokenFactory basic 템플릿 발행 — 표준 ERC-20 확인)
+- treasury `0x8d75…Ab7A`(15%) / burn `0x3cDa…6B81`(5%) — 컨트랙트에 고정, `FEE_WALLETS` 표시도 일치
+- 로고 `public/tokens/KANGTEST1.svg`, lib/tokens·게임·클레임 화면 KDG 참조 전부 교체
+- `.env.local` + Vercel production env(`NEXT_PUBLIC_LMS_CONTRACT`, `NEXT_PUBLIC_LMS_DEPLOY_BLOCK`) 갱신, 프로덕션 배포·라이브 확인 완료
+- 참고: 구 컨트랙트(0x9552…2fe2)의 토큰 회수/수령은 보류 (사용자 지시)
+
+## (기록) 재배포 전 준비 메모 — 토큰 대기 중이던 시점
 
 **배경**: 기존 KangLMS `0x9552…2fe2`의 owner `0xe3d1…0358` 개인키 분실 → 소유권 이전
 불가 → 새 지갑으로 재배포하기로 결정. 베팅 토큰도 KDG에서 신규 토큰으로 교체 예정
