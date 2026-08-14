@@ -299,9 +299,17 @@ function OnchainCampaignCard({
             {!c.isPublic && myAlloc ? "Your allocation" : "Reward per wallet"}
           </p>
           <p className="text-xl font-bold">
-            {c.isPublic || myAlloc
-              ? `${claimAmount.toLocaleString()} ${c.tokenSymbol}`
-              : c.tokenSymbol}
+            {c.isPublic || myAlloc ? (
+              <>
+                {claimAmount.toLocaleString()}{" "}
+                {/* 티커는 수량보다 2단계 작게(xl→base)·한 단계 얇게 */}
+                <span className="text-base font-semibold text-[var(--muted)]">
+                  {c.tokenSymbol}
+                </span>
+              </>
+            ) : (
+              c.tokenSymbol
+            )}
           </p>
         </div>
         {/* Tokens with no USDX pool have priceUsd 0 — "≈ $0" reads as
