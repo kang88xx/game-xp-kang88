@@ -54,7 +54,18 @@ fee-on-transfer/리베이스 불가).
 - KangLMS `0x9552…2fe2` — 진행 중 라운드의 풀은 승자가 직접 claim 가능(권한 불필요).
   owner 기능(pause 등)은 영구 잠김.
 
-## ⚠️ 미해결 — 에어드랍 소유권 & 예전 배포키
+## ✅ 해결 (2026-08-14) — 에어드랍 재배포
+
+- 사용자 확인: 예전 owner(0x70b4…B39D) 키 백업 없음 → 재배포 경로 선택.
+- 새 MerkleAirdrop: `0xaa14546abdccf1990328a77fc35b089cb85228d0` (block 45879426,
+  tx 0x0b29dbf0…0fa8). 배포 직후 소유권을 관리자 지갑
+  `0xe0830caB9BB54e4B6C42A85EfFb841b2Ab077b36`으로 이전 완료 (온체인 확인).
+- `.env.local` + Vercel production env: `NEXT_PUBLIC_AIRDROP_CONTRACT`,
+  `NEXT_PUBLIC_AIRDROP_DEPLOY_BLOCK=45879426` 갱신.
+- 구 컨트랙트(0x0658…478e)에 남은 미회수 3건(구 KDG 2건 + 소량 XP, 종료된 테스트
+  캠페인)은 owner 키 유실로 회수 불가 — 방치 확정.
+
+## (기록) 이전 미해결 메모 — 에어드랍 소유권 & 예전 배포키
 
 - Airdrop `0x06583bf2…478e`의 owner = `0x70b4B19F85041bEa823A72D41f841Dc4e028B39D`.
 - 그 키는 .env.deploy에 있었으나 **새 키로 교체하는 과정에서 덮어써져 리포/디스크에
