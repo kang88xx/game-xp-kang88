@@ -239,9 +239,20 @@ export function ZigapHost() {
 
   return (
     <>
+      {/* zigap-utils 는 내부 갱신 시 size prop 을 무시하고 128px 캔버스로
+          되돌리는 버그가 있다 — CSS 로 항상 크게, 모듈 경계는 pixelated 로
+          또렷하게 강제해 스캔 인식률을 지킨다. */}
+      <style>{`
+        .zigap-qr canvas {
+          width: ${QR_SIZE}px !important;
+          height: ${QR_SIZE}px !important;
+          image-rendering: pixelated;
+          background: #fff;
+        }
+      `}</style>
       {state.login && (
         <ModalShell title="Connect ZIGAP" onClose={closeLogin}>
-          <div className="flex flex-col items-center gap-3">
+          <div className="zigap-qr flex flex-col items-center gap-3">
             <LoginQR
               key={loginNonce}
               dapp={DAPP_NAME}
@@ -274,7 +285,7 @@ export function ZigapHost() {
 
       {state.pendingTx && (
         <ModalShell title="Approve in ZIGAP" onClose={closeTx}>
-          <div className="flex flex-col items-center gap-3">
+          <div className="zigap-qr flex flex-col items-center gap-3">
             <SendTransactionQR
               dapp={DAPP_NAME}
               url={DAPP_URL}
