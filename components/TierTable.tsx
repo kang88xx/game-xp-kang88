@@ -5,17 +5,19 @@
 // legible at a glance. The live tier row gets a ring + pulse dot.
 
 // Mirrors KangLMS.betFloorForTier / durationForTier (row index === tier).
+// Labels use human bet numbering: tier t covers on-chain betCount t*10..t*10+9,
+// i.e. the (t*10+1)th through (t*10+10)th bet — "1st–10th", "11th–20th", …
 const ROWS = [
-  { bets: "0–9", bet: "1,000", timer: "24h" },
-  { bets: "10–19", bet: "2,000", timer: "12h" },
-  { bets: "20–29", bet: "4,000", timer: "6h" },
-  { bets: "30–39", bet: "8,000", timer: "3h" },
-  { bets: "40–49", bet: "16,000", timer: "1.5h" },
-  { bets: "50–59", bet: "32,000", timer: "45m" },
-  { bets: "60–69", bet: "64,000", timer: "22.5m" },
-  { bets: "70–79", bet: "128,000", timer: "11.25m" },
-  { bets: "80–89", bet: "256,000", timer: "5.6m" },
-  { bets: "90+", bet: "512,000+", timer: "min 30s" },
+  { bets: "1st–10th", bet: "1,000", timer: "24h" },
+  { bets: "11th–20th", bet: "2,000", timer: "12h" },
+  { bets: "21st–30th", bet: "4,000", timer: "6h" },
+  { bets: "31st–40th", bet: "8,000", timer: "3h" },
+  { bets: "41st–50th", bet: "16,000", timer: "1.5h" },
+  { bets: "51st–60th", bet: "32,000", timer: "45m" },
+  { bets: "61st–70th", bet: "64,000", timer: "22.5m" },
+  { bets: "71st–80th", bet: "128,000", timer: "11.25m" },
+  { bets: "81st–90th", bet: "256,000", timer: "5.6m" },
+  { bets: "91st+", bet: "512,000+", timer: "min 30s" },
 ];
 
 // cream → ember → crimson heat ramp across the 10 tiers
@@ -70,7 +72,7 @@ export function TierTable({ tier }: { tier: number }) {
                         : "text-[var(--muted)]"
                     }
                   >
-                    {r.bets} bets
+                    {r.bets} bet
                   </span>
                   {active && (
                     <span className="dot-live h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />

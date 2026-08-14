@@ -33,6 +33,7 @@ import { CHAIN_ID, NATIVE_SYMBOL } from "@/lib/chain";
 import { TOKEN_MAP } from "@/lib/tokens";
 import { merkleRoot } from "@/lib/merkle";
 import { AIRDROP_ABI, AIRDROP_CONTRACT, NATIVE_TOKEN, airdropLive } from "@/lib/airdrop";
+import { AIRDROP_FROM_BLOCK } from "@/lib/onchain-campaigns";
 import {
   daysUntil,
   isPast,
@@ -73,27 +74,30 @@ function openClaimDetail(
   receivedRows?: { address: string; allocated: number; received: number }[],
 ) {
   const isWl = c.eligibility === "whitelist";
-  const rows = isWl
-    ? (
-        receivedRows ??
-        c.whitelist.map((w) => ({
+  // 공개 캠페인도 온체인 Claimed 이벤트로 만든 rows 를 받으면 표를 그린다.
+  const sourceRows =
+    receivedRows ??
+    (isWl
+      ? c.whitelist.map((w) => ({
           address: w.address,
           allocated: w.amount,
           received: w.claimed ? w.amount : 0,
         }))
-      ).map((r) => ({
-        ...r,
-        claimed: r.received > 0,
-        full: r.received > 0 && r.received >= r.allocated,
-      }))
-    : [];
+      : null);
+  const rows = (sourceRows ?? []).map((r) => ({
+    ...r,
+    claimed: r.received > 0,
+    full: r.received > 0 && r.received >= r.allocated,
+  }));
   const totalAlloc = rows.reduce((s, r) => s + r.allocated, 0);
   const totalRecv = rows.reduce((s, r) => s + r.received, 0);
   const claimedCount = rows.filter((r) => r.claimed).length;
   const sym = esc(c.tokenSymbol);
   const note = isWl
     ? `${claimedCount}/${rows.length} claimed · Allocated total ${totalAlloc.toLocaleString()} ${sym} · Received total ${totalRecv.toLocaleString()} ${sym}`
-    : `This campaign does not track per-wallet claim history (whitelist campaigns only) · ${c.claimedCount} total claims`;
+    : sourceRows
+      ? `${rows.length} wallets claimed (on-chain Claimed events) · Received total ${totalRecv.toLocaleString()} ${sym}`
+      : `Claim history loads from on-chain events after launch · ${c.claimedCount} total claims`;
 
   const html = `<!doctype html>
 <html lang="en">
@@ -1437,7 +1441,41 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={() => openClaimDetail(c, isWl ? receivedRows : undefined)}
+            onClick={async () => {
+              if (isWl) return openClaimDetail(c, receivedRows);
+              // 공개 캠페인: 온체인 Claimed 이벤트에서 지갑별 수령 내역을 만든다.
+              if (launched && c.onchainId != null && publicClient) {
+                try {
+                  const logs = await publicClient.getContractEvents({
+                    address: AIRDROP_CONTRACT as `0x${string}`,
+                    abi: AIRDROP_ABI,
+                    eventName: "Claimed",
+                    args: { id: BigInt(c.onchainId) },
+                    fromBlock: AIRDROP_FROM_BLOCK,
+                    toBlock: "latest",
+                  });
+                  const dec = TOKEN_MAP[c.tokenSymbol]?.decimals ?? 18;
+                  const per = new Map<string, number>();
+                  for (const log of logs) {
+                    const account = (log.args.account ?? "") as string;
+                    if (!account) continue;
+                    const amt = Number(formatUnits(log.args.amount ?? 0n, dec));
+                    per.set(account, (per.get(account) ?? 0) + amt);
+                  }
+                  return openClaimDetail(
+                    c,
+                    [...per.entries()].map(([address, received]) => ({
+                      address,
+                      allocated: c.amountPerClaim,
+                      received,
+                    })),
+                  );
+                } catch {
+                  toast.error("Failed to load on-chain claim events");
+                }
+              }
+              openClaimDetail(c);
+            }}
             title="View claim history"
             className="inline-flex items-center gap-1 rounded-full border border-[var(--border-strong)] px-2.5 py-1 text-xs font-medium text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
           >
@@ -1456,7 +1494,10 @@ function CampaignAdminRow({ campaign: c }: { campaign: AirdropCampaign }) {
                   ? "Pause"
                   : "Activate"
             }
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--muted)] transition-colors hover:bg-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-50"
+            className={`flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[var(--surface)] disabled:cursor-not-allowed disabled:opacity-50 ${
+              // 전원 아이콘이 상태를 말한다: 활성=초록, 일시정지=빨강.
+              isActive ? "text-[var(--up)]" : "text-[var(--down)]"
+            }`}
           >
             {txBusy ? (
               <Loader2 className="h-4 w-4 animate-spin" />

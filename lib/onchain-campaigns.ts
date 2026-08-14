@@ -16,7 +16,7 @@ import type { Token } from "./types";
 // First block the current MerkleAirdrop deployment exists at (verified via
 // on-chain getCode binary search). Bounds event scans so RPC log-range limits
 // can't silently empty the campaign list; override per-deploy via env.
-const AIRDROP_FROM_BLOCK: bigint = process.env
+export const AIRDROP_FROM_BLOCK: bigint = process.env
   .NEXT_PUBLIC_AIRDROP_DEPLOY_BLOCK
   ? BigInt(process.env.NEXT_PUBLIC_AIRDROP_DEPLOY_BLOCK)
   : 45816553n;
