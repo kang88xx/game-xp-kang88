@@ -47,9 +47,6 @@ loadEnv();
 const PK = process.env.DEPLOYER_PRIVATE_KEY;
 const RPC = process.env.XPHERE_RPC ?? "https://en-bkk.x-phere.com";
 const FINAL_OWNER = process.env.AIRDROP_OWNER;
-// 쉼표로 구분된 operator 지갑 목록 — 배포 직후(소유권 이전 전) 등록된다.
-const OPERATORS = (process.env.AIRDROP_OPERATORS ?? "")
-  .split(",").map((s) => s.trim()).filter(Boolean);
 
 const xphere = defineChain({
   id: 20250217,
@@ -113,27 +110,6 @@ const contractAddress = receipt.contractAddress;
 console.log("\n✓ Deployed!");
 console.log("Contract   :", contractAddress);
 console.log("Explorer   : https://xp.tamsa.io/address/" + contractAddress);
-
-// Register campaign operators while the deployer is still owner.
-for (const op of OPERATORS) {
-  if (!isAddress(op)) {
-    console.error(`✗ AIRDROP_OPERATORS entry is not an address: ${op}`);
-    process.exit(1);
-  }
-  console.log("Registering operator", op, "…");
-  const opHash = await walletClient.writeContract({
-    address: contractAddress,
-    abi: artifact.abi,
-    functionName: "setOperator",
-    args: [op, true],
-  });
-  const opReceipt = await publicClient.waitForTransactionReceipt({ hash: opHash });
-  if (opReceipt.status !== "success") {
-    console.error("✗ setOperator failed for", op);
-    process.exit(1);
-  }
-  console.log("✓ operator:", op);
-}
 
 // Hand ownership to the admin wallet that will create/fund campaigns.
 if (FINAL_OWNER && FINAL_OWNER.toLowerCase() !== account.address.toLowerCase()) {

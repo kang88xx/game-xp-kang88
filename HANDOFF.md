@@ -54,19 +54,6 @@ fee-on-transfer/리베이스 불가).
 - KangLMS `0x9552…2fe2` — 진행 중 라운드의 풀은 승자가 직접 claim 가능(권한 불필요).
   owner 기능(pause 등)은 영구 잠김.
 
-## ✅ 완료 (2026-08-14) — MerkleAirdrop v6: operator 권한 분리 재배포
-
-- 새 컨트랙트: `0x01e5120e88b2ae141d49d47ccea8aed9eac8bafd` (block 45901247)
-- 권한 모델: createCampaign/updateRoot/publishWhitelist/setActive = **operator**,
-  sweep/endAndSweep/setOperator/transferOwnership = **owner 전용** (자금·권한 분리)
-- owner = `0xe083…7b36`, 초기 operators = `0xe083…7b36`, `0xd601…cb8c`
-- 관리자 탭에 "On-chain operators" 등록/해제 UI 추가 (owner 지갑 서명 필요)
-- 화이트리스트는 발행 후에도 updateRoot 로 수정 가능 — 미클레임 지갑은 자유 변경,
-  이미 클레임한 지갑은 수령분 회수 불가(할당 증가분만 추가 클레임)
-- ⚠ 이전 v5(0xaa14…28d0)의 캠페인 #1(test kang claim, 99,995 KANGTEST1 잔여)은
-  Legacy Sweep Tool 에 0xaa14546abdccf1990328a77fc35b089cb85228d0 입력 →
-  owner 지갑으로 End+Sweep 회수 후 새 컨트랙트에서 재발행 (사용자 수동)
-
 ## ✅ 완료 (2026-08-14) — ZIGAP 정식 통합 + 모바일 지갑 UX
 
 - `zigap-utils`(Seoul Labs 공식) 통합: 데스크톱 QR·모바일 원탭 딥링크 로그인,

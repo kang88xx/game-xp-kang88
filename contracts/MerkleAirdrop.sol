@@ -91,25 +91,6 @@ contract MerkleAirdrop {
         _;
     }
 
-    // ── v6: 운영자(operator) ────────────────────────────────────────────
-    // 캠페인 생성·루트 갱신·화이트리스트 공개·일시정지는 operator 도 실행
-    // 가능하다. 자금이 빠져나가는 sweep/endAndSweep 과 operator 관리,
-    // 소유권 이전은 여전히 owner 전용 — 운영 권한과 자금 권한을 분리한다.
-    mapping(address => bool) public operators;
-
-    event OperatorSet(address indexed account, bool allowed);
-
-    modifier onlyOperator() {
-        require(msg.sender == owner || operators[msg.sender], "not operator");
-        _;
-    }
-
-    function setOperator(address account, bool allowed) external onlyOwner {
-        require(account != address(0), "operator=0");
-        operators[account] = allowed;
-        emit OperatorSet(account, allowed);
-    }
-
     /**
      * Create + fund a campaign. The caller (owner) must have approved this
      * contract for at least `amount` of `token` beforehand.
@@ -126,7 +107,7 @@ contract MerkleAirdrop {
         uint64 endsAt,
         uint256 amountPerClaim,
         string calldata name
-    ) external payable onlyOperator returns (uint256 id) {
+    ) external payable onlyOwner returns (uint256 id) {
         require(token != address(0), "token=0");
         require(amount > 0, "amount=0");
         // Public campaigns (no root) must define a positive per-wallet reward.
@@ -245,7 +226,7 @@ contract MerkleAirdrop {
         uint256 id,
         bytes32 newRoot,
         uint256 addAmount
-    ) external payable onlyOperator {
+    ) external payable onlyOwner {
         Campaign storage c = campaigns[id];
         require(c.token != address(0), "no campaign");
         require(c.merkleRoot != bytes32(0), "public campaign");
@@ -272,7 +253,7 @@ contract MerkleAirdrop {
         uint256 id,
         address[] calldata accounts,
         uint256[] calldata amounts
-    ) external onlyOperator {
+    ) external onlyOwner {
         require(campaigns[id].token != address(0), "no campaign");
         require(accounts.length == amounts.length, "length mismatch");
         emit WhitelistPublished(id, accounts, amounts);
@@ -314,7 +295,7 @@ contract MerkleAirdrop {
         }
     }
 
-    function setActive(uint256 id, bool active_) external onlyOperator {
+    function setActive(uint256 id, bool active_) external onlyOwner {
         require(campaigns[id].token != address(0), "no campaign");
         campaigns[id].active = active_;
         emit ActiveSet(id, active_);
