@@ -138,15 +138,20 @@ export interface ZigapAccount {
 export function useZigapAccount(): ZigapAccount {
   const { userInfo, logout, isWindowLoaded } = useZigap();
 
+  // 만료 판정 기준 시각 — 마운트 시 한 번만 캡처한다 (렌더 중 Date.now()
+  // 직접 호출은 순수성 규칙 위반). 실제 만료 처리는 zigap-utils 가 하므로
+  // 여기서는 마운트 시점 기준의 보조 검사로 충분하다.
+  const [mountedAt] = useState(() => Date.now());
+
   let address: `0x${string}` | null = null;
   if (isWindowLoaded && userInfo?.address) {
     const network = (userInfo.network ?? "").toLowerCase();
     // expireDateTime 은 "YYYY-MM-DD HH:mm:ss" — Safari 는 공백 구분을 못
-    // 읽으므로 ISO 형태로 바꿔 파싱한다 (만료 처리 자체는 라이브러리가 함).
+    // 읽으므로 ISO 형태로 바꿔 파싱한다.
     const expired =
       !!userInfo.expireDateTime &&
       new Date(userInfo.expireDateTime.replace(" ", "T")).getTime() <
-        Date.now();
+        mountedAt;
     if (!expired && (network === ZIGAP_NETWORK || network === "xp")) {
       try {
         address = getAddress(userInfo.address);

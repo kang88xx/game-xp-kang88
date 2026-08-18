@@ -33,7 +33,7 @@ export function WalletButton() {
 
   if (!hydrated) {
     return (
-      <div className="h-9 w-32 rounded-full bg-[var(--surface-2)] animate-pulse-soft" />
+      <div className="h-11 w-28 rounded-full bg-[var(--surface-2)] animate-pulse-soft sm:w-32" />
     );
   }
 
@@ -41,13 +41,14 @@ export function WalletButton() {
     return (
       <button
         onClick={() => open()}
-        className="wallet-connect group inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold"
+        className="wallet-connect group inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold sm:px-4"
       >
         <span className="wc-dot" />
-        Connect Wallet
+        <span className="sm:hidden">Connect</span>
+        <span className="hidden sm:inline">Connect Wallet</span>
         {/* bare diagonal arrow — no chip plate */}
         <svg
-          className="transition-transform duration-150 ease-out group-hover:translate-x-[1.5px] group-hover:-translate-y-[1.5px]"
+          className="hidden transition-transform duration-150 ease-out group-hover:translate-x-[1.5px] group-hover:-translate-y-[1.5px] sm:block"
           width="15"
           height="15"
           viewBox="0 0 16 16"
@@ -75,9 +76,8 @@ export function WalletButton() {
     <div className="relative">
       <button
         onClick={() => setMenuOpen((v) => !v)}
-        aria-haspopup="menu"
         aria-expanded={menuOpen}
-        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--card)] px-3 py-2 text-sm font-medium transition-colors hover:bg-[var(--surface)]"
+        className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--border-strong)] bg-[var(--card)] px-2.5 py-2 text-xs font-medium transition-colors hover:bg-[var(--surface)] sm:px-3 sm:text-sm"
       >
         <span className="h-2 w-2 rounded-full bg-[var(--up)]" />
         <span className="font-mono">{shortAddress(address)}</span>

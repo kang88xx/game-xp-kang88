@@ -15,7 +15,6 @@ import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import { X } from "lucide-react";
 import { useConnect, type Connector } from "wagmi";
 import { CHAIN_ID } from "./chain";
-import { openZigapLogin } from "./zigap";
 import { toast } from "@/components/toast";
 
 const METAMASK_INSTALL_URL = "https://metamask.io/download";

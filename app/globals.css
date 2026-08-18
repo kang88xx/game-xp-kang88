@@ -226,10 +226,13 @@ h4 {
   transition: filter 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease,
     background-color 0.22s ease;
 }
-[class*="bg-[var(--accent)]"]:not(:disabled):hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
-  box-shadow: 0 10px 28px -8px rgba(207, 21, 18, 0.55);
+/* hover 효과는 실제 포인터 기기에서만 — 터치 기기의 sticky hover 잔상 방지 */
+@media (hover: hover) {
+  [class*="bg-[var(--accent)]"]:not(:disabled):hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 28px -8px rgba(207, 21, 18, 0.55);
+  }
 }
 [class*="bg-[var(--accent)]"]:not(:disabled):active {
   transform: translateY(0) scale(0.985);
@@ -254,15 +257,17 @@ h4 {
   background: var(--muted-2);
   transition: background 0.3s ease;
 }
-.wallet-connect:hover {
-  border-color: transparent;
-  background-image: var(--grad-btn);
-  color: var(--on-accent);
-  box-shadow: 0 6px 24px -8px rgba(207, 21, 18, 0.45);
-  transform: translateY(-1px);
-}
-.wallet-connect:hover .wc-dot {
-  background: #fff;
+@media (hover: hover) {
+  .wallet-connect:hover {
+    border-color: transparent;
+    background-image: var(--grad-btn);
+    color: var(--on-accent);
+    box-shadow: 0 6px 24px -8px rgba(207, 21, 18, 0.45);
+    transform: translateY(-1px);
+  }
+  .wallet-connect:hover .wc-dot {
+    background: #fff;
+  }
 }
 .wallet-connect:active {
   transform: translateY(0) scale(0.985);
@@ -271,18 +276,22 @@ h4 {
 
 /* stake ghost buttons — outlined/surface chips warm to ember on hover
    (`.btn:hover { border-color: ember; color: ember-2 }`) */
-:is(button, a)[class*="border-[var(--border)"]:not(:disabled):hover {
-  border-color: rgba(255, 151, 56, 0.55);
-  color: var(--accent-bright);
-}
-:is(button, a)[class*="bg-[var(--card)"]:not(:disabled):hover {
-  color: var(--accent-bright);
+@media (hover: hover) {
+  :is(button, a)[class*="border-[var(--border)"]:not(:disabled):hover {
+    border-color: rgba(255, 151, 56, 0.55);
+    color: var(--accent-bright);
+  }
+  :is(button, a)[class*="bg-[var(--card)"]:not(:disabled):hover {
+    color: var(--accent-bright);
+  }
 }
 
 /* stake bb-cta — underlined links warm to ember on hover */
-a[class*="underline"]:hover {
-  color: var(--accent-bright);
-  text-decoration-color: rgba(255, 151, 56, 0.5);
+@media (hover: hover) {
+  a[class*="underline"]:hover {
+    color: var(--accent-bright);
+    text-decoration-color: rgba(255, 151, 56, 0.5);
+  }
 }
 
 /* stake stat-card motion — lift, ember border, crimson glow, and a skewed
@@ -292,10 +301,12 @@ a[class*="underline"]:hover {
   overflow: hidden;
   transition: transform 0.35s, border-color 0.35s, box-shadow 0.35s;
 }
-.lift-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(255, 151, 56, 0.32);
-  box-shadow: 0 24px 50px -24px rgba(207, 21, 18, 0.35);
+@media (hover: hover) {
+  .lift-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 151, 56, 0.32);
+    box-shadow: 0 24px 50px -24px rgba(207, 21, 18, 0.35);
+  }
 }
 .lift-card::after {
   content: "";
@@ -314,8 +325,10 @@ a[class*="underline"]:hover {
   transition: left 0.7s;
   pointer-events: none;
 }
-.lift-card:hover::after {
-  left: 130%;
+@media (hover: hover) {
+  .lift-card:hover::after {
+    left: 130%;
+  }
 }
 
 /* stake burnband — ember-rimmed card with a breathing crimson glow and
@@ -328,8 +341,10 @@ a[class*="underline"]:hover {
   animation: burnflicker 3.6s ease-in-out infinite;
   transition: border-color 0.2s ease;
 }
-.burnband:hover {
-  border-color: var(--accent-bright);
+@media (hover: hover) {
+  .burnband:hover {
+    border-color: var(--accent-bright);
+  }
 }
 .burnband > * {
   position: relative;

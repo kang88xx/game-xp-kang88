@@ -22,18 +22,20 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-background/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <div className="flex items-center gap-8">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-3 sm:px-6">
+        <div className="flex min-w-0 items-center gap-4 md:gap-8">
           {/* stake.x-phere.com lockup form: glyph + `XP UNION / VAULT` → ours */}
-          <Link href="/" className="flex items-center gap-2.5">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5">
             <XphereMark size={22} />
             <span className="font-mono text-[15px] font-bold uppercase tracking-[0.18em] text-[var(--foreground)]">
               XP
             </span>
-            <span className="-mx-0.5 font-mono text-[15px] font-bold text-[var(--muted-2)]">
+            {/* 380px 미만(연결된 지갑 + 햄버거가 다 들어가야 하는 폭)에서는
+                로고를 `XP`로 축약해 헤더 가로 오버플로우를 막는다 */}
+            <span className="-mx-0.5 hidden font-mono text-[15px] font-bold text-[var(--muted-2)] min-[380px]:inline">
               /
             </span>
-            <span className="font-mono text-[15px] font-bold uppercase tracking-[0.18em] text-[var(--muted-2)]">
+            <span className="hidden font-mono text-[15px] font-bold uppercase tracking-[0.18em] text-[var(--muted-2)] min-[380px]:inline">
               GAME
             </span>
           </Link>
@@ -56,12 +58,12 @@ export function Navbar() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <ThemeToggle />
           {/* 관리자 진입점은 화면에 노출하지 않는다 — /admin 직접 접속으로만 사용 */}
           <WalletButton />
           <button
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] md:hidden"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--border)] md:hidden"
             onClick={() => setMobileOpen((v) => !v)}
             aria-label="Menu"
             aria-expanded={mobileOpen}

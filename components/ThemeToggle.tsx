@@ -25,7 +25,7 @@ export function ThemeToggle() {
 
   // Reserve space before mount to avoid layout shift / hydration mismatch
   if (!mounted) {
-    return <div className="h-9 w-9" aria-hidden />;
+    return <div className="h-11 w-11 sm:h-9 sm:w-9" aria-hidden />;
   }
 
   return (
@@ -33,7 +33,7 @@ export function ThemeToggle() {
       onClick={toggle}
       title={dark ? "Switch to light mode" : "Switch to dark mode"}
       aria-label="Toggle color theme"
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)]"
+      className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--border)] text-[var(--muted)] transition-colors hover:bg-[var(--surface)] hover:text-[var(--foreground)] sm:h-9 sm:w-9"
     >
       {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>
