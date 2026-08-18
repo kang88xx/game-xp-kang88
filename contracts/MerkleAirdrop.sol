@@ -240,12 +240,21 @@ contract MerkleAirdrop {
      * Owner-trust note: this lets the owner change unclaimed allocations.
      * A wallet that already claimed can claim again only for the DIFFERENCE
      * between its new cumulative allocation and claimedAmount (v5).
+     *
+     * SECURITY (source fix for future redeploys; deployed bytecode is
+     * immutable): this is OWNER-ONLY, not onlyOperator. The Merkle root IS
+     * fund control — an operator who could set an arbitrary root could
+     * allocate the whole campaign balance to their own wallet and claim it,
+     * bypassing the owner-only sweep/endAndSweep guards. Root updates must
+     * carry the same trust level as moving funds out, so they stay with the
+     * owner. Operators keep genuinely operational powers only (createCampaign
+     * with their own funds, publishWhitelist, setActive).
      */
     function updateRoot(
         uint256 id,
         bytes32 newRoot,
         uint256 addAmount
-    ) external payable onlyOperator {
+    ) external payable onlyOwner {
         Campaign storage c = campaigns[id];
         require(c.token != address(0), "no campaign");
         require(c.merkleRoot != bytes32(0), "public campaign");
