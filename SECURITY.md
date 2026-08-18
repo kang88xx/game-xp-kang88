@@ -5,14 +5,15 @@ outcome and the operational rules that keep the **already-deployed** contracts
 safe. Deployed bytecode is immutable, so source fixes here only take effect on a
 future redeploy — until then the operational rules below are the real controls.
 
-Deployed addresses (Xphere mainnet, see `lib/chain.ts`):
+Deployed addresses (Xphere mainnet, `NEXT_PUBLIC_*` env in `.env.local` / Vercel):
 
-- KangLMS `0xFCa5FC96a94bF6D98eE266de8E811Ed39B737e64`
-- MerkleAirdrop `0xFca8cA57D8f3bA44428Ab6bd7CF2960496cA420E`
+- KangLMS `0xafbcb897540da09f95c2b9d1dc4514a9a460fb07`
+- MerkleAirdrop `0x925a720a1a06e55adb553fee469b3ab47de0326e` (v6-fixed, redeployed 2026-08-18)
+  - superseded: `0x01e5120e88b2ae141d49d47ccea8aed9eac8bafd` (updateRoot was operator-callable; had no campaigns/funds)
 
-## Fixed in source (applies on next redeploy)
+## Fixed and redeployed on-chain
 
-### `updateRoot` is now owner-only (was operator) — P1
+### `updateRoot` is now owner-only (was operator) — P1 [RESOLVED on-chain]
 
 `MerkleAirdrop.updateRoot()` replaces a campaign's Merkle root. The root **is
 fund control**: whoever can set it can allocate the whole campaign balance to
@@ -20,10 +21,16 @@ their own wallet and `claim()` it, bypassing the owner-only `sweep` /
 `endAndSweep` guards. Leaving it `onlyOperator` contradicted the contract's own
 "operators can't move funds" design. It is now `onlyOwner`.
 
-**On the currently deployed contract this is NOT yet fixed.** Operational rule:
-**do not add any operator you would not trust with the full campaign balance.**
-With zero operators (the default) `onlyOperator == owner`, so the live contract
-is safe as long as `setOperator` is never called for an untrusted wallet.
+**Redeployed 2026-08-18** to `0x925a720a…0326e` with the fix. Verified on-chain:
+a registered operator calling `updateRoot` reverts with `not owner`; the owner
+passes the auth check. The old contract `0x01e5120e…bafd` held no campaigns or
+funds, so nothing needed migrating. Operators (`0xe0830caB…`, `0xd60196c5…`)
+were re-registered on the new contract and now hold operational powers only
+(createCampaign with their own funds, publishWhitelist, setActive).
+
+**Action still required:** set `NEXT_PUBLIC_AIRDROP_CONTRACT=0x925a720a…0326e`
+in Vercel's project env and redeploy, so production points at the fixed
+contract (local `.env.local` is already updated).
 
 ## Accepted-by-design risks (know these before running a campaign)
 
