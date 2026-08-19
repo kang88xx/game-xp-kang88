@@ -204,6 +204,28 @@ function OnchainCampaignCard({
   const claimableNow = c.isPublic
     ? c.amountPerClaim
     : Number(formatUnits(remainingAllocWei, dec));
+  /** Total this wallet has already pulled out (cumulative). */
+  const walletClaimed = Number(formatUnits(walletClaimedWei, dec));
+
+  // Reward row display. Whitelist allocations stack cumulatively, so we never
+  // show the lifetime total while anything is still claimable — we show only
+  // what's claimable RIGHT NOW (the sum of un-claimed allocations). Once the
+  // wallet is fully caught up, we show the total it received instead.
+  const hasReward = c.isPublic || !!myAlloc;
+  const rewardLabel = c.isPublic
+    ? "Reward per wallet"
+    : !myAlloc
+      ? "Reward per wallet"
+      : remainingAllocWei > 0n
+        ? "Claimable"
+        : "Claimed";
+  const rewardAmount = c.isPublic
+    ? claimAmount
+    : remainingAllocWei > 0n
+      ? claimableNow
+      : walletClaimed;
+  // Amber highlight only while there is something to claim.
+  const rewardAmber = !c.isPublic && !!myAlloc && remainingAllocWei > 0n;
 
   let eligible = true;
   let reason = "";
@@ -293,27 +315,23 @@ function OnchainCampaignCard({
         </span>
       </div>
 
-      {/* Label left, amount right. Whitelist wallets with an allocation see
-          "Your allocation" (amber); wallets with none see "No allocation". */}
+      {/* Label left, amount right. Whitelist wallets with a live allocation
+          see "Claimable" (amber) with only the un-claimed amount; once fully
+          claimed it flips to "Claimed" with the total received. */}
       <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-[var(--surface)] px-4 py-3">
         <p
           className="text-xs"
-          style={{
-            color:
-              !c.isPublic && myAlloc ? "var(--accent-bright)" : "var(--muted)",
-          }}
+          style={{ color: rewardAmber ? "var(--accent-bright)" : "var(--muted)" }}
         >
-          {!c.isPublic && myAlloc ? "Your allocation" : "Reward per wallet"}
+          {rewardLabel}
         </p>
         <div className="text-right">
-          {c.isPublic || myAlloc ? (
+          {hasReward ? (
             <p
               className="text-lg font-bold"
-              style={
-                !c.isPublic && myAlloc ? { color: "var(--accent-bright)" } : undefined
-              }
+              style={rewardAmber ? { color: "var(--accent-bright)" } : undefined}
             >
-              {claimAmount.toLocaleString()}{" "}
+              {rewardAmount.toLocaleString()}{" "}
               {/* 티커는 수량보다 한 단계 작게·얇게 */}
               <span className="text-sm font-semibold text-[var(--muted)]">
                 {c.tokenSymbol}
@@ -332,9 +350,9 @@ function OnchainCampaignCard({
           )}
           {/* Tokens with no USDX pool have priceUsd 0 — hide the USD estimate
               until a real price exists (never show "≈ $0"). */}
-          {(c.isPublic || myAlloc) && (token?.priceUsd ?? 0) > 0 && (
+          {hasReward && (token?.priceUsd ?? 0) > 0 && (
             <p className="mt-0.5 text-xs text-[var(--muted)]">
-              ≈ {formatUsd(claimAmount * (token?.priceUsd ?? 0))}
+              ≈ {formatUsd(rewardAmount * (token?.priceUsd ?? 0))}
             </p>
           )}
         </div>
@@ -390,9 +408,7 @@ function OnchainCampaignCard({
             className="group flex h-12 w-full items-center justify-center gap-2.5 rounded-full bg-[var(--accent)] font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {claiming && <Loader2 className="h-5 w-5 animate-spin" />}
-            {claiming
-              ? "Claiming…"
-              : `Claim ${claimableNow.toLocaleString()} ${c.tokenSymbol}`}
+            {claiming ? "Claiming…" : "Claim"}
             {!claiming && <ArrowChip />}
           </button>
         ) : (
