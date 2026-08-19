@@ -331,6 +331,16 @@ h4 {
   }
 }
 
+/* Burned card warms to the brand red on hover — same hue as the timer
+   band but softer (half-opacity rule, lighter glow) so the hero keeps
+   the strongest motion. */
+@media (hover: hover) {
+  .lift-card.lift-red:hover {
+    border-color: rgba(231, 69, 58, 0.5);
+    box-shadow: 0 20px 40px -24px rgba(207, 21, 18, 0.25);
+  }
+}
+
 /* stake burnband — ember-rimmed card with a breathing crimson glow and
    sparks drifting inside (`.burnband` + `burnflicker` on stake.x-phere.com) */
 .burnband {
@@ -343,7 +353,7 @@ h4 {
 }
 @media (hover: hover) {
   .burnband:hover {
-    border-color: var(--accent-bright);
+    border-color: var(--accent);
   }
 }
 .burnband > * {
@@ -407,6 +417,93 @@ h4 {
 }
 .flamebob {
   animation: flamebob 1.6s ease-in-out infinite;
+}
+
+/* stat-card ambient motion — Burned: mini embers rise from the card base
+   over a breathing heat glow (hand-me-down from the hero timer's ember
+   band); Prize Pool: a gold light streak orbits the card border. */
+/* NB: these live on real child <span>s, not ::before — the stat cards'
+   `dotgrid` class already owns ::before for the dot texture. */
+.heat-glow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -18px;
+  height: 40px;
+  background: radial-gradient(
+    60% 100% at 50% 100%,
+    rgba(207, 21, 18, 0.35),
+    transparent 70%
+  );
+  animation: heat-breathe 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes heat-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.mini-ember {
+  position: absolute;
+  bottom: 4px;
+  width: 3px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--accent-bright);
+  opacity: 0;
+  pointer-events: none;
+  animation: mini-ember-rise 2.1s ease-in infinite;
+}
+@keyframes mini-ember-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-52px) scale(0.4);
+    opacity: 0;
+  }
+}
+/* prize border beam — a gold light streak orbits the card's border ring.
+   A conic gradient masked to the 1px border band so it rides on top of
+   the card's own border. */
+@property --beam {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.beam-ring {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--beam),
+    transparent 0deg 300deg,
+    rgba(255, 151, 56, 0.15) 320deg,
+    #ff9738 345deg,
+    #ffeed4 355deg,
+    rgba(255, 151, 56, 0.15) 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: beam-orbit 3.5s linear infinite;
+  pointer-events: none;
+}
+@keyframes beam-orbit {
+  to {
+    --beam: 360deg;
+  }
 }
 
 .tabular {
@@ -616,9 +713,16 @@ input[type="number"] {
   .ember,
   .flamebob,
   .burnband,
+  .burnband.animate-fade-in,
   .burn-digits,
+  .mini-ember,
+  .heat-glow,
+  .beam-ring,
   .dot-live::after {
     animation: none;
+  }
+  .beam-ring {
+    display: none;
   }
   .burnband {
     box-shadow: rgba(207, 21, 18, 0.16) 0 0 26px inset,
@@ -645,6 +749,12 @@ input[type="number"] {
 }
 .animate-fade-in {
   animation: fade-in 0.45s cubic-bezier(0.2, 0.9, 0.25, 1.2) both;
+}
+/* burnband + fade-in on one element: both set the `animation` shorthand,
+   so the later declaration would silently drop burnflicker — compose them */
+.burnband.animate-fade-in {
+  animation: fade-in 0.45s cubic-bezier(0.2, 0.9, 0.25, 1.2) both,
+    burnflicker 3.6s ease-in-out infinite;
 }
 
 /* stake.x-phere.com embers — tiny sparks drifting up from the hero floor.

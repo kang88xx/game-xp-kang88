@@ -158,44 +158,47 @@ function LmsIntroModal({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-modal="true"
         aria-label="Last Man Standing"
-        className="animate-fade-in relative max-h-[calc(100dvh-5rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-[var(--border)] bg-[var(--card)] shadow-2xl"
+        className="animate-fade-in burnband relative max-h-[calc(100dvh-5rem)] w-full max-w-md overflow-y-auto rounded-3xl shadow-2xl"
+        style={{ backgroundColor: "var(--card)" }}
       >
-        <div className="px-6 pt-6 pb-5 text-center">
-          <h2 className="text-2xl font-bold tracking-tight">
+        <span aria-hidden className="beam-ring" />
+        <div className="px-6 pt-7 pb-1 text-center">
+          <h2 className="burn-digits text-2xl font-bold tracking-tight">
             Last Man Standing
           </h2>
-          <p className="mt-2 text-[13px] font-light leading-relaxed text-[var(--muted)]">
-            A KANGTEST1 betting round where the final eligible bettor before expiry
+          <p className="mx-auto mt-2 max-w-[320px] text-[13px] font-light leading-relaxed text-[var(--muted)]">
+            A betting round where the final eligible bettor before expiry
             receives the credited prize.
           </p>
         </div>
 
-        <div className="border-t border-[var(--border)]">
+        <div className="flex flex-col gap-2 px-5 pt-4">
           <LmsStep
-            n="01"
-            icon={<Dices className="h-5 w-5" />}
+            icon={<Dices className="h-4 w-4" />}
             title="Enter with the current minimum"
             body="The page submits only the active on-chain minimum bet."
           />
           <LmsStep
-            n="02"
-            icon={<Clock className="h-5 w-5" />}
+            icon={<Clock className="h-4 w-4" />}
             title="Take the lead"
-            body="Your bet resets the timer and makes your wallet the current last bettor."
+            body="Your bet resets the timer and makes you the last bettor."
           />
           <LmsStep
-            n="03"
-            icon={<Trophy className="h-5 w-5" />}
+            icon={<Trophy className="h-4 w-4" />}
             title="Claim after settlement"
             body="Winnings and refunds are credited first, then withdrawn with claim."
           />
         </div>
 
-        <div className="border-t border-[var(--border)] bg-[var(--surface)] px-6 py-3 text-center font-mono text-xs text-[var(--muted)]">
-          80% prize / 15% treasury / 5% burn
+        <div className="mx-5 mt-3 rounded-xl border border-dashed border-[rgba(255,151,56,0.25)] bg-[rgba(255,151,56,0.04)] px-3 py-2 text-center font-mono text-xs text-[var(--muted)]">
+          <b className="font-semibold text-[var(--accent-bright)]">80%</b> prize
+          {" · "}
+          <b className="font-semibold text-[var(--accent-bright)]">15%</b> treasury
+          {" · "}
+          <b className="font-semibold text-[var(--accent-bright)]">5%</b> burn
         </div>
 
-        <div className="px-6 pb-6 pt-4">
+        <div className="px-5 pb-6 pt-4">
           <button
             onClick={close}
             className="group flex w-full items-center justify-center gap-2.5 rounded-full bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985]"
@@ -219,23 +222,25 @@ function LmsIntroModal({ onClose }: { onClose: () => void }) {
 }
 
 function LmsStep({
-  n,
   icon,
   title,
   body,
 }: {
-  n: string;
   icon: ReactNode;
   title: string;
   body: string;
 }) {
   return (
-    <div className="group flex items-start gap-4 border-b border-[var(--border)] px-6 py-4 last:border-b-0">
-      <span className="mt-0.5 font-mono text-sm text-[var(--muted-2)]">{n}</span>
-      <span className="icontile shrink-0 text-[var(--accent)]">{icon}</span>
+    <div className="flex items-center gap-3 rounded-full border border-[var(--border)] bg-white/[0.02] py-2.5 pl-2.5 pr-5">
+      <span
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
+        style={{ background: "var(--grad-btn)" }}
+      >
+        {icon}
+      </span>
       <div>
         <div className="text-sm font-semibold">{title}</div>
-        <div className="mt-1 text-[13px] font-light leading-relaxed text-[var(--muted)]">
+        <div className="mt-0.5 text-xs font-light leading-snug text-[var(--muted)]">
           {body}
         </div>
       </div>
@@ -457,6 +462,7 @@ function DemoGame() {
           unit="KANGTEST1"
           accent
           valueColor="var(--accent-bright)"
+          motion="beam"
         />
         <StatCard
           icon={<Users className="h-5 w-5" />}
@@ -476,6 +482,7 @@ function DemoGame() {
           value={formatNumber(animBurned, 2)}
           unit="KANGTEST1"
           valueColor="var(--accent)"
+          motion="embers"
         />
       </div>
 
@@ -1250,6 +1257,7 @@ function OnchainGame() {
               value={formatNumber(animBurned, 2)}
           unit="KANGTEST1"
               valueColor="var(--accent)"
+              motion="embers"
             />
             <StatCard
               icon={<TrendingUp className="h-5 w-5" />}
@@ -1258,6 +1266,7 @@ function OnchainGame() {
           unit="KANGTEST1"
               accent
               valueColor="var(--accent-bright)"
+              motion="beam"
               className="sm:col-span-2"
             />
           </div>
@@ -1625,6 +1634,7 @@ function StatCard({
   detail,
   accent,
   valueColor,
+  motion,
   className = "",
 }: {
   icon: React.ReactNode;
@@ -1635,13 +1645,30 @@ function StatCard({
   detail?: string;
   accent?: boolean;
   valueColor?: string;
+  /** ambient motion — "embers": 잔불 상승 + 히트 글로우(Burned),
+      "beam": 테두리를 도는 골드 빛줄기(Prize Pool) */
+  motion?: "embers" | "beam";
   className?: string;
 }) {
   return (
     <div
-      className={`dotgrid lift-card group rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 ${className}`}
+      className={`dotgrid lift-card group rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 ${
+        motion === "embers" ? "lift-red" : ""
+      } ${className}`}
     >
-      <div className="flex items-center justify-between gap-3">
+      {motion === "embers" && (
+        <>
+          <span aria-hidden className="heat-glow" />
+          <span aria-hidden className="mini-ember" style={{ left: "12%", animationDelay: "0s" }} />
+          <span aria-hidden className="mini-ember" style={{ left: "28%", width: 2, height: 2, background: "var(--dot-yellow)", animationDelay: "0.7s" }} />
+          <span aria-hidden className="mini-ember" style={{ left: "45%", animationDelay: "1.3s" }} />
+          <span aria-hidden className="mini-ember" style={{ left: "62%", width: 2, height: 2, animationDelay: "0.4s" }} />
+          <span aria-hidden className="mini-ember" style={{ left: "78%", background: "var(--dot-yellow)", animationDelay: "1.7s" }} />
+          <span aria-hidden className="mini-ember" style={{ left: "90%", width: 2, height: 2, animationDelay: "1s" }} />
+        </>
+      )}
+      {motion === "beam" && <span aria-hidden className="beam-ring" />}
+      <div className="relative z-[1] flex items-center justify-between gap-3">
         {/* valueColor cards (Prize Pool / Burned): bare icon, no tile plate,
             and the label matches the number's color. */}
         <div
