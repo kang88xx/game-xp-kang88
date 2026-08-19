@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { useEffect } from "react";
-import { CheckCircle2, XCircle, Info } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 type Variant = "success" | "error" | "info";
 
@@ -36,12 +36,13 @@ export const toast = {
   info: (m: string) => useToastStore.getState().push(m, "info"),
 };
 
-// success=green, error=red, info=amber. info must NOT use the red brand
-// accent — a red ⓘ reads as an error even on a plain notice.
-const ICONS = {
+// success=green check, error=red x. info has NO icon — any colored ⓘ (red
+// or amber) reads as an error/warning on a plain notice, so info shows the
+// message text alone.
+const ICONS: Record<Variant, React.ReactNode> = {
   success: <CheckCircle2 className="h-5 w-5 text-[var(--up)]" />,
   error: <XCircle className="h-5 w-5 text-[var(--down)]" />,
-  info: <Info className="h-5 w-5 text-[var(--accent-bright)]" />,
+  info: null,
 };
 
 function ToastRow({ item }: { item: ToastItem }) {
@@ -56,7 +57,7 @@ function ToastRow({ item }: { item: ToastItem }) {
       role={item.variant === "error" ? "alert" : "status"}
       className="animate-fade-in flex w-full items-start gap-3 rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 shadow-lg shadow-black/5 sm:w-[320px]"
     >
-      <div className="mt-0.5">{ICONS[item.variant]}</div>
+      {ICONS[item.variant] && <div className="mt-0.5">{ICONS[item.variant]}</div>}
       <p className="text-sm text-[var(--foreground)] leading-snug">
         {item.message}
       </p>
