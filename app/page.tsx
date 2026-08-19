@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Trophy, Clock, Flame, Users, TrendingUp, Loader2, Dices } from "lucide-react";
 import { useMetaMask } from "@/lib/use-metamask";
-import { erc20Abi, formatUnits, parseUnits } from "viem";
+import { erc20Abi, formatUnits, maxUint256, parseUnits } from "viem";
 import { usePublicClient, useReadContract } from "wagmi";
 import { useActiveAccount, useSendContractTx } from "@/lib/active-account";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -531,8 +531,8 @@ function DemoGame() {
 
           {/* Place Your Bet card */}
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7 shadow-2xl">
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 className="text-base font-semibold">Place Your Bet</h2>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="shrink-0 text-base font-semibold">Place Your Bet</h2>
               <AddToWalletButton symbol="KANGTEST1" />
             </div>
 
@@ -1047,12 +1047,16 @@ function OnchainGame() {
         args: [wallet!, contract],
       });
       if (allowance < amountWei) {
-        toast.info("1/2 Approving KANGTEST1 spend… confirm in your wallet");
+        // One-time unlimited approve: later bets skip straight to the single
+        // bet() signature instead of paying approve gas every round.
+        toast.info(
+          "One-time approval of KANGTEST1 spend… confirm in your wallet",
+        );
         const approveHash = await sendTx({
           address: kangAddr,
           abi: erc20Abi,
           functionName: "approve",
-          args: [contract, amountWei],
+          args: [contract, maxUint256],
         });
         await publicClient!.waitForTransactionReceipt({ hash: approveHash });
       }
@@ -1273,8 +1277,8 @@ function OnchainGame() {
 
           {/* Place Your Bet card */}
           <div className="max-md:-order-4 rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7 shadow-2xl">
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 className="text-base font-semibold">Place Your Bet</h2>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="shrink-0 text-base font-semibold">Place Your Bet</h2>
               <AddToWalletButton symbol="KANGTEST1" />
             </div>
 
@@ -1451,7 +1455,8 @@ function OnchainGame() {
           {/* Your Prizes — compact pull-payment claims, one row per winning
               round (claimRound). A just-won pot settles when claimed. */}
           {hydrated && connected && prizeRows.length > 0 && (
-            <div className="rounded-3xl border border-[var(--accent)]/40 bg-[var(--card)] p-4">
+            <div className="relative overflow-hidden rounded-3xl border border-[var(--accent)]/40 bg-[var(--card)] p-4">
+              <span aria-hidden className="beam-ring" />
               <div className="mb-2.5 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5">
                   <Trophy className="h-3.5 w-3.5 text-[var(--accent-bright)]" />
@@ -1471,8 +1476,9 @@ function OnchainGame() {
                       : `Claim all · ${formatNumber(claimable, 2)}`}
                   </button>
                 ) : (
-                  <span className="text-xs text-[var(--muted)]">
-                    {formatNumber(claimable, 2)} KANGTEST1
+                  <span className="text-xs text-[var(--muted-2)]">
+                    Round #{prizeRows[0].roundId}
+                    {prizeRows[0].isRefund ? " · Refund" : ""}
                   </span>
                 )}
               </div>
@@ -1483,13 +1489,21 @@ function OnchainGame() {
                     className="flex items-center justify-between gap-2 rounded-xl bg-[var(--surface)] px-3 py-2"
                   >
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-bold">
-                        {formatNumber(row.amount, 2)} KANGTEST1
+                      {/* Prize Pool 스탯 카드와 동일한 수량 표기 — mono 앰버,
+                          티커는 한 단계 작고 얇게 */}
+                      <div className="truncate font-mono text-sm tabular-nums text-[var(--accent-bright)]">
+                        {formatNumber(row.amount, 2)}
+                        <span className="ml-1 text-xs font-light opacity-85">
+                          KANGTEST1
+                        </span>
                       </div>
-                      <div className="text-xs text-[var(--muted-2)]">
-                        Round #{row.roundId}
-                        {row.isRefund ? " · Refund" : ""}
-                      </div>
+                      {/* 상금 1건이면 라운드·환불 표기는 헤더 오른쪽에 있음 */}
+                      {prizeRows.length > 1 && (
+                        <div className="text-xs text-[var(--muted-2)]">
+                          Round #{row.roundId}
+                          {row.isRefund ? " · Refund" : ""}
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => doClaimRound(row.roundId, row.amount)}

@@ -487,11 +487,11 @@ h4 {
   padding: 1px;
   background: conic-gradient(
     from var(--beam),
-    transparent 0deg 300deg,
-    rgba(255, 151, 56, 0.15) 320deg,
+    rgba(231, 69, 58, 0.4) 0deg 300deg,
+    rgba(255, 151, 56, 0.5) 320deg,
     #ff9738 345deg,
     #ffeed4 355deg,
-    rgba(255, 151, 56, 0.15) 360deg
+    rgba(231, 69, 58, 0.4) 360deg
   );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
