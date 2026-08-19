@@ -36,10 +36,12 @@ export const toast = {
   info: (m: string) => useToastStore.getState().push(m, "info"),
 };
 
+// success=green, error=red, info=amber. info must NOT use the red brand
+// accent — a red ⓘ reads as an error even on a plain notice.
 const ICONS = {
   success: <CheckCircle2 className="h-5 w-5 text-[var(--up)]" />,
   error: <XCircle className="h-5 w-5 text-[var(--down)]" />,
-  info: <Info className="h-5 w-5 text-[var(--accent)]" />,
+  info: <Info className="h-5 w-5 text-[var(--accent-bright)]" />,
 };
 
 function ToastRow({ item }: { item: ToastItem }) {
