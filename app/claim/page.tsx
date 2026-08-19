@@ -9,7 +9,7 @@ import { useActiveAccount, useSendContractTx } from "@/lib/active-account";
 import { useQueryClient } from "@tanstack/react-query";
 import { TOKEN_MAP } from "@/lib/mock-data";
 import { useDexStore, useHydrated } from "@/lib/store";
-import { daysUntil, formatCompact, formatUsd, isPast } from "@/lib/format";
+import { daysUntil, formatUsd, isPast } from "@/lib/format";
 import { merkleProof } from "@/lib/merkle";
 import { AIRDROP_ABI, AIRDROP_CONTRACT, airdropLive, CHAIN_ID } from "@/lib/airdrop";
 import {
@@ -326,7 +326,7 @@ function OnchainCampaignCard({
         <div className="flex justify-between text-xs text-[var(--muted)]">
           <span>{progress.toFixed(1)}% claimed</span>
           <span>
-            {formatCompact(c.claimed)} / {formatCompact(totalForBar)}{" "}
+            {c.claimed.toLocaleString()} / {totalForBar.toLocaleString()}{" "}
             {c.tokenSymbol}
           </span>
         </div>
@@ -437,15 +437,15 @@ function DraftCampaignCard({ campaign: c }: { campaign: AirdropCampaign }) {
         {c.description}
       </p>
 
-      <div className="mt-4 flex items-end justify-between rounded-2xl bg-[var(--surface)] px-4 py-2.5">
-        <div>
-          <p className="text-xs text-[var(--muted)]">Reward per wallet</p>
-          <p className="text-xl font-bold">
-            {c.amountPerClaim.toLocaleString()} {c.tokenSymbol}
-          </p>
-        </div>
-        <p className="text-sm text-[var(--muted)]">
-          ≈ {formatUsd(c.amountPerClaim * (token?.priceUsd ?? 0))}
+      {/* Label left, amount right — the label names what the number means
+          (per-wallet reward). USD estimate hidden until a real price exists. */}
+      <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-[var(--surface)] px-4 py-3">
+        <p className="text-xs text-[var(--muted)]">Reward per wallet</p>
+        <p className="text-lg font-bold">
+          {c.amountPerClaim.toLocaleString()}{" "}
+          <span className="text-sm font-semibold text-[var(--muted)]">
+            {c.tokenSymbol}
+          </span>
         </p>
       </div>
 
@@ -453,7 +453,7 @@ function DraftCampaignCard({ campaign: c }: { campaign: AirdropCampaign }) {
         <div className="flex justify-between text-xs text-[var(--muted)]">
           <span>{progress.toFixed(1)}% claimed</span>
           <span>
-            {formatCompact(claimedAlloc)} / {formatCompact(c.totalAllocation)}{" "}
+            {claimedAlloc.toLocaleString()} / {c.totalAllocation.toLocaleString()}{" "}
             {c.tokenSymbol}
           </span>
         </div>
@@ -470,9 +470,7 @@ function DraftCampaignCard({ campaign: c }: { campaign: AirdropCampaign }) {
           disabled
           className="h-12 w-full rounded-full bg-[var(--surface-2)] font-semibold text-[var(--muted-2)]"
         >
-          {airdropLive
-            ? "Waiting for on-chain launch (Admin)"
-            : "On-chain claims coming soon"}
+          {airdropLive ? "Launching soon" : "On-chain claims coming soon"}
         </button>
       </div>
     </div>
