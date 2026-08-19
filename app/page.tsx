@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Trophy, Clock, Flame, Users, TrendingUp, Loader2, Dices } from "lucide-react";
 import { useMetaMask } from "@/lib/use-metamask";
 import { erc20Abi, formatUnits, maxUint256, parseUnits } from "viem";
@@ -14,6 +15,7 @@ import { ArrowChip } from "@/components/ui";
 import { AddToWalletButton } from "@/components/AddToWalletButton";
 import { PixelArena, ARENA_STAGE_NAMES } from "@/components/PixelArena";
 import { TierTable } from "@/components/TierTable";
+import { TokenLogo } from "@/components/TokenLogo";
 import { PerspectiveGrid } from "@/components/PerspectiveGrid";
 import { toast } from "@/components/toast";
 import { TOKEN_MAP } from "@/lib/tokens";
@@ -117,7 +119,7 @@ export default function GamesPage() {
           </defs>
         </svg>
         <PerspectiveGrid />
-        {lmsLive ? <OnchainGame /> : <DemoGame />}
+        {lmsLive ? <OnchainGame introOpen={showIntro} /> : <DemoGame />}
       </div>
     </>
   );
@@ -793,7 +795,7 @@ const LMS_FROM_BLOCK: bigint = process.env.NEXT_PUBLIC_LMS_DEPLOY_BLOCK
  * The real game — round state, bets, prizes all live on the KangLMS contract.
  * Anyone can settle an expired round (pull-payment prizes, no keeper needed).
  */
-function OnchainGame() {
+function OnchainGame({ introOpen = false }: { introOpen?: boolean }) {
   const hydrated = useHydrated();
   const connected = useDexStore((s) => s.connected);
   const { open: openWalletModal } = useMetaMask();
@@ -981,6 +983,10 @@ function OnchainGame() {
     },
   });
 
+  // One RoundSettled fetch serves both the 5-row history display AND the
+  // winner announcement (latest settled round with a real winner + its block
+  // time). Scanning for the winner before the 5-row cap means refund rounds
+  // can't hide a real win, and there's no second full-range RPC scan.
   const { data: history } = useQuery({
     queryKey: ["lms-history", contract, round?.id],
     enabled: !!publicClient && round != null,
@@ -993,7 +999,7 @@ function OnchainGame() {
         fromBlock: LMS_FROM_BLOCK,
         toBlock: "latest",
       });
-      return logs
+      const rows = logs
         .slice(-5)
         .reverse()
         .map((log) => ({
@@ -1002,8 +1008,102 @@ function OnchainGame() {
           prize: Number(formatUnits(log.args.prize ?? 0n, dec)),
           block: Number(log.blockNumber ?? 0n),
         }));
+      // Latest settled round with a real winner (no block lookup here — the
+      // timestamp is fetched by a separate, block-number-keyed query so this
+      // 30s poll never repeats an immutable getBlock).
+      let lastWinner: {
+        roundId: number;
+        winner: string;
+        prize: number;
+        block: number;
+      } | null = null;
+      for (let i = logs.length - 1; i >= 0; i--) {
+        const w = (logs[i].args.winner ?? ZERO_ADDR) as string;
+        const prize = Number(formatUnits(logs[i].args.prize ?? 0n, dec));
+        if (w !== ZERO_ADDR && prize > 0) {
+          lastWinner = {
+            roundId: Number(logs[i].args.id ?? 0n),
+            winner: w,
+            prize,
+            block: Number(logs[i].blockNumber ?? 0n),
+          };
+          break;
+        }
+      }
+      return { rows, lastWinner };
     },
   });
+  const historyRows = history?.rows ?? [];
+  const lastWinner = history?.lastWinner ?? null;
+  // Block timestamps are immutable → cache forever, keyed by block number, so
+  // it's fetched once when the winning block changes and never on later polls.
+  const { data: lastWinAtMs } = useQuery({
+    queryKey: ["lms-win-block-ts", contract, lastWinner?.block],
+    enabled: !!publicClient && lastWinner != null,
+    // Timestamps are immutable so never refetch while active, but let inactive
+    // entries (from older winning blocks) be garbage-collected — at short round
+    // durations a long-lived tab would otherwise cache them without bound.
+    staleTime: Infinity,
+    gcTime: 30 * 60_000,
+    queryFn: async () => {
+      const b = await publicClient!.getBlock({
+        blockNumber: BigInt(lastWinner!.block),
+      });
+      return Number(b.timestamp) * 1000;
+    },
+  });
+  const lastWin =
+    lastWinner && lastWinAtMs != null
+      ? { ...lastWinner, atMs: lastWinAtMs }
+      : null;
+  // Prior dismissal for this round (persisted per browser). Read synchronously
+  // in render — never via setState-in-effect — so a reload within the window
+  // doesn't flash the already-seen modal before an effect can hide it.
+  // Namespace the dismissal key by contract so a redeployment (round IDs
+  // restart from 0) never suppresses a fresh contract's winner announcement.
+  const winnerRoundId = lastWin?.roundId;
+  const winnerKey =
+    winnerRoundId != null
+      ? `lms-winner-seen-${contract}-${winnerRoundId}`
+      : null;
+  // Re-read the persisted flag when another tab dismisses the same winner.
+  const [storageTick, setStorageTick] = useState(0);
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key?.startsWith("lms-winner-seen-")) setStorageTick((t) => t + 1);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+  const winnerSeen = useMemo(() => {
+    if (winnerKey == null || typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem(winnerKey) === "1";
+    } catch {
+      return false;
+    }
+    // storageTick intentionally re-reads the flag on cross-tab dismissals.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [winnerKey, storageTick]);
+  // Immediate in-session dismissal (set only on the user's click).
+  const [winnerDismissed, setWinnerDismissed] = useState<number | null>(null);
+  const WINNER_WINDOW_MS = 6 * 60 * 60 * 1000;
+  // Held back while the intro rules dialog is open — never stack two modals.
+  const showWinner =
+    !introOpen &&
+    lastWin != null &&
+    nowMs - lastWin.atMs <= WINNER_WINDOW_MS &&
+    !winnerSeen &&
+    winnerDismissed !== lastWin.roundId;
+  const dismissWinner = () => {
+    if (lastWin == null) return;
+    try {
+      if (winnerKey) localStorage.setItem(winnerKey, "1");
+    } catch {
+      /* ignore */
+    }
+    setWinnerDismissed(lastWin.roundId);
+  };
 
   const refreshAll = () => queryClient.invalidateQueries();
 
@@ -1151,6 +1251,18 @@ function OnchainGame() {
               <h1 className="grad-text text-2xl font-bold tracking-tight">
                 Last Man Standing
               </h1>
+              {showWinner && lastWin && (
+                <WinnerModal
+                  roundId={lastWin.roundId}
+                  winner={lastWin.winner}
+                  prize={lastWin.prize}
+                  isYou={
+                    !!wallet &&
+                    lastWin.winner.toLowerCase() === wallet.toLowerCase()
+                  }
+                  onClose={dismissWinner}
+                />
+              )}
               <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-[var(--up)]/40 bg-[var(--up-soft)] px-2.5 py-0.5 text-xs font-medium text-[var(--up)]">
                 {displayRoundNo != null ? `Round #${displayRoundNo}` : "…"}
               </span>
@@ -1281,7 +1393,7 @@ function OnchainGame() {
           </div>
 
           {/* Place Your Bet card */}
-          <div className="max-md:-order-4 rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7 shadow-2xl">
+          <div id="lms-place-bet" className="max-md:-order-4 scroll-mt-24 rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-7 shadow-2xl">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <h2 className="shrink-0 text-base font-semibold">Place Your Bet</h2>
               <AddToWalletButton symbol="KANGTEST1" />
@@ -1572,7 +1684,7 @@ function OnchainGame() {
           {/* Round History */}
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5">
             <h3 className="text-sm font-semibold mb-3">Round History</h3>
-            {!history || history.length === 0 ? (
+            {historyRows.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-[var(--border)] px-3 py-6 text-center text-xs text-[var(--muted-2)]">
                 First round in progress.
               </p>
@@ -1583,7 +1695,7 @@ function OnchainGame() {
                   <span>Winner</span>
                   <span>Prize</span>
                 </div>
-                {history.map((h) => (
+                {historyRows.map((h) => (
                   <div
                     key={h.roundId}
                     className="grid grid-cols-[auto_1fr_auto] gap-2 items-center rounded-xl px-2 py-1.5 text-xs"
@@ -1726,5 +1838,168 @@ function StatCard({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Winner announcement popup (variant A). Shows for 6h after a round settles
+ * with a real winner, once per round per browser. Celebration modal with the
+ * bet token's logo/symbol and the prize amount in the brand gradient.
+ */
+function WinnerModal({
+  roundId,
+  winner,
+  prize,
+  isYou,
+  onClose,
+}: {
+  roundId: number;
+  winner: string;
+  prize: number;
+  isYou: boolean;
+  onClose: () => void;
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Keep the latest onClose in a ref so the focus-trap effect can run ONCE on
+  // mount. onClose (dismissWinner) is recreated every second by the nowMs
+  // ticker; depending on it would rerun the effect and reset focus each tick.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+  useEffect(() => {
+    const prevFocus = document.activeElement as HTMLElement | null;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const dialog = dialogRef.current;
+    const focusables = () =>
+      dialog
+        ? Array.from(
+            dialog.querySelectorAll<HTMLElement>(
+              'button, [href], input, [tabindex]:not([tabindex="-1"])',
+            ),
+          ).filter((el) => !el.hasAttribute("disabled"))
+        : [];
+    // Move focus into the dialog so keyboard users can't reach the page behind.
+    (focusables()[0] ?? dialog)?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onCloseRef.current();
+        return;
+      }
+      if (e.key !== "Tab" || !dialog) return;
+      const f = focusables();
+      if (f.length === 0) return;
+      const first = f[0];
+      const last = f[f.length - 1];
+      const active = document.activeElement;
+      if (!dialog.contains(active as Node)) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+      // preventScroll so restoring focus doesn't undo a CTA-triggered scroll.
+      prevFocus?.focus?.({ preventScroll: true });
+    };
+    // Run once on mount — onClose is read through onCloseRef to stay stable.
+  }, []);
+
+  // Portal to <body> so the dialog escapes the game's `relative isolate`
+  // stacking context and can actually cover the sticky navbar/banner.
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <>
+      <div className="winner-scrim" onClick={onClose} aria-hidden />
+      {/* rising embers */}
+      <span aria-hidden className="winner-ember" style={{ left: "16%", animationDelay: "0.1s" }} />
+      <span aria-hidden className="winner-ember" style={{ left: "33%", width: 3, height: 3, animationDelay: "1.1s" }} />
+      <span aria-hidden className="winner-ember" style={{ left: "50%", animationDelay: "0.6s" }} />
+      <span aria-hidden className="winner-ember" style={{ left: "67%", width: 3, height: 3, animationDelay: "1.7s" }} />
+      <span aria-hidden className="winner-ember" style={{ left: "84%", animationDelay: "0.9s" }} />
+
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Round ${roundId + 1} winner`}
+        tabIndex={-1}
+        className="winner-modal outline-none"
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-white/[0.06] text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+        >
+          ✕
+        </button>
+
+        <div className="winner-badge">
+          <span className="winner-dot" />
+          Round <b>{roundId + 1}</b> winner
+        </div>
+
+        <div className="winner-trophy">
+          <Trophy className="h-8 w-8" stroke="var(--accent-bright)" strokeWidth={1.8} />
+        </div>
+
+        <div className="text-sm text-[var(--muted)]">Last Man Standing</div>
+        <div className="burn-digits mt-1 font-mono text-5xl font-bold tabular-nums leading-none">
+          {formatNumber(prize, 2)}
+        </div>
+        <div className="mt-2.5 flex items-center justify-center gap-2 text-[15px] font-semibold text-[var(--muted)]">
+          <TokenLogo symbol="KANGTEST1" size={24} />
+          KANGTEST1
+        </div>
+
+        <div className="mt-3.5 text-sm text-[var(--muted)]">
+          Winner{" "}
+          <span className="font-mono font-semibold text-[var(--foreground)]">
+            {shortAddress(winner)}
+          </span>
+          {isYou && (
+            <span className="ml-1 font-semibold text-[var(--accent-bright)]">
+              · you
+            </span>
+          )}
+        </div>
+        <div className="mt-3 text-xs text-[var(--muted-2)]">
+          Prize credited · claimable anytime · new round is live
+        </div>
+
+        <div className="mt-5 flex flex-col gap-2">
+          <button
+            onClick={() => {
+              onClose();
+              // Close, then bring the bet card into view so the CTA leads
+              // somewhere real (winners can also claim from Your Prizes below).
+              document
+                .getElementById("lms-place-bet")
+                ?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985]"
+          >
+            Place your bet
+            <ArrowChip />
+          </button>
+          <button
+            onClick={onClose}
+            className="h-11 w-full rounded-full border border-[var(--border-strong)] font-semibold text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+          >
+            Dismiss
+          </button>
+        </div>
+      </div>
+    </>,
+    document.body,
   );
 }

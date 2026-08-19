@@ -506,6 +506,156 @@ h4 {
   }
 }
 
+/* winner announcement popup — centered celebration modal (variant A):
+   breathing crimson glow, bobbing trophy, live badge dot, rising embers.
+   The prize amount reuses .burn-digits for the brand gradient shimmer. */
+.winner-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(0, 0, 0, 0.66);
+  backdrop-filter: blur(3px);
+  animation: fade-in 0.3s ease both;
+}
+.winner-modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  /* Centering lives on the element itself so it holds even when the pop
+     animation is disabled under prefers-reduced-motion. */
+  transform: translate(-50%, -50%);
+  z-index: 91;
+  width: 400px;
+  max-width: calc(100vw - 2rem);
+  /* Stay within short viewports (mobile landscape, high zoom) so the CTA and
+     dismiss controls are always reachable while body scroll is locked. */
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  border-radius: 28px;
+  padding: 34px 30px 26px;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(231, 69, 58, 0.12), var(--card) 44%);
+  border: 1px solid rgba(231, 69, 58, 0.42);
+  animation: winner-pop 0.5s cubic-bezier(0.2, 0.9, 0.25, 1.2) both,
+    winner-glow 3.6s ease-in-out infinite;
+}
+@keyframes winner-pop {
+  0% {
+    transform: translate(-50%, -46%) scale(0.92);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes winner-glow {
+  0%,
+  100% {
+    box-shadow: 0 40px 90px -30px rgba(207, 21, 18, 0.5),
+      inset 0 0 44px rgba(207, 21, 18, 0.1);
+  }
+  50% {
+    box-shadow: 0 46px 100px -28px rgba(207, 21, 18, 0.66),
+      inset 0 0 60px rgba(207, 21, 18, 0.16);
+  }
+}
+.winner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 13px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.winner-badge b {
+  color: var(--foreground);
+  font-weight: 700;
+}
+.winner-dot {
+  position: relative;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(231, 69, 58, 0.7);
+  animation: winner-dotpulse 1.6s ease-in-out infinite;
+}
+.winner-dot::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 999px;
+  border: 1.5px solid var(--accent);
+  opacity: 0.7;
+  animation: winner-dotping 1.6s ease-out infinite;
+}
+@keyframes winner-dotpulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+@keyframes winner-dotping {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.7;
+  }
+  80%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+.winner-trophy {
+  width: 64px;
+  height: 64px;
+  margin: 16px auto 8px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    160deg,
+    rgba(255, 151, 56, 0.22),
+    rgba(207, 21, 18, 0.22)
+  );
+  border: 1px solid rgba(255, 151, 56, 0.38);
+  animation: flamebob 1.8s ease-in-out infinite;
+}
+.winner-ember {
+  position: fixed;
+  bottom: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent-bright);
+  opacity: 0;
+  z-index: 91;
+  pointer-events: none;
+  animation: winner-rise 3s ease-in infinite;
+}
+@keyframes winner-rise {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateY(-70vh) scale(0.35);
+    opacity: 0;
+  }
+}
+
 .tabular {
   font-variant-numeric: tabular-nums;
 }
@@ -718,8 +868,18 @@ input[type="number"] {
   .mini-ember,
   .heat-glow,
   .beam-ring,
+  .winner-scrim,
+  .winner-modal,
+  .winner-dot,
+  .winner-dot::after,
+  .winner-trophy,
+  .winner-ember,
   .dot-live::after {
     animation: none;
+  }
+  .winner-ember,
+  .winner-dot::after {
+    display: none;
   }
   .beam-ring {
     display: none;
