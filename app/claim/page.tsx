@@ -212,7 +212,7 @@ function OnchainCampaignCard({
     reason =
       wlAllocs.length === 0
         ? "Whitelist data isn't available yet"
-        : "Your wallet is not whitelisted";
+        : "Not eligible";
   }
 
   const doClaim = async () => {
@@ -293,32 +293,51 @@ function OnchainCampaignCard({
         </span>
       </div>
 
-      <div className="mt-4 flex items-end justify-between rounded-2xl bg-[var(--surface)] px-4 py-2.5">
-        <div>
-          <p className="text-xs text-[var(--muted)]">
-            {!c.isPublic && myAlloc ? "Your allocation" : "Reward per wallet"}
-          </p>
-          <p className="text-xl font-bold">
-            {c.isPublic || myAlloc ? (
-              <>
-                {claimAmount.toLocaleString()}{" "}
-                {/* 티커는 수량보다 2단계 작게(xl→base)·한 단계 얇게 */}
-                <span className="text-base font-semibold text-[var(--muted)]">
-                  {c.tokenSymbol}
-                </span>
-              </>
-            ) : (
-              c.tokenSymbol
-            )}
-          </p>
+      {/* Label left, amount right. Whitelist wallets with an allocation see
+          "Your allocation" (amber); wallets with none see "No allocation". */}
+      <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-[var(--surface)] px-4 py-3">
+        <p
+          className="text-xs"
+          style={{
+            color:
+              !c.isPublic && myAlloc ? "var(--accent-bright)" : "var(--muted)",
+          }}
+        >
+          {!c.isPublic && myAlloc ? "Your allocation" : "Reward per wallet"}
+        </p>
+        <div className="text-right">
+          {c.isPublic || myAlloc ? (
+            <p
+              className="text-lg font-bold"
+              style={
+                !c.isPublic && myAlloc ? { color: "var(--accent-bright)" } : undefined
+              }
+            >
+              {claimAmount.toLocaleString()}{" "}
+              {/* 티커는 수량보다 한 단계 작게·얇게 */}
+              <span className="text-sm font-semibold text-[var(--muted)]">
+                {c.tokenSymbol}
+              </span>
+            </p>
+          ) : connected ? (
+            // Connected whitelist wallet with nothing allocated.
+            <p className="text-sm font-semibold text-[var(--muted-2)]">
+              No allocation
+            </p>
+          ) : (
+            // Not connected yet — allocation is unknown until they connect.
+            <p className="text-sm font-semibold text-[var(--muted-2)]">
+              Connect to check
+            </p>
+          )}
+          {/* Tokens with no USDX pool have priceUsd 0 — hide the USD estimate
+              until a real price exists (never show "≈ $0"). */}
+          {(c.isPublic || myAlloc) && (token?.priceUsd ?? 0) > 0 && (
+            <p className="mt-0.5 text-xs text-[var(--muted)]">
+              ≈ {formatUsd(claimAmount * (token?.priceUsd ?? 0))}
+            </p>
+          )}
         </div>
-        {/* Tokens with no USDX pool have priceUsd 0 — "≈ $0" reads as
-            worthless, so hide the USD estimate until a price exists. */}
-        {(c.isPublic || myAlloc) && (token?.priceUsd ?? 0) > 0 && (
-          <p className="text-sm text-[var(--muted)]">
-            ≈ {formatUsd(claimAmount * (token?.priceUsd ?? 0))}
-          </p>
-        )}
       </div>
 
       {/* Progress (claimed / funded, read from chain) */}
@@ -354,7 +373,7 @@ function OnchainCampaignCard({
             onClick={() => openWalletModal()}
             className="h-12 w-full rounded-full bg-[var(--accent)] font-semibold text-white transition-all hover:bg-[var(--accent-hover)] active:scale-[0.985]"
           >
-            Connect to claim
+            Connect Wallet
           </button>
         ) : alreadyClaimed ? (
           <button
@@ -388,7 +407,7 @@ function OnchainCampaignCard({
             {!ended && !soldOut && !eligible && (
               <ShieldCheck className="h-4 w-4" />
             )}
-            {ended ? "Ended" : soldOut ? "Fully claimed" : reason}
+            {ended ? "Ended" : soldOut ? "No tokens left" : reason}
           </button>
         )}
       </div>
