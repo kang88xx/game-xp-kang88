@@ -13,7 +13,18 @@ export const LMS_ABI = [
     type: "function",
     name: "bet",
     stateMutability: "nonpayable",
-    inputs: [{ name: "amount", type: "uint256" }],
+    inputs: [
+      { name: "amount", type: "uint256" },
+      { name: "expectedRoundId", type: "uint256" },
+    ],
+    outputs: [],
+  },
+  {
+    // Claim one win by its winsOf index — O(1), gas-bounded escape hatch.
+    type: "function",
+    name: "claimByIndex",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "index", type: "uint256" }],
     outputs: [],
   },
   {

@@ -1060,12 +1060,17 @@ function OnchainGame() {
         });
         await publicClient!.waitForTransactionReceipt({ hash: approveHash });
       }
+      // Bind the bet to the round it applies to. If this round already expired,
+      // bet() settles it on-chain and the stake opens the NEXT round (id + 1);
+      // otherwise it lands in the live round. The contract reverts if the round
+      // advances before the tx mines, so a stake never lands in the wrong round.
+      const expectedRoundId = BigInt(round.id + (expired ? 1 : 0));
       toast.info("Please approve the bet transaction in your wallet");
       const hash = await sendTx({
         address: contract,
         abi: LMS_ABI,
         functionName: "bet",
-        args: [amountWei],
+        args: [amountWei, expectedRoundId],
       });
       const receipt = await publicClient!.waitForTransactionReceipt({ hash });
       if (receipt.status !== "success") return toast.error("Bet failed");

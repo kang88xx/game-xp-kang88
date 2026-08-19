@@ -171,9 +171,14 @@ contract KangLMS {
      * clock; each later bet RESETS it to the active tier's timer. If the
      * previous round expired, it is settled HERE — this bet opens the next.
      */
-    function bet(uint256 amount) external nonReentrant {
+    function bet(uint256 amount, uint256 expectedRoundId) external nonReentrant {
         require(!paused, "paused");
         _settleExpired();
+        // Bind the bet to the round the caller signed for. If the previous
+        // round expired and settled between the caller reading state and this
+        // tx mining, currentRoundId has advanced — reverting here prevents the
+        // stake landing in an unintended (fresh tier-0) round.
+        require(currentRoundId == expectedRoundId, "round changed");
         Round storage r = rounds[currentRoundId];
         require(!r.settled, "settled");
         uint8 tier = tierAt(r.betCount);
@@ -267,6 +272,28 @@ contract KangLMS {
         _safeTransfer(msg.sender, totalPaid, "transfer failed");
     }
 
+    /**
+     * Claim ONE win by its array index (from winsOf / winCount) in O(1).
+     * A gas-bounded escape hatch: claimRound/claimAll scan the full win
+     * history, so an address with a very long history could eventually exceed
+     * the block gas limit — this path never does, so no prize is ever locked.
+     */
+    function claimByIndex(uint256 index) external nonReentrant {
+        _settleExpired();
+        Win[] storage list = _wins[msg.sender];
+        require(index < list.length, "bad index");
+        Win storage w = list[index];
+        require(!w.claimed && w.amount > 0, "nothing to claim");
+        uint256 available = token.balanceOf(address(this));
+        require(available > 0, "no contract balance");
+        uint256 pay = w.amount > available ? available : w.amount;
+        w.amount -= pay;
+        if (w.amount == 0) w.claimed = true;
+        totalPendingPrize -= pay;
+        _safeTransfer(msg.sender, pay, "transfer failed");
+        emit PrizeClaimed(msg.sender, w.roundId, pay);
+    }
+
     // ---------- Prize views ----------
 
     /// Total still unclaimed across all of `who`'s rounds.
@@ -292,8 +319,11 @@ contract KangLMS {
     /// Fee split in bps; prize gets the remainder. Bounded like the reference
     /// so the owner can never starve the prize pool.
     function setFeeSplit(uint16 _burnBps, uint16 _treasuryBps) external onlyOwner {
-        require(_burnBps <= 2000, "burn > 20%");
-        require(_treasuryBps <= 2000, "treasury > 20%");
+        // Caps pinned to the advertised split (5% burn / 15% treasury) so the
+        // prize pool is ALWAYS >= 80% — the owner can lower fees but never
+        // raise them above what the UI promises to bettors.
+        require(_burnBps <= 500, "burn > 5%");
+        require(_treasuryBps <= 1500, "treasury > 15%");
         burnBps = _burnBps;
         treasuryBps = _treasuryBps;
         emit ConfigUpdated("feeSplit");
@@ -306,6 +336,9 @@ contract KangLMS {
         uint32 _tierStep
     ) external onlyOwner {
         require(_baseBet > 0, "baseBet=0");
+        // Bound baseBet so `baseBet << MAX_TIER` (top-tier floor) can never
+        // overflow uint256 and silently wrap to a tiny/zero bet floor.
+        require(_baseBet <= type(uint256).max >> MAX_TIER, "baseBet too large");
         require(_baseDuration >= 60 && _baseDuration <= 7 days, "duration range");
         require(_minDuration >= 10 && _minDuration <= _baseDuration, "minDur range");
         require(_tierStep >= 1, "tierStep=0");
